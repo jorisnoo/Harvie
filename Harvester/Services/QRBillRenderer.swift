@@ -43,7 +43,6 @@ struct QRBillRenderer {
         static let payableByPlaceholder = "Zahlbar durch (Name/Adresse)"
         static let currency = "Währung"
         static let amount = "Betrag"
-        static let acceptancePoint = "Annahmestelle"
     }
 
     func renderQRBillPage(data: QRBillData, qrImage: CGImage) -> PDFPage? {
@@ -133,19 +132,17 @@ struct QRBillRenderer {
             drawCornerMarks(context: context, xMM: marginMM, yMM: y / mmToPoints - 20, widthMM: 52, heightMM: 20)
         }
 
-        // Currency and Amount at bottom (with more padding)
-        let bottomY: CGFloat = 15 * mmToPoints
-        _ = drawText(context: context, text: Labels.currency, x: leftMargin, y: bottomY + 10, fontSize: 6, bold: true, maxWidth: maxWidth)
-        _ = drawText(context: context, text: data.currency, x: leftMargin, y: bottomY, fontSize: 8, bold: false, maxWidth: maxWidth)
+        // Currency and Amount at bottom
+        let bottomY: CGFloat = 20 * mmToPoints
+        _ = drawText(context: context, text: Labels.currency, x: leftMargin, y: bottomY + 10, fontSize: 6, bold: true, maxWidth: 20 * mmToPoints)
+        _ = drawText(context: context, text: data.currency, x: leftMargin, y: bottomY, fontSize: 8, bold: false, maxWidth: 20 * mmToPoints)
 
         let amountX = 25 * mmToPoints
-        _ = drawText(context: context, text: Labels.amount, x: amountX, y: bottomY + 10, fontSize: 6, bold: true, maxWidth: maxWidth)
+        _ = drawText(context: context, text: Labels.amount, x: amountX, y: bottomY + 10, fontSize: 6, bold: true, maxWidth: 30 * mmToPoints)
         if let amount = data.amount {
-            _ = drawText(context: context, text: formatAmount(amount), x: amountX, y: bottomY, fontSize: 8, bold: false, maxWidth: maxWidth)
+            _ = drawText(context: context, text: formatAmount(amount), x: amountX, y: bottomY, fontSize: 8, bold: false, maxWidth: 30 * mmToPoints)
         }
 
-        // Acceptance point (with padding from bottom edge)
-        _ = drawText(context: context, text: Labels.acceptancePoint, x: leftMargin, y: 8 * mmToPoints, fontSize: 6, bold: true, maxWidth: maxWidth)
     }
 
     // MARK: - Payment Section (Right, 148mm wide, at bottom of A4)
@@ -214,8 +211,8 @@ struct QRBillRenderer {
             drawCornerMarks(context: context, xMM: textColumnX / mmToPoints, yMM: textY / mmToPoints - 25, widthMM: 65, heightMM: 25)
         }
 
-        // Währung und Betrag at bottom left of payment section (with more padding)
-        let bottomY: CGFloat = 15 * mmToPoints
+        // Währung und Betrag at bottom left of payment section
+        let bottomY: CGFloat = 16 * mmToPoints
         _ = drawText(context: context, text: Labels.currency, x: leftMargin, y: bottomY + 12, fontSize: 8, bold: true, maxWidth: 50 * mmToPoints)
         _ = drawText(context: context, text: data.currency, x: leftMargin, y: bottomY, fontSize: 10, bold: false, maxWidth: 50 * mmToPoints)
 

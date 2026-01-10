@@ -5,36 +5,57 @@
 
 import SwiftUI
 
+enum SettingsSection: String, CaseIterable, Identifiable {
+    case harvest
+    case qrBill
+    case downloads
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .harvest: "Harvest"
+        case .qrBill: "QR Bill"
+        case .downloads: "Downloads"
+        }
+    }
+
+    var icon: String {
+        switch self {
+        case .harvest: "cloud"
+        case .qrBill: "qrcode"
+        case .downloads: "folder"
+        }
+    }
+}
+
 struct SettingsView: View {
     @State private var viewModel = SettingsViewModel()
+    @State private var selection: SettingsSection? = .harvest
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
-        TabView {
-            HarvestSettingsTab(viewModel: viewModel)
-                .tabItem {
-                    Label("Harvest", systemImage: "cloud")
-                }
-
-            QRBillSettingsTab(viewModel: viewModel)
-                .tabItem {
-                    Label("QR Bill", systemImage: "qrcode")
-                }
-
-            DownloadsSettingsTab(viewModel: viewModel)
-                .tabItem {
-                    Label("Downloads", systemImage: "folder")
-                }
+        NavigationSplitView {
+            List(SettingsSection.allCases, selection: $selection) { section in
+                Label(section.title, systemImage: section.icon)
+                    .tag(section)
+            }
+            .navigationSplitViewColumnWidth(180)
+            .navigationTitle("Settings")
+        } detail: {
+            if let section = selection {
+                SettingsDetail(section: section, viewModel: viewModel)
+            }
         }
-        .frame(minWidth: 500, minHeight: 400)
-        .toolbar {
-            ToolbarItem(placement: .cancellationAction) {
+        .frame(minWidth: 600, minHeight: 400)
+        .safeAreaInset(edge: .bottom) {
+            HStack {
+                Spacer()
                 Button("Cancel") {
                     dismiss()
                 }
-            }
+                .keyboardShortcut(.cancelAction)
 
-            ToolbarItem(placement: .confirmationAction) {
                 Button("Save") {
                     Task {
                         await viewModel.saveSettings()
@@ -43,13 +64,16 @@ struct SettingsView: View {
                         }
                     }
                 }
+                .keyboardShortcut(.defaultAction)
                 .disabled(viewModel.isSaving)
             }
+            .padding()
+            .background(.bar)
         }
         .task {
             await viewModel.loadSettings()
         }
-        .alert("Error", isPresented: .init(
+        .alert("Error", isPresented: Binding(
             get: { viewModel.saveError != nil },
             set: { if !$0 { viewModel.saveError = nil } }
         )) {
@@ -60,21 +84,48 @@ struct SettingsView: View {
     }
 }
 
-// MARK: - Harvest Settings Tab
+// MARK: - Settings Detail
 
-struct HarvestSettingsTab: View {
+struct SettingsDetail: View {
+    let section: SettingsSection
+    @Bindable var viewModel: SettingsViewModel
+
+    var body: some View {
+        switch section {
+        case .harvest:
+            HarvestSettings(viewModel: viewModel)
+        case .qrBill:
+            QRBillSettings(viewModel: viewModel)
+        case .downloads:
+            DownloadsSettings(viewModel: viewModel)
+        }
+    }
+}
+
+// MARK: - Harvest Settings
+
+struct HarvestSettings: View {
     @Bindable var viewModel: SettingsViewModel
 
     var body: some View {
         Form {
             Section("API Credentials") {
-                SecureField("Access Token", text: $viewModel.harvestCredentials.accessToken)
-                    .textContentType(.password)
+                LabeledContent("Access Token") {
+                    SecureField("", text: $viewModel.harvestCredentials.accessToken)
+                        .textContentType(.password)
+                        .multilineTextAlignment(.trailing)
+                }
 
-                TextField("Account ID", text: $viewModel.harvestCredentials.accountId)
+                LabeledContent("Account ID") {
+                    TextField("", text: $viewModel.harvestCredentials.accountId)
+                        .multilineTextAlignment(.trailing)
+                }
 
-                TextField("Subdomain", text: $viewModel.harvestCredentials.subdomain)
-                    .textContentType(.URL)
+                LabeledContent("Subdomain") {
+                    TextField("", text: $viewModel.harvestCredentials.subdomain)
+                        .textContentType(.URL)
+                        .multilineTextAlignment(.trailing)
+                }
             }
 
             Section {
@@ -115,35 +166,54 @@ struct HarvestSettingsTab: View {
     }
 }
 
-// MARK: - QR Bill Settings Tab
+// MARK: - QR Bill Settings
 
-struct QRBillSettingsTab: View {
+struct QRBillSettings: View {
     @Bindable var viewModel: SettingsViewModel
 
     var body: some View {
         Form {
             Section("Creditor Information") {
-                TextField("IBAN", text: $viewModel.creditorInfo.iban)
-                    .textContentType(.creditCardNumber)
+                LabeledContent("IBAN") {
+                    TextField("", text: $viewModel.creditorInfo.iban)
+                        .textContentType(.creditCardNumber)
+                        .multilineTextAlignment(.trailing)
+                }
 
-                TextField("Name", text: $viewModel.creditorInfo.name)
+                LabeledContent("Name") {
+                    TextField("", text: $viewModel.creditorInfo.name)
+                        .multilineTextAlignment(.trailing)
+                }
             }
 
             Section("Address") {
-                HStack {
-                    TextField("Street", text: $viewModel.creditorInfo.streetName)
-                    TextField("Nr.", text: $viewModel.creditorInfo.buildingNumber)
-                        .frame(width: 60)
+                LabeledContent("Street") {
+                    TextField("", text: $viewModel.creditorInfo.streetName)
+                        .multilineTextAlignment(.trailing)
                 }
 
-                HStack {
-                    TextField("ZIP", text: $viewModel.creditorInfo.postalCode)
+                LabeledContent("Number") {
+                    TextField("", text: $viewModel.creditorInfo.buildingNumber)
                         .frame(width: 80)
-                    TextField("City", text: $viewModel.creditorInfo.town)
+                        .multilineTextAlignment(.trailing)
                 }
 
-                TextField("Country", text: $viewModel.creditorInfo.country)
-                    .frame(width: 80)
+                LabeledContent("ZIP") {
+                    TextField("", text: $viewModel.creditorInfo.postalCode)
+                        .frame(width: 80)
+                        .multilineTextAlignment(.trailing)
+                }
+
+                LabeledContent("City") {
+                    TextField("", text: $viewModel.creditorInfo.town)
+                        .multilineTextAlignment(.trailing)
+                }
+
+                LabeledContent("Country") {
+                    TextField("", text: $viewModel.creditorInfo.country)
+                        .frame(width: 80)
+                        .multilineTextAlignment(.trailing)
+                }
             }
 
             Section {
@@ -156,9 +226,9 @@ struct QRBillSettingsTab: View {
     }
 }
 
-// MARK: - Downloads Settings Tab
+// MARK: - Downloads Settings
 
-struct DownloadsSettingsTab: View {
+struct DownloadsSettings: View {
     @Bindable var viewModel: SettingsViewModel
 
     private var filenamePreview: String {
@@ -181,27 +251,28 @@ struct DownloadsSettingsTab: View {
                 .pickerStyle(.radioGroup)
 
                 if viewModel.appSettings.downloadBehavior == .useDefaultFolder {
-                    HStack {
-                        Text("Folder")
-                        Spacer()
-                        Text(viewModel.appSettings.defaultDownloadPath ?? "Not set")
-                            .foregroundStyle(.secondary)
-                            .lineLimit(1)
-                            .truncationMode(.middle)
-                        Button("Choose...") {
-                            viewModel.selectDownloadFolder()
+                    LabeledContent("Folder") {
+                        HStack {
+                            Text(viewModel.appSettings.defaultDownloadPath ?? "Not set")
+                                .foregroundStyle(.secondary)
+                                .lineLimit(1)
+                                .truncationMode(.middle)
+                            Button("Choose...") {
+                                viewModel.selectDownloadFolder()
+                            }
                         }
                     }
                 }
             }
 
             Section("Filename") {
-                TextField("Pattern", text: $viewModel.appSettings.filenamePattern)
-                    .font(.system(.body, design: .monospaced))
+                LabeledContent("Pattern") {
+                    TextField("", text: $viewModel.appSettings.filenamePattern)
+                        .font(.system(.body, design: .monospaced))
+                        .multilineTextAlignment(.trailing)
+                }
 
-                HStack {
-                    Text("Preview")
-                    Spacer()
+                LabeledContent("Preview") {
                     Text(filenamePreview)
                         .foregroundStyle(.secondary)
                         .font(.system(.body, design: .monospaced))

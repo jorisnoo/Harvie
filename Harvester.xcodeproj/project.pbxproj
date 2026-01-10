@@ -8,12 +8,12 @@
 
 /* Begin PBXBuildFile section */
 		CFC0703F2F12C51800DBAFCB /* QRCode in Frameworks */ = {isa = PBXBuildFile; productRef = CFC06FC12F12C10000DBAFCB /* QRCode */; };
-		CFC070C02F12D7D700DBAFCB /* AppIcon.icon in Resources */ = {isa = PBXBuildFile; fileRef = CFC070BF2F12D7D700DBAFCB /* AppIcon.icon */; };
+		CFC0713A2F130E6000DBAFCB /* HarvesterAppIcon.icon in Resources */ = {isa = PBXBuildFile; fileRef = CFC071392F130E6000DBAFCB /* HarvesterAppIcon.icon */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
 		CFC06FAE2F12C02400DBAFCB /* Harvester.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Harvester.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		CFC070BF2F12D7D700DBAFCB /* AppIcon.icon */ = {isa = PBXFileReference; lastKnownFileType = folder.iconcomposer.icon; path = AppIcon.icon; sourceTree = "<group>"; };
+		CFC071392F130E6000DBAFCB /* HarvesterAppIcon.icon */ = {isa = PBXFileReference; lastKnownFileType = folder.iconcomposer.icon; path = HarvesterAppIcon.icon; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -39,7 +39,7 @@
 		CFC06FA52F12C02400DBAFCB = {
 			isa = PBXGroup;
 			children = (
-				CFC070BF2F12D7D700DBAFCB /* AppIcon.icon */,
+				CFC071392F130E6000DBAFCB /* HarvesterAppIcon.icon */,
 				CFC06FB02F12C02400DBAFCB /* Harvester */,
 				CFC06FAF2F12C02400DBAFCB /* Products */,
 			);
@@ -121,7 +121,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				CFC070C02F12D7D700DBAFCB /* AppIcon.icon in Resources */,
+				CFC0713A2F130E6000DBAFCB /* HarvesterAppIcon.icon in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -261,8 +261,9 @@
 		CFC06FBA2F12C02500DBAFCB /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_APPICON_NAME = HarvesterAppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = NO;
 				CODE_SIGN_ENTITLEMENTS = Harvester/Harvester.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
@@ -294,8 +295,9 @@
 		CFC06FBB2F12C02500DBAFCB /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_APPICON_NAME = HarvesterAppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = NO;
 				CODE_SIGN_ENTITLEMENTS = Harvester/Harvester.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;

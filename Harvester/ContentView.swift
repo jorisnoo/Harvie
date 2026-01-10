@@ -10,11 +10,12 @@ struct ContentView: View {
     @Environment(\.modelContext) private var modelContext
     @State private var viewModel = InvoicesViewModel()
     @State private var showingSettings = false
+    @State private var columnVisibility: NavigationSplitViewVisibility = .all
 
     var body: some View {
-        NavigationSplitView {
-            InvoicesListView(viewModel: viewModel)
-                .frame(minWidth: 300)
+        NavigationSplitView(columnVisibility: $columnVisibility) {
+            InvoicesListView(viewModel: viewModel, sidebarVisible: columnVisibility != .detailOnly)
+                .navigationSplitViewColumnWidth(min: 280, ideal: 320, max: 400)
         } detail: {
             if viewModel.selectedInvoiceIDs.count > 1 {
                 ContentUnavailableView(
@@ -34,12 +35,27 @@ struct ContentView: View {
         }
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
-                Button {
-                    showingSettings = true
+                Menu {
+                    Button {
+                        Task {
+                            await viewModel.refresh()
+                        }
+                    } label: {
+                        Label("Refresh", systemImage: "arrow.clockwise")
+                    }
+                    .disabled(viewModel.isLoading)
+
+                    Divider()
+
+                    Button {
+                        showingSettings = true
+                    } label: {
+                        Label("Settings", systemImage: "gear")
+                    }
+                    .keyboardShortcut(",", modifiers: .command)
                 } label: {
-                    Label("Settings", systemImage: "gear")
+                    Label("More", systemImage: "ellipsis.circle")
                 }
-                .keyboardShortcut(",", modifiers: .command)
             }
         }
         .sheet(isPresented: $showingSettings) {

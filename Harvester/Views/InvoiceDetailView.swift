@@ -12,6 +12,7 @@ struct InvoiceDetailView: View {
     let invoice: Invoice
 
     @State private var isProcessing = false
+    @State private var isPreviewing = false
     @State private var error: String?
     @State private var showingSuccess = false
     @State private var savedFilePath: String?
@@ -75,6 +76,23 @@ struct InvoiceDetailView: View {
             ToolbarItem(placement: .primaryAction) {
                 Button {
                     Task {
+                        await previewWithQRBill()
+                    }
+                } label: {
+                    if isPreviewing {
+                        ProgressView()
+                            .scaleEffect(0.7)
+                    } else {
+                        Label("Preview", systemImage: "eye")
+                    }
+                }
+                .disabled(isPreviewing || isProcessing)
+                .help("Preview invoice PDF with Swiss QR bill")
+            }
+
+            ToolbarItem(placement: .primaryAction) {
+                Button {
+                    Task {
                         await downloadWithQRBill()
                     }
                 } label: {
@@ -82,11 +100,11 @@ struct InvoiceDetailView: View {
                         ProgressView()
                             .scaleEffect(0.7)
                     } else {
-                        Label("Download with QR Bill", systemImage: "qrcode")
+                        Label("Download", systemImage: "square.and.arrow.down")
                     }
                 }
                 .buttonStyle(.borderedProminent)
-                .disabled(isProcessing)
+                .disabled(isProcessing || isPreviewing)
                 .help("Download invoice PDF with Swiss QR bill")
             }
         }
@@ -345,6 +363,41 @@ struct InvoiceDetailView: View {
             self.error = "Failed to save notes: \(error.localizedDescription)"
         }
         isSavingNotes = false
+    }
+
+    private func previewWithQRBill() async {
+        isPreviewing = true
+        error = nil
+
+        do {
+            let credentials = try await keychainService.loadHarvestCredentials()
+            let creditorInfo = try await keychainService.loadCreditorInfo()
+
+            guard creditorInfo.isValid else {
+                error = "Please configure your creditor information in Settings."
+                isPreviewing = false
+                return
+            }
+
+            let pdf = try await pdfService.createInvoiceWithQRBill(
+                invoice: invoice,
+                credentials: credentials,
+                creditorInfo: creditorInfo
+            )
+
+            let tempURL = FileManager.default.temporaryDirectory
+                .appendingPathComponent("\(invoiceFileName).pdf")
+
+            pdf.write(to: tempURL)
+
+            await MainActor.run {
+                NSWorkspace.shared.open(tempURL)
+            }
+        } catch {
+            self.error = error.localizedDescription
+        }
+
+        isPreviewing = false
     }
 
     private func downloadWithQRBill() async {

@@ -7,6 +7,7 @@ import SwiftUI
 
 struct InvoicesListView: View {
     @Bindable var viewModel: InvoicesViewModel
+    var sidebarVisible: Bool = true
 
     var body: some View {
         Group {
@@ -48,7 +49,7 @@ struct InvoicesListView: View {
                                 await viewModel.exportSelectedInvoices(withQRBill: true)
                             }
                         } label: {
-                            Label("Export with QR Bill", systemImage: "qrcode")
+                            Label("Export with QR Bill", systemImage: "square.and.arrow.down")
                         }
 
                         Button {
@@ -91,64 +92,40 @@ struct InvoicesListView: View {
             Text("Successfully exported \(viewModel.exportedCount) invoice(s).")
         }
         .toolbar {
-            ToolbarItem(placement: .primaryAction) {
-                Menu {
-                    Button("Select All") {
-                        viewModel.selectAll()
-                    }
-                    Button("Deselect All") {
-                        viewModel.deselectAll()
-                    }
-                } label: {
-                    Label("Selection", systemImage: "checkmark.circle")
-                }
-            }
-
-            ToolbarItem(placement: .primaryAction) {
-                Menu {
-                    ForEach(InvoiceSortOption.allCases, id: \.self) { option in
-                        Button {
-                            if viewModel.sortOption == option {
-                                viewModel.sortDirection.toggle()
-                            } else {
-                                viewModel.sortOption = option
-                                viewModel.sortDirection = .descending
-                            }
-                        } label: {
-                            HStack {
-                                Text(option.rawValue)
+            if sidebarVisible {
+                ToolbarItemGroup(placement: .automatic) {
+                    Menu {
+                        ForEach(InvoiceSortOption.allCases, id: \.self) { option in
+                            Button {
                                 if viewModel.sortOption == option {
-                                    Image(systemName: viewModel.sortDirection == .ascending ? "chevron.up" : "chevron.down")
+                                    viewModel.sortDirection.toggle()
+                                } else {
+                                    viewModel.sortOption = option
+                                    viewModel.sortDirection = .descending
+                                }
+                            } label: {
+                                HStack {
+                                    Text(option.rawValue)
+                                    if viewModel.sortOption == option {
+                                        Image(systemName: viewModel.sortDirection == .ascending ? "chevron.up" : "chevron.down")
+                                    }
                                 }
                             }
                         }
+                    } label: {
+                        Label("Sort", systemImage: "arrow.up.arrow.down")
                     }
-                } label: {
-                    Label("Sort", systemImage: "arrow.up.arrow.down")
-                }
-            }
 
-            ToolbarItem(placement: .primaryAction) {
-                Picker("Filter", selection: $viewModel.stateFilter) {
-                    Text("Open").tag(InvoiceState?.some(.open))
-                    Text("Paid").tag(InvoiceState?.some(.paid))
-                    Text("Draft").tag(InvoiceState?.some(.draft))
-                    Text("Closed").tag(InvoiceState?.some(.closed))
-                    Divider()
-                    Text("All").tag(InvoiceState?.none)
-                }
-                .pickerStyle(.menu)
-            }
-
-            ToolbarItem(placement: .primaryAction) {
-                Button {
-                    Task {
-                        await viewModel.refresh()
+                    Picker("Filter", selection: $viewModel.stateFilter) {
+                        Text("Open").tag(InvoiceState?.some(.open))
+                        Text("Paid").tag(InvoiceState?.some(.paid))
+                        Text("Draft").tag(InvoiceState?.some(.draft))
+                        Text("Closed").tag(InvoiceState?.some(.closed))
+                        Divider()
+                        Text("All").tag(InvoiceState?.none)
                     }
-                } label: {
-                    Label("Refresh", systemImage: "arrow.clockwise")
+                    .pickerStyle(.menu)
                 }
-                .disabled(viewModel.isLoading)
             }
         }
         .onChange(of: viewModel.stateFilter) {
