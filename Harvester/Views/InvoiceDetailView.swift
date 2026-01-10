@@ -10,10 +10,13 @@ import UniformTypeIdentifiers
 
 struct InvoiceDetailView: View {
     let invoice: Invoice
+
     @State private var isProcessing = false
     @State private var error: String?
     @State private var showingSuccess = false
     @State private var savedFilePath: String?
+    @State private var creditorName: String = ""
+    @State private var appSettings: AppSettings = .default
 
     // Subject editing
     @State private var editedSubject: String = ""
@@ -32,17 +35,11 @@ struct InvoiceDetailView: View {
     private let apiService = HarvestAPIService.shared
 
     private var formattedAmount: String {
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .currency
-        formatter.currencyCode = invoice.currency
-        return formatter.string(from: invoice.amount as NSDecimalNumber) ?? "\(invoice.amount)"
+        formatCurrency(invoice.amount)
     }
 
     private var formattedDueAmount: String {
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .currency
-        formatter.currencyCode = invoice.currency
-        return formatter.string(from: invoice.dueAmount as NSDecimalNumber) ?? "\(invoice.dueAmount)"
+        formatCurrency(invoice.dueAmount)
     }
 
     var body: some View {
@@ -183,11 +180,8 @@ struct InvoiceDetailView: View {
 
     private var clientSection: some View {
         GroupBox("Client") {
-            VStack(alignment: .leading, spacing: 4) {
-                Text(invoice.client.name)
-                    .font(.headline)
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
+            Text(invoice.client.name)
+                .frame(maxWidth: .infinity, alignment: .leading)
         }
     }
 
@@ -390,9 +384,6 @@ struct InvoiceDetailView: View {
             isProcessing = false
         }
     }
-
-    @State private var creditorName: String = ""
-    @State private var appSettings: AppSettings = .default
 
     private var invoiceFileName: String {
         appSettings.generateFilename(

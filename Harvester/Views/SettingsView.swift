@@ -67,7 +67,7 @@ struct HarvestSettingsTab: View {
 
     var body: some View {
         Form {
-            Section {
+            Section("API Credentials") {
                 SecureField("Access Token", text: $viewModel.harvestCredentials.accessToken)
                     .textContentType(.password)
 
@@ -75,11 +75,6 @@ struct HarvestSettingsTab: View {
 
                 TextField("Subdomain", text: $viewModel.harvestCredentials.subdomain)
                     .textContentType(.URL)
-            } header: {
-                Text("API Credentials")
-            } footer: {
-                Text("Get your API credentials from Harvest Developer Tools.")
-                    .foregroundStyle(.secondary)
             }
 
             Section {
@@ -109,9 +104,14 @@ struct HarvestSettingsTab: View {
                     }
                 }
             }
+
+            Section {
+                Text("Get your API credentials from Harvest Developer Tools.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
         }
         .formStyle(.grouped)
-        .padding()
     }
 }
 
@@ -122,49 +122,37 @@ struct QRBillSettingsTab: View {
 
     var body: some View {
         Form {
-            Section {
-                LabeledContent("IBAN") {
-                    TextField("CH00 0000 0000 0000 0000 0", text: $viewModel.creditorInfo.iban)
-                        .textContentType(.creditCardNumber)
+            Section("Creditor Information") {
+                TextField("IBAN", text: $viewModel.creditorInfo.iban)
+                    .textContentType(.creditCardNumber)
+
+                TextField("Name", text: $viewModel.creditorInfo.name)
+            }
+
+            Section("Address") {
+                HStack {
+                    TextField("Street", text: $viewModel.creditorInfo.streetName)
+                    TextField("Nr.", text: $viewModel.creditorInfo.buildingNumber)
+                        .frame(width: 60)
                 }
 
-                LabeledContent("Name") {
-                    TextField("Company or Person Name", text: $viewModel.creditorInfo.name)
+                HStack {
+                    TextField("ZIP", text: $viewModel.creditorInfo.postalCode)
+                        .frame(width: 80)
+                    TextField("City", text: $viewModel.creditorInfo.town)
                 }
-            } header: {
-                Text("Creditor Information")
-            } footer: {
-                Text("This information appears on the QR bill as the payment recipient.")
-                    .foregroundStyle(.secondary)
+
+                TextField("Country", text: $viewModel.creditorInfo.country)
+                    .frame(width: 80)
             }
 
             Section {
-                LabeledContent("Street") {
-                    HStack {
-                        TextField("Street name", text: $viewModel.creditorInfo.streetName)
-                        TextField("Nr.", text: $viewModel.creditorInfo.buildingNumber)
-                            .frame(width: 60)
-                    }
-                }
-
-                LabeledContent("City") {
-                    HStack {
-                        TextField("ZIP", text: $viewModel.creditorInfo.postalCode)
-                            .frame(width: 70)
-                        TextField("City", text: $viewModel.creditorInfo.town)
-                    }
-                }
-
-                LabeledContent("Country") {
-                    TextField("CH", text: $viewModel.creditorInfo.country)
-                        .frame(width: 50)
-                }
-            } header: {
-                Text("Address")
+                Text("This information appears on the QR bill as the payment recipient.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
             }
         }
         .formStyle(.grouped)
-        .padding()
     }
 }
 
@@ -184,7 +172,7 @@ struct DownloadsSettingsTab: View {
 
     var body: some View {
         Form {
-            Section {
+            Section("Save Location") {
                 Picker("Save behavior", selection: $viewModel.appSettings.downloadBehavior) {
                     ForEach(DownloadBehavior.allCases, id: \.self) { behavior in
                         Text(behavior.displayName).tag(behavior)
@@ -193,39 +181,34 @@ struct DownloadsSettingsTab: View {
                 .pickerStyle(.radioGroup)
 
                 if viewModel.appSettings.downloadBehavior == .useDefaultFolder {
-                    LabeledContent("Folder") {
-                        HStack {
-                            Text(viewModel.appSettings.defaultDownloadPath ?? "Not set")
-                                .foregroundStyle(.secondary)
-                                .lineLimit(1)
-                                .truncationMode(.middle)
-
-                            Spacer()
-
-                            Button("Choose...") {
-                                viewModel.selectDownloadFolder()
-                            }
+                    HStack {
+                        Text("Folder")
+                        Spacer()
+                        Text(viewModel.appSettings.defaultDownloadPath ?? "Not set")
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
+                            .truncationMode(.middle)
+                        Button("Choose...") {
+                            viewModel.selectDownloadFolder()
                         }
                     }
                 }
-            } header: {
-                Text("Save Location")
             }
 
-            Section {
-                LabeledContent("Pattern") {
-                    TextField("Rechnung_{number}_{creditor}", text: $viewModel.appSettings.filenamePattern)
-                        .font(.system(.body, design: .monospaced))
-                }
+            Section("Filename") {
+                TextField("Pattern", text: $viewModel.appSettings.filenamePattern)
+                    .font(.system(.body, design: .monospaced))
 
-                LabeledContent("Preview") {
+                HStack {
+                    Text("Preview")
+                    Spacer()
                     Text(filenamePreview)
                         .foregroundStyle(.secondary)
                         .font(.system(.body, design: .monospaced))
                 }
-            } header: {
-                Text("Filename")
-            } footer: {
+            }
+
+            Section {
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Available placeholders:")
                         .fontWeight(.medium)
@@ -239,7 +222,6 @@ struct DownloadsSettingsTab: View {
             }
         }
         .formStyle(.grouped)
-        .padding()
     }
 }
 
