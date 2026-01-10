@@ -14,7 +14,13 @@ struct ContentView: View {
             InvoicesListView(viewModel: viewModel)
                 .frame(minWidth: 300)
         } detail: {
-            if let invoice = viewModel.selectedInvoice {
+            if viewModel.selectedInvoiceIDs.count > 1 {
+                ContentUnavailableView(
+                    "\(viewModel.selectedInvoiceIDs.count) Invoices Selected",
+                    systemImage: "doc.on.doc",
+                    description: Text("Right-click to export selected invoices.")
+                )
+            } else if let invoice = viewModel.selectedInvoice {
                 InvoiceDetailView(invoice: invoice)
             } else {
                 ContentUnavailableView(
@@ -31,6 +37,7 @@ struct ContentView: View {
                 } label: {
                     Label("Settings", systemImage: "gear")
                 }
+                .keyboardShortcut(",", modifiers: .command)
             }
         }
         .sheet(isPresented: $showingSettings) {

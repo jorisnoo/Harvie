@@ -32,6 +32,20 @@ struct QRBillRenderer {
     // Margins
     private let marginMM: CGFloat = 5
 
+    // Bilingual labels (German / English)
+    private enum Labels {
+        static let receipt = "Empfangsschein"
+        static let paymentPart = "Zahlteil"
+        static let accountPayableTo = "Konto / Zahlbar an"
+        static let reference = "Referenz"
+        static let additionalInfo = "Zusätzliche Informationen"
+        static let payableBy = "Zahlbar durch"
+        static let payableByPlaceholder = "Zahlbar durch (Name/Adresse)"
+        static let currency = "Währung"
+        static let amount = "Betrag"
+        static let acceptancePoint = "Annahmestelle"
+    }
+
     func renderQRBillPage(data: QRBillData, qrImage: CGImage) -> PDFPage? {
         let pageWidth = pageWidthMM * mmToPoints
         let pageHeight = pageHeightMM * mmToPoints
@@ -83,12 +97,12 @@ struct QRBillRenderer {
         // Start from top of QR bill area (105mm from bottom, minus margin)
         var y = (qrBillHeightMM - marginMM) * mmToPoints
 
-        // Title "Receipt"
-        y = drawText(context: context, text: "Receipt", x: leftMargin, y: y, fontSize: 11, bold: true, maxWidth: maxWidth)
+        // Title
+        y = drawText(context: context, text: Labels.receipt, x: leftMargin, y: y, fontSize: 11, bold: true, maxWidth: maxWidth)
         y -= 8 * mmToPoints
 
         // Account / Payable to
-        y = drawText(context: context, text: "Account / Payable to", x: leftMargin, y: y, fontSize: 6, bold: true, maxWidth: maxWidth)
+        y = drawText(context: context, text: Labels.accountPayableTo, x: leftMargin, y: y, fontSize: 6, bold: true, maxWidth: maxWidth)
         y = drawText(context: context, text: IBANValidator.format(data.creditorIBAN), x: leftMargin, y: y, fontSize: 8, bold: false, maxWidth: maxWidth)
         y = drawText(context: context, text: data.creditorAddress.name, x: leftMargin, y: y, fontSize: 8, bold: false, maxWidth: maxWidth)
 
@@ -102,14 +116,14 @@ struct QRBillRenderer {
 
         // Reference
         if let reference = data.reference, !reference.isEmpty {
-            y = drawText(context: context, text: "Reference", x: leftMargin, y: y, fontSize: 6, bold: true, maxWidth: maxWidth)
+            y = drawText(context: context, text: Labels.reference, x: leftMargin, y: y, fontSize: 6, bold: true, maxWidth: maxWidth)
             y = drawText(context: context, text: formatReference(reference), x: leftMargin, y: y, fontSize: 8, bold: false, maxWidth: maxWidth)
             y -= 8 * mmToPoints
         }
 
         // Payable by
         if let debtor = data.debtorAddress {
-            y = drawText(context: context, text: "Payable by", x: leftMargin, y: y, fontSize: 6, bold: true, maxWidth: maxWidth)
+            y = drawText(context: context, text: Labels.payableBy, x: leftMargin, y: y, fontSize: 6, bold: true, maxWidth: maxWidth)
             y = drawText(context: context, text: debtor.name, x: leftMargin, y: y, fontSize: 8, bold: false, maxWidth: maxWidth, wrap: true)
             if let street = debtor.streetName, !street.isEmpty {
                 let addressLine = [street, debtor.buildingNumber].compactMap { $0 }.joined(separator: " ")
@@ -117,23 +131,23 @@ struct QRBillRenderer {
             }
             _ = drawText(context: context, text: "\(debtor.postalCode) \(debtor.town)", x: leftMargin, y: y, fontSize: 8, bold: false, maxWidth: maxWidth, wrap: true)
         } else {
-            y = drawText(context: context, text: "Payable by (name/address)", x: leftMargin, y: y, fontSize: 6, bold: true, maxWidth: maxWidth)
+            y = drawText(context: context, text: Labels.payableByPlaceholder, x: leftMargin, y: y, fontSize: 6, bold: true, maxWidth: maxWidth)
             drawCornerMarks(context: context, xMM: marginMM, yMM: y / mmToPoints - 20, widthMM: 52, heightMM: 20)
         }
 
         // Currency and Amount at bottom (with more padding)
         let bottomY: CGFloat = 15 * mmToPoints
-        _ = drawText(context: context, text: "Currency", x: leftMargin, y: bottomY + 10, fontSize: 6, bold: true, maxWidth: maxWidth)
+        _ = drawText(context: context, text: Labels.currency, x: leftMargin, y: bottomY + 10, fontSize: 6, bold: true, maxWidth: maxWidth)
         _ = drawText(context: context, text: data.currency, x: leftMargin, y: bottomY, fontSize: 8, bold: false, maxWidth: maxWidth)
 
         let amountX = 25 * mmToPoints
-        _ = drawText(context: context, text: "Amount", x: amountX, y: bottomY + 10, fontSize: 6, bold: true, maxWidth: maxWidth)
+        _ = drawText(context: context, text: Labels.amount, x: amountX, y: bottomY + 10, fontSize: 6, bold: true, maxWidth: maxWidth)
         if let amount = data.amount {
             _ = drawText(context: context, text: formatAmount(amount), x: amountX, y: bottomY, fontSize: 8, bold: false, maxWidth: maxWidth)
         }
 
         // Acceptance point (with padding from bottom edge)
-        _ = drawText(context: context, text: "Acceptance point", x: leftMargin, y: 8 * mmToPoints, fontSize: 6, bold: true, maxWidth: maxWidth)
+        _ = drawText(context: context, text: Labels.acceptancePoint, x: leftMargin, y: 8 * mmToPoints, fontSize: 6, bold: true, maxWidth: maxWidth)
     }
 
     // MARK: - Payment Section (Right, 148mm wide, at bottom of A4)
@@ -144,8 +158,8 @@ struct QRBillRenderer {
         // Start from top of QR bill area (105mm from bottom, minus margin)
         var y = (qrBillHeightMM - marginMM) * mmToPoints
 
-        // Title "Payment part"
-        y = drawText(context: context, text: "Payment part", x: leftMargin, y: y, fontSize: 11, bold: true, maxWidth: 140 * mmToPoints)
+        // Title "Zahlteil"
+        y = drawText(context: context, text: Labels.paymentPart, x: leftMargin, y: y, fontSize: 11, bold: true, maxWidth: 140 * mmToPoints)
         y -= 5 * mmToPoints
 
         // QR Code (positioned at left of payment section)
@@ -163,8 +177,8 @@ struct QRBillRenderer {
         let textColumnMaxWidth = (pageWidthMM - sectionStartMM - marginMM - qrCodeSizeMM - 10) * mmToPoints
         var textY = y - 3 * mmToPoints
 
-        // Account / Payable to
-        textY = drawText(context: context, text: "Account / Payable to", x: textColumnX, y: textY, fontSize: 8, bold: true, maxWidth: textColumnMaxWidth)
+        // Konto / Zahlbar an
+        textY = drawText(context: context, text: Labels.accountPayableTo, x: textColumnX, y: textY, fontSize: 8, bold: true, maxWidth: textColumnMaxWidth)
         textY = drawText(context: context, text: IBANValidator.format(data.creditorIBAN), x: textColumnX, y: textY, fontSize: 10, bold: false, maxWidth: textColumnMaxWidth)
         textY = drawText(context: context, text: data.creditorAddress.name, x: textColumnX, y: textY, fontSize: 10, bold: false, maxWidth: textColumnMaxWidth)
 
@@ -176,23 +190,23 @@ struct QRBillRenderer {
 
         textY -= 5 * mmToPoints
 
-        // Reference
+        // Referenz
         if let reference = data.reference, !reference.isEmpty {
-            textY = drawText(context: context, text: "Reference", x: textColumnX, y: textY, fontSize: 8, bold: true, maxWidth: textColumnMaxWidth)
+            textY = drawText(context: context, text: Labels.reference, x: textColumnX, y: textY, fontSize: 8, bold: true, maxWidth: textColumnMaxWidth)
             textY = drawText(context: context, text: formatReference(reference), x: textColumnX, y: textY, fontSize: 10, bold: false, maxWidth: textColumnMaxWidth)
             textY -= 5 * mmToPoints
         }
 
-        // Additional information
+        // Zusätzliche Informationen
         if let message = data.unstructuredMessage, !message.isEmpty {
-            textY = drawText(context: context, text: "Additional information", x: textColumnX, y: textY, fontSize: 8, bold: true, maxWidth: textColumnMaxWidth)
+            textY = drawText(context: context, text: Labels.additionalInfo, x: textColumnX, y: textY, fontSize: 8, bold: true, maxWidth: textColumnMaxWidth)
             textY = drawText(context: context, text: message, x: textColumnX, y: textY, fontSize: 10, bold: false, maxWidth: textColumnMaxWidth)
             textY -= 5 * mmToPoints
         }
 
-        // Payable by
+        // Zahlbar durch
         if let debtor = data.debtorAddress {
-            textY = drawText(context: context, text: "Payable by", x: textColumnX, y: textY, fontSize: 8, bold: true, maxWidth: textColumnMaxWidth)
+            textY = drawText(context: context, text: Labels.payableBy, x: textColumnX, y: textY, fontSize: 8, bold: true, maxWidth: textColumnMaxWidth)
             textY = drawText(context: context, text: debtor.name, x: textColumnX, y: textY, fontSize: 10, bold: false, maxWidth: textColumnMaxWidth, wrap: true)
             if let street = debtor.streetName, !street.isEmpty {
                 let addressLine = [street, debtor.buildingNumber].compactMap { $0 }.joined(separator: " ")
@@ -200,17 +214,17 @@ struct QRBillRenderer {
             }
             _ = drawText(context: context, text: "\(debtor.postalCode) \(debtor.town)", x: textColumnX, y: textY, fontSize: 10, bold: false, maxWidth: textColumnMaxWidth, wrap: true)
         } else {
-            textY = drawText(context: context, text: "Payable by (name/address)", x: textColumnX, y: textY, fontSize: 8, bold: true, maxWidth: textColumnMaxWidth)
+            textY = drawText(context: context, text: Labels.payableByPlaceholder, x: textColumnX, y: textY, fontSize: 8, bold: true, maxWidth: textColumnMaxWidth)
             drawCornerMarks(context: context, xMM: textColumnX / mmToPoints, yMM: textY / mmToPoints - 25, widthMM: 65, heightMM: 25)
         }
 
-        // Currency and Amount at bottom left of payment section (with more padding)
+        // Währung und Betrag at bottom left of payment section (with more padding)
         let bottomY: CGFloat = 15 * mmToPoints
-        _ = drawText(context: context, text: "Currency", x: leftMargin, y: bottomY + 12, fontSize: 8, bold: true, maxWidth: 50 * mmToPoints)
+        _ = drawText(context: context, text: Labels.currency, x: leftMargin, y: bottomY + 12, fontSize: 8, bold: true, maxWidth: 50 * mmToPoints)
         _ = drawText(context: context, text: data.currency, x: leftMargin, y: bottomY, fontSize: 10, bold: false, maxWidth: 50 * mmToPoints)
 
         let amountX = leftMargin + 15 * mmToPoints
-        _ = drawText(context: context, text: "Amount", x: amountX, y: bottomY + 12, fontSize: 8, bold: true, maxWidth: 50 * mmToPoints)
+        _ = drawText(context: context, text: Labels.amount, x: amountX, y: bottomY + 12, fontSize: 8, bold: true, maxWidth: 50 * mmToPoints)
         if let amount = data.amount {
             _ = drawText(context: context, text: formatAmount(amount), x: amountX, y: bottomY, fontSize: 10, bold: false, maxWidth: 50 * mmToPoints)
         }

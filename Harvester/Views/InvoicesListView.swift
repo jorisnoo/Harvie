@@ -37,14 +37,96 @@ struct InvoicesListView: View {
                     }
                 }
             } else {
-                List(viewModel.invoices, selection: $viewModel.selectedInvoice) { invoice in
+                List(viewModel.sortedInvoices, selection: $viewModel.selectedInvoiceIDs) { invoice in
                     InvoiceRowView(invoice: invoice)
-                        .tag(invoice)
+                        .tag(invoice.id)
+                }
+                .contextMenu(forSelectionType: Int.self) { selectedIDs in
+                    if !selectedIDs.isEmpty {
+                        Button {
+                            Task {
+                                await viewModel.exportSelectedInvoices(withQRBill: true)
+                            }
+                        } label: {
+                            Label("Export with QR Bill", systemImage: "qrcode")
+                        }
+
+                        Button {
+                            Task {
+                                await viewModel.exportSelectedInvoices(withQRBill: false)
+                            }
+                        } label: {
+                            Label("Export without QR Bill", systemImage: "doc.text")
+                        }
+                    }
+                } primaryAction: { selectedIDs in
+                    // Double-click: show first selected invoice in detail
+                    if let firstID = selectedIDs.first {
+                        viewModel.selectedInvoice = viewModel.invoices.first { $0.id == firstID }
+                    }
                 }
             }
         }
         .navigationTitle("Invoices")
+        .overlay {
+            if viewModel.isExporting {
+                ExportProgressOverlay(
+                    progress: viewModel.exportProgress,
+                    message: viewModel.exportProgressMessage
+                )
+            }
+        }
+        .alert("Export Error", isPresented: .init(
+            get: { viewModel.exportError != nil },
+            set: { if !$0 { viewModel.exportError = nil } }
+        )) {
+            Button("OK") { viewModel.exportError = nil }
+        } message: {
+            Text(viewModel.exportError ?? "")
+        }
+        .alert("Export Complete", isPresented: $viewModel.showExportSuccess) {
+            Button("OK") { }
+        } message: {
+            Text("Successfully exported \(viewModel.exportedCount) invoice(s).")
+        }
         .toolbar {
+            ToolbarItem(placement: .primaryAction) {
+                Menu {
+                    Button("Select All") {
+                        viewModel.selectAll()
+                    }
+                    Button("Deselect All") {
+                        viewModel.deselectAll()
+                    }
+                } label: {
+                    Label("Selection", systemImage: "checkmark.circle")
+                }
+            }
+
+            ToolbarItem(placement: .primaryAction) {
+                Menu {
+                    ForEach(InvoiceSortOption.allCases, id: \.self) { option in
+                        Button {
+                            if viewModel.sortOption == option {
+                                viewModel.sortDirection.toggle()
+                            } else {
+                                viewModel.sortOption = option
+                                viewModel.sortDirection = .descending
+                            }
+                        } label: {
+                            HStack {
+                                Text(option.rawValue)
+                                if viewModel.sortOption == option {
+                                    Image(systemName: viewModel.sortDirection == .ascending ? "chevron.up" : "chevron.down")
+                                }
+                            }
+                        }
+                    }
+                } label: {
+                    Label("Sort", systemImage: "arrow.up.arrow.down")
+                }
+            }
+
             ToolbarItem(placement: .primaryAction) {
                 Picker("Filter", selection: $viewModel.stateFilter) {
                     Text("Open").tag(InvoiceState?.some(.open))
@@ -72,6 +154,43 @@ struct InvoicesListView: View {
             Task {
                 await viewModel.loadInvoices()
             }
+        }
+        .onChange(of: viewModel.selectedInvoiceIDs) {
+            // Update single selection for detail view when selection changes
+            if viewModel.selectedInvoiceIDs.count == 1,
+               let id = viewModel.selectedInvoiceIDs.first {
+                viewModel.selectedInvoice = viewModel.invoices.first { $0.id == id }
+            } else if viewModel.selectedInvoiceIDs.isEmpty {
+                viewModel.selectedInvoice = nil
+            }
+        }
+    }
+}
+
+struct ExportProgressOverlay: View {
+    let progress: Double
+    let message: String
+
+    var body: some View {
+        ZStack {
+            Color.black.opacity(0.4)
+                .ignoresSafeArea()
+
+            VStack(spacing: 16) {
+                ProgressView(value: progress) {
+                    Text("Exporting Invoices")
+                        .font(.headline)
+                } currentValueLabel: {
+                    Text(message)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                .progressViewStyle(.linear)
+                .frame(width: 250)
+            }
+            .padding(24)
+            .background(.regularMaterial)
+            .clipShape(RoundedRectangle(cornerRadius: 12))
         }
     }
 }
