@@ -32,23 +32,10 @@ final class SettingsViewModel {
     private let apiService = HarvestAPIService.shared
 
     func loadSettings() async {
-        do {
-            harvestCredentials = try await keychainService.loadHarvestCredentials()
-        } catch {
-            harvestCredentials = HarvestCredentials(accessToken: "", accountId: "", subdomain: "")
-        }
-
-        do {
-            creditorInfo = try await keychainService.loadCreditorInfo()
-        } catch {
-            creditorInfo = .empty
-        }
-
-        do {
-            appSettings = try await keychainService.loadAppSettings()
-        } catch {
-            appSettings = .default
-        }
+        harvestCredentials = (try? await keychainService.loadHarvestCredentials())
+            ?? HarvestCredentials(accessToken: "", accountId: "", subdomain: "")
+        creditorInfo = (try? await keychainService.loadCreditorInfo()) ?? .empty
+        appSettings = (try? await keychainService.loadAppSettings()) ?? .default
     }
 
     func saveSettings() async {

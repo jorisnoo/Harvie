@@ -92,6 +92,10 @@ enum InvoiceState: String, Codable {
     case open
     case paid
     case closed
+
+    var displayName: String {
+        rawValue.capitalized
+    }
 }
 
 struct LineItem: Codable, Identifiable {

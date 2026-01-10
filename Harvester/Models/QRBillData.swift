@@ -97,8 +97,21 @@ struct StructuredAddress {
 
     var addressType: String { "S" }
 
+    var isValid: Bool {
+        !name.isEmpty && !postalCode.isEmpty && !town.isEmpty && !country.isEmpty
+    }
+
+    var streetLine: String? {
+        guard let street = streetName, !street.isEmpty else { return nil }
+        return [street, buildingNumber].compactMap { $0 }.joined(separator: " ")
+    }
+
+    var cityLine: String {
+        "\(postalCode) \(town)"
+    }
+
     func toPayloadLines() -> [String] {
-        return [
+        [
             addressType,
             String(name.prefix(70)),
             String((streetName ?? "").prefix(70)),

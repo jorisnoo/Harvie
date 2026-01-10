@@ -7,77 +7,39 @@ import Foundation
 
 struct CreditorReferenceGenerator {
     static func generate(from invoiceNumber: String) -> String {
-        let cleanedNumber = invoiceNumber
+        let cleaned = invoiceNumber
             .uppercased()
             .filter { $0.isLetter || $0.isNumber }
 
-        let reference = String(cleanedNumber.prefix(21))
-
+        let reference = String(cleaned.prefix(21))
         let checkDigits = calculateCheckDigits(reference: reference)
 
         return "RF\(checkDigits)\(reference)"
     }
 
     static func validate(_ reference: String) -> Bool {
-        let cleanedReference = reference
+        let cleaned = reference
             .replacingOccurrences(of: " ", with: "")
             .uppercased()
 
-        guard cleanedReference.hasPrefix("RF"),
-              cleanedReference.count >= 5,
-              cleanedReference.count <= 25 else {
+        guard cleaned.hasPrefix("RF"),
+              cleaned.count >= 5,
+              cleaned.count <= 25 else {
             return false
         }
 
-        let rearranged = String(cleanedReference.dropFirst(4)) + String(cleanedReference.prefix(4))
+        let rearranged = String(cleaned.dropFirst(4)) + String(cleaned.prefix(4))
+        let numericString = Mod97Calculator.convertToNumeric(rearranged)
 
-        var numericString = ""
-        for char in rearranged {
-            if char.isNumber {
-                numericString.append(char)
-            } else if char.isLetter {
-                let value = Int(char.asciiValue!) - Int(Character("A").asciiValue!) + 10
-                numericString.append(String(value))
-            }
-        }
-
-        return mod97(numericString) == 1
+        return Mod97Calculator.calculate(numericString) == 1
     }
 
     private static func calculateCheckDigits(reference: String) -> String {
-        let numericReference = convertToNumeric(reference)
-
+        let numericReference = Mod97Calculator.convertToNumeric(reference)
         let rfNumeric = numericReference + "271500"
-
-        let remainder = mod97(rfNumeric)
+        let remainder = Mod97Calculator.calculate(rfNumeric)
         let checkDigits = 98 - remainder
 
         return String(format: "%02d", checkDigits)
-    }
-
-    private static func convertToNumeric(_ string: String) -> String {
-        var numericString = ""
-
-        for char in string {
-            if char.isNumber {
-                numericString.append(char)
-            } else if char.isLetter {
-                let value = Int(char.asciiValue!) - Int(Character("A").asciiValue!) + 10
-                numericString.append(String(value))
-            }
-        }
-
-        return numericString
-    }
-
-    private static func mod97(_ numericString: String) -> Int {
-        var remainder = 0
-
-        for char in numericString {
-            guard let digit = Int(String(char)) else { continue }
-            remainder = (remainder * 10 + digit) % 97
-        }
-
-        return remainder
     }
 }

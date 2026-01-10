@@ -201,29 +201,7 @@ actor HarvestAPIService {
         notes: String,
         credentials: HarvestCredentials
     ) async throws {
-        var request = makeRequest(
-            path: "invoices/\(invoiceId)",
-            credentials: credentials
-        )
-        request.httpMethod = "PATCH"
-
-        let body = ["notes": notes]
-        request.httpBody = try JSONEncoder().encode(body)
-
-        let (_, response) = try await session.data(for: request)
-
-        guard let httpResponse = response as? HTTPURLResponse else {
-            throw APIError.networkError(URLError(.badServerResponse))
-        }
-
-        guard (200...299).contains(httpResponse.statusCode) else {
-            if httpResponse.statusCode == 401 {
-                throw APIError.unauthorized
-            } else if httpResponse.statusCode == 404 {
-                throw APIError.notFound
-            }
-            throw APIError.serverError(httpResponse.statusCode)
-        }
+        try await updateInvoice(id: invoiceId, fields: ["notes": notes], credentials: credentials)
     }
 
     func updateInvoiceSubject(
@@ -231,14 +209,17 @@ actor HarvestAPIService {
         subject: String,
         credentials: HarvestCredentials
     ) async throws {
-        var request = makeRequest(
-            path: "invoices/\(invoiceId)",
-            credentials: credentials
-        )
-        request.httpMethod = "PATCH"
+        try await updateInvoice(id: invoiceId, fields: ["subject": subject], credentials: credentials)
+    }
 
-        let body = ["subject": subject]
-        request.httpBody = try JSONEncoder().encode(body)
+    private func updateInvoice(
+        id: Int,
+        fields: [String: String],
+        credentials: HarvestCredentials
+    ) async throws {
+        var request = makeRequest(path: "invoices/\(id)", credentials: credentials)
+        request.httpMethod = "PATCH"
+        request.httpBody = try JSONEncoder().encode(fields)
 
         let (_, response) = try await session.data(for: request)
 
@@ -246,12 +227,14 @@ actor HarvestAPIService {
             throw APIError.networkError(URLError(.badServerResponse))
         }
 
-        guard (200...299).contains(httpResponse.statusCode) else {
-            if httpResponse.statusCode == 401 {
-                throw APIError.unauthorized
-            } else if httpResponse.statusCode == 404 {
-                throw APIError.notFound
-            }
+        switch httpResponse.statusCode {
+        case 200...299:
+            return
+        case 401:
+            throw APIError.unauthorized
+        case 404:
+            throw APIError.notFound
+        default:
             throw APIError.serverError(httpResponse.statusCode)
         }
     }

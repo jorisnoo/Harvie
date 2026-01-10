@@ -106,11 +106,10 @@ struct QRBillRenderer {
         y = drawText(context: context, text: IBANValidator.format(data.creditorIBAN), x: leftMargin, y: y, fontSize: 8, bold: false, maxWidth: maxWidth)
         y = drawText(context: context, text: data.creditorAddress.name, x: leftMargin, y: y, fontSize: 8, bold: false, maxWidth: maxWidth)
 
-        if let street = data.creditorAddress.streetName, !street.isEmpty {
-            let addressLine = [street, data.creditorAddress.buildingNumber].compactMap { $0 }.joined(separator: " ")
-            y = drawText(context: context, text: addressLine, x: leftMargin, y: y, fontSize: 8, bold: false, maxWidth: maxWidth)
+        if let streetLine = data.creditorAddress.streetLine {
+            y = drawText(context: context, text: streetLine, x: leftMargin, y: y, fontSize: 8, bold: false, maxWidth: maxWidth)
         }
-        y = drawText(context: context, text: "\(data.creditorAddress.postalCode) \(data.creditorAddress.town)", x: leftMargin, y: y, fontSize: 8, bold: false, maxWidth: maxWidth)
+        y = drawText(context: context, text: data.creditorAddress.cityLine, x: leftMargin, y: y, fontSize: 8, bold: false, maxWidth: maxWidth)
 
         y -= 8 * mmToPoints
 
@@ -125,11 +124,10 @@ struct QRBillRenderer {
         if let debtor = data.debtorAddress {
             y = drawText(context: context, text: Labels.payableBy, x: leftMargin, y: y, fontSize: 6, bold: true, maxWidth: maxWidth)
             y = drawText(context: context, text: debtor.name, x: leftMargin, y: y, fontSize: 8, bold: false, maxWidth: maxWidth, wrap: true)
-            if let street = debtor.streetName, !street.isEmpty {
-                let addressLine = [street, debtor.buildingNumber].compactMap { $0 }.joined(separator: " ")
-                y = drawText(context: context, text: addressLine, x: leftMargin, y: y, fontSize: 8, bold: false, maxWidth: maxWidth, wrap: true)
+            if let streetLine = debtor.streetLine {
+                y = drawText(context: context, text: streetLine, x: leftMargin, y: y, fontSize: 8, bold: false, maxWidth: maxWidth, wrap: true)
             }
-            _ = drawText(context: context, text: "\(debtor.postalCode) \(debtor.town)", x: leftMargin, y: y, fontSize: 8, bold: false, maxWidth: maxWidth, wrap: true)
+            _ = drawText(context: context, text: debtor.cityLine, x: leftMargin, y: y, fontSize: 8, bold: false, maxWidth: maxWidth, wrap: true)
         } else {
             y = drawText(context: context, text: Labels.payableByPlaceholder, x: leftMargin, y: y, fontSize: 6, bold: true, maxWidth: maxWidth)
             drawCornerMarks(context: context, xMM: marginMM, yMM: y / mmToPoints - 20, widthMM: 52, heightMM: 20)
@@ -182,11 +180,10 @@ struct QRBillRenderer {
         textY = drawText(context: context, text: IBANValidator.format(data.creditorIBAN), x: textColumnX, y: textY, fontSize: 10, bold: false, maxWidth: textColumnMaxWidth)
         textY = drawText(context: context, text: data.creditorAddress.name, x: textColumnX, y: textY, fontSize: 10, bold: false, maxWidth: textColumnMaxWidth)
 
-        if let street = data.creditorAddress.streetName, !street.isEmpty {
-            let addressLine = [street, data.creditorAddress.buildingNumber].compactMap { $0 }.joined(separator: " ")
-            textY = drawText(context: context, text: addressLine, x: textColumnX, y: textY, fontSize: 10, bold: false, maxWidth: textColumnMaxWidth)
+        if let streetLine = data.creditorAddress.streetLine {
+            textY = drawText(context: context, text: streetLine, x: textColumnX, y: textY, fontSize: 10, bold: false, maxWidth: textColumnMaxWidth)
         }
-        textY = drawText(context: context, text: "\(data.creditorAddress.postalCode) \(data.creditorAddress.town)", x: textColumnX, y: textY, fontSize: 10, bold: false, maxWidth: textColumnMaxWidth)
+        textY = drawText(context: context, text: data.creditorAddress.cityLine, x: textColumnX, y: textY, fontSize: 10, bold: false, maxWidth: textColumnMaxWidth)
 
         textY -= 5 * mmToPoints
 
@@ -208,11 +205,10 @@ struct QRBillRenderer {
         if let debtor = data.debtorAddress {
             textY = drawText(context: context, text: Labels.payableBy, x: textColumnX, y: textY, fontSize: 8, bold: true, maxWidth: textColumnMaxWidth)
             textY = drawText(context: context, text: debtor.name, x: textColumnX, y: textY, fontSize: 10, bold: false, maxWidth: textColumnMaxWidth, wrap: true)
-            if let street = debtor.streetName, !street.isEmpty {
-                let addressLine = [street, debtor.buildingNumber].compactMap { $0 }.joined(separator: " ")
-                textY = drawText(context: context, text: addressLine, x: textColumnX, y: textY, fontSize: 10, bold: false, maxWidth: textColumnMaxWidth, wrap: true)
+            if let streetLine = debtor.streetLine {
+                textY = drawText(context: context, text: streetLine, x: textColumnX, y: textY, fontSize: 10, bold: false, maxWidth: textColumnMaxWidth, wrap: true)
             }
-            _ = drawText(context: context, text: "\(debtor.postalCode) \(debtor.town)", x: textColumnX, y: textY, fontSize: 10, bold: false, maxWidth: textColumnMaxWidth, wrap: true)
+            _ = drawText(context: context, text: debtor.cityLine, x: textColumnX, y: textY, fontSize: 10, bold: false, maxWidth: textColumnMaxWidth, wrap: true)
         } else {
             textY = drawText(context: context, text: Labels.payableByPlaceholder, x: textColumnX, y: textY, fontSize: 8, bold: true, maxWidth: textColumnMaxWidth)
             drawCornerMarks(context: context, xMM: textColumnX / mmToPoints, yMM: textY / mmToPoints - 25, widthMM: 65, heightMM: 25)
@@ -382,13 +378,7 @@ struct QRBillRenderer {
     }
 
     private func formatAmount(_ amount: Decimal) -> String {
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .decimal
-        formatter.minimumFractionDigits = 2
-        formatter.maximumFractionDigits = 2
-        formatter.decimalSeparator = "."
-        formatter.groupingSeparator = " "
-        return formatter.string(from: amount as NSDecimalNumber) ?? "\(amount)"
+        CurrencyFormatter.formatDecimal(amount, groupingSeparator: " ")
     }
 
     private func formatReference(_ reference: String) -> String {

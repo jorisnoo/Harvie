@@ -53,21 +53,24 @@ final class InvoicesViewModel {
     private let pdfService = PDFService.shared
 
     var sortedInvoices: [Invoice] {
-        let sorted = invoices.sorted { lhs, rhs in
-            let comparison: ComparisonResult
+        invoices.sorted { lhs, rhs in
+            let lhsDate: Date
+            let rhsDate: Date
+
             switch sortOption {
             case .issueDate:
-                comparison = lhs.issueDate.compare(rhs.issueDate)
+                lhsDate = lhs.issueDate
+                rhsDate = rhs.issueDate
             case .dueDate:
-                comparison = lhs.dueDate.compare(rhs.dueDate)
+                lhsDate = lhs.dueDate
+                rhsDate = rhs.dueDate
             case .paidDate:
-                let lhsDate = lhs.paidAt ?? lhs.paidDate ?? Date.distantPast
-                let rhsDate = rhs.paidAt ?? rhs.paidDate ?? Date.distantPast
-                comparison = lhsDate.compare(rhsDate)
+                lhsDate = lhs.paidAt ?? lhs.paidDate ?? .distantPast
+                rhsDate = rhs.paidAt ?? rhs.paidDate ?? .distantPast
             }
-            return sortDirection == .ascending ? comparison == .orderedAscending : comparison == .orderedDescending
+
+            return sortDirection == .ascending ? lhsDate < rhsDate : lhsDate > rhsDate
         }
-        return sorted
     }
 
     func loadInvoices() async {
@@ -223,13 +226,7 @@ final class InvoicesViewModel {
             }
 
             let total = invoicesToExport.count
-
-            let appSettings: AppSettings
-            do {
-                appSettings = try await keychainService.loadAppSettings()
-            } catch {
-                appSettings = .default
-            }
+            let appSettings = (try? await keychainService.loadAppSettings()) ?? .default
 
             for (index, invoice) in invoicesToExport.enumerated() {
                 exportProgressMessage = "Exporting \(invoice.number)..."

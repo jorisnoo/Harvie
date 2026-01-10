@@ -200,10 +200,7 @@ struct InvoiceRowView: View {
     let invoice: Invoice
 
     private var formattedAmount: String {
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .currency
-        formatter.currencyCode = invoice.currency
-        return formatter.string(from: invoice.dueAmount as NSDecimalNumber) ?? "\(invoice.dueAmount)"
+        CurrencyFormatter.format(invoice.dueAmount, currency: invoice.currency)
     }
 
     private var formattedDate: String {
@@ -245,19 +242,15 @@ struct StateIndicator: View {
 
     private var color: Color {
         switch state {
-        case .draft:
-            return .gray
-        case .open:
-            return .orange
-        case .paid:
-            return .green
-        case .closed:
-            return .blue
+        case .draft: .gray
+        case .open: .orange
+        case .paid: .green
+        case .closed: .blue
         }
     }
 
     var body: some View {
-        Text(state.rawValue.capitalized)
+        Text(state.displayName)
             .font(.caption2)
             .fontWeight(.medium)
             .padding(.horizontal, 6)

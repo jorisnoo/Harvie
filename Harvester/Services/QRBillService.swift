@@ -44,7 +44,7 @@ struct QRBillService {
         }
 
         let currency = invoice.currency.uppercased()
-        guard currency == "CHF" || currency == "EUR" else {
+        guard ["CHF", "EUR"].contains(currency) else {
             throw ValidationError.invalidCurrency
         }
 
@@ -95,10 +95,7 @@ struct QRBillService {
             errors.append(.invalidIBAN)
         }
 
-        if data.creditorAddress.name.isEmpty ||
-           data.creditorAddress.postalCode.isEmpty ||
-           data.creditorAddress.town.isEmpty ||
-           data.creditorAddress.country.isEmpty {
+        if !data.creditorAddress.isValid {
             errors.append(.invalidCreditorAddress)
         }
 
@@ -106,7 +103,7 @@ struct QRBillService {
             errors.append(.invalidAmount)
         }
 
-        if data.currency != "CHF" && data.currency != "EUR" {
+        if !["CHF", "EUR"].contains(data.currency) {
             errors.append(.invalidCurrency)
         }
 

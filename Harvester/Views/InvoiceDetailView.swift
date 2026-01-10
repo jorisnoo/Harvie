@@ -35,11 +35,11 @@ struct InvoiceDetailView: View {
     private let apiService = HarvestAPIService.shared
 
     private var formattedAmount: String {
-        formatCurrency(invoice.amount)
+        CurrencyFormatter.format(invoice.amount, currency: invoice.currency)
     }
 
     private var formattedDueAmount: String {
-        formatCurrency(invoice.dueAmount)
+        CurrencyFormatter.format(invoice.dueAmount, currency: invoice.currency)
     }
 
     var body: some View {
@@ -206,7 +206,7 @@ struct InvoiceDetailView: View {
                     GridRow {
                         Text("Tax (\(tax.formatted())%):")
                             .foregroundStyle(.secondary)
-                        Text(formatCurrency(taxAmount))
+                        Text(CurrencyFormatter.format(taxAmount, currency: invoice.currency))
                     }
                 }
 
@@ -214,7 +214,7 @@ struct InvoiceDetailView: View {
                     GridRow {
                         Text("Discount (\(discount.formatted())%):")
                             .foregroundStyle(.secondary)
-                        Text("-\(formatCurrency(discountAmount))")
+                        Text("-\(CurrencyFormatter.format(discountAmount, currency: invoice.currency))")
                             .foregroundStyle(.green)
                     }
                 }
@@ -270,14 +270,14 @@ struct InvoiceDetailView: View {
                                     .font(.headline)
                             }
 
-                            Text("\(item.quantity.formatted()) x \(formatCurrency(item.unitPrice))")
+                            Text("\(item.quantity.formatted()) x \(CurrencyFormatter.format(item.unitPrice, currency: invoice.currency))")
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                         }
 
                         Spacer()
 
-                        Text(formatCurrency(item.amount))
+                        Text(CurrencyFormatter.format(item.amount, currency: invoice.currency))
                             .fontWeight(.medium)
                     }
 
@@ -368,16 +368,10 @@ struct InvoiceDetailView: View {
                 creditorInfo: creditorInfo
             )
 
-            // Load app settings to determine save behavior
-            let appSettings: AppSettings
-            do {
-                appSettings = try await keychainService.loadAppSettings()
-            } catch {
-                appSettings = .default
-            }
+            let settings = (try? await keychainService.loadAppSettings()) ?? .default
 
             await MainActor.run {
-                savePDF(pdf, settings: appSettings)
+                savePDF(pdf, settings: settings)
             }
         } catch {
             self.error = error.localizedDescription
@@ -462,12 +456,6 @@ struct InvoiceDetailView: View {
         }
     }
 
-    private func formatCurrency(_ amount: Decimal) -> String {
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .currency
-        formatter.currencyCode = invoice.currency
-        return formatter.string(from: amount as NSDecimalNumber) ?? "\(amount)"
-    }
 }
 
 #Preview {
