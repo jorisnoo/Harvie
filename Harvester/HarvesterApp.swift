@@ -2,8 +2,6 @@
 //  HarvesterApp.swift
 //  Harvester
 //
-//  Created by Jorge on 11.01.2026.
-//
 
 import SwiftUI
 
@@ -12,6 +10,11 @@ struct HarvesterApp: App {
     var body: some Scene {
         WindowGroup {
             ContentView()
+        }
+        .windowStyle(.automatic)
+        .defaultSize(width: 900, height: 600)
+        .commands {
+            CommandGroup(replacing: .newItem) { }
         }
     }
 }
