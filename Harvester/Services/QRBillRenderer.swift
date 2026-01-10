@@ -132,8 +132,8 @@ struct QRBillRenderer {
             _ = drawText(context: context, text: formatAmount(amount), x: amountX, y: bottomY, fontSize: 8, bold: false, maxWidth: maxWidth)
         }
 
-        // Acceptance point
-        _ = drawText(context: context, text: "Acceptance point", x: leftMargin, y: marginMM * mmToPoints + 3, fontSize: 6, bold: true, maxWidth: maxWidth)
+        // Acceptance point (with padding from bottom edge)
+        _ = drawText(context: context, text: "Acceptance point", x: leftMargin, y: 8 * mmToPoints, fontSize: 6, bold: true, maxWidth: maxWidth)
     }
 
     // MARK: - Payment Section (Right, 148mm wide, at bottom of A4)

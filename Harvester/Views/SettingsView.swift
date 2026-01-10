@@ -48,24 +48,35 @@ struct SettingsView: View {
             }
 
             Section("Creditor Information (QR Bill)") {
-                TextField("IBAN", text: $viewModel.creditorInfo.iban)
-                    .textContentType(.creditCardNumber)
-
-                TextField("Name / Company", text: $viewModel.creditorInfo.name)
-
-                TextField("Street", text: $viewModel.creditorInfo.streetName)
-
-                TextField("Building Number", text: $viewModel.creditorInfo.buildingNumber)
-
-                HStack {
-                    TextField("Postal Code", text: $viewModel.creditorInfo.postalCode)
-                        .frame(width: 100)
-
-                    TextField("Town", text: $viewModel.creditorInfo.town)
+                LabeledContent("IBAN") {
+                    TextField("", text: $viewModel.creditorInfo.iban)
+                        .textContentType(.creditCardNumber)
                 }
 
-                TextField("Country Code", text: $viewModel.creditorInfo.country)
-                    .frame(width: 60)
+                LabeledContent("Name") {
+                    TextField("", text: $viewModel.creditorInfo.name)
+                }
+
+                LabeledContent("Street") {
+                    HStack {
+                        TextField("Street name", text: $viewModel.creditorInfo.streetName)
+                        TextField("Nr.", text: $viewModel.creditorInfo.buildingNumber)
+                            .frame(width: 50)
+                    }
+                }
+
+                LabeledContent("City") {
+                    HStack {
+                        TextField("ZIP", text: $viewModel.creditorInfo.postalCode)
+                            .frame(width: 60)
+                        TextField("City", text: $viewModel.creditorInfo.town)
+                    }
+                }
+
+                LabeledContent("Country") {
+                    TextField("", text: $viewModel.creditorInfo.country)
+                        .frame(width: 40)
+                }
             }
 
             Section("Downloads") {

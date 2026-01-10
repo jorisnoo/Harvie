@@ -15,6 +15,7 @@ struct InvoiceDetailView: View {
     @State private var showingSuccess = false
     @State private var savedFilePath: String?
     @State private var editedNotes: String = ""
+    @State private var lastSavedNotes: String = ""
     @State private var isSavingNotes = false
     @State private var notesSaved = false
 
@@ -53,8 +54,12 @@ struct InvoiceDetailView: View {
             .padding()
         }
         .navigationTitle("Invoice \(invoice.number)")
-        .onAppear {
+        .task {
             editedNotes = invoice.notes ?? ""
+            lastSavedNotes = invoice.notes ?? ""
+            if let creditorInfo = try? await keychainService.loadCreditorInfo() {
+                creditorName = creditorInfo.name
+            }
         }
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
@@ -245,7 +250,7 @@ struct InvoiceDetailView: View {
                         notesSaved = false
                     }
 
-                if editedNotes != (invoice.notes ?? "") {
+                if editedNotes != lastSavedNotes {
                     HStack {
                         Spacer()
                         if notesSaved {
@@ -283,6 +288,7 @@ struct InvoiceDetailView: View {
                 notes: editedNotes,
                 credentials: credentials
             )
+            lastSavedNotes = editedNotes
             notesSaved = true
         } catch {
             self.error = "Failed to save notes: \(error.localizedDescription)"
@@ -328,13 +334,17 @@ struct InvoiceDetailView: View {
         }
     }
 
+    @State private var creditorName: String = ""
+
     private var invoiceFileName: String {
-        let sanitizedClient = invoice.client.name
+        let sanitizedNumber = invoice.number
+            .replacingOccurrences(of: "/", with: "-")
+        let sanitizedCreditor = creditorName
             .lowercased()
             .replacingOccurrences(of: " ", with: "_")
             .replacingOccurrences(of: "/", with: "_")
             .filter { $0.isLetter || $0.isNumber || $0 == "_" }
-        return "Rechnung_\(invoice.number)_\(sanitizedClient).pdf"
+        return "Rechnung_\(sanitizedNumber)_\(sanitizedCreditor).pdf"
     }
 
     private func savePDF(_ document: PDFDocument, settings: AppSettings) {
@@ -342,13 +352,8 @@ struct InvoiceDetailView: View {
 
         if settings.downloadBehavior == .useDefaultFolder,
            let folderURL = settings.downloadURL {
-            // Start accessing security-scoped resource
+            // Start accessing security-scoped resource (for user-selected folders)
             let hasAccess = folderURL.startAccessingSecurityScopedResource()
-            defer {
-                if hasAccess {
-                    folderURL.stopAccessingSecurityScopedResource()
-                }
-            }
 
             let fileURL = folderURL.appendingPathComponent(fileName)
 
@@ -361,16 +366,20 @@ struct InvoiceDetailView: View {
                 counter += 1
             }
 
-            // Save synchronously while we have access
-            do {
-                guard document.write(to: finalURL) else {
-                    self.error = "Failed to write PDF file."
-                    isProcessing = false
-                    return
-                }
+            // Try to save
+            let success = document.write(to: finalURL)
+
+            if hasAccess {
+                folderURL.stopAccessingSecurityScopedResource()
+            }
+
+            if success {
                 savedFilePath = finalURL.path
                 showingSuccess = true
                 isProcessing = false
+            } else {
+                // Fall back to save panel if direct save fails
+                showSavePanel(for: document, suggestedName: fileName)
             }
         } else {
             showSavePanel(for: document, suggestedName: fileName)
