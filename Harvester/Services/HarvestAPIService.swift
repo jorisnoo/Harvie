@@ -196,6 +196,36 @@ actor HarvestAPIService {
         URL(string: "https://\(subdomain).harvestapp.com/client/invoices/\(invoice.clientKey).pdf")!
     }
 
+    func updateInvoiceNotes(
+        invoiceId: Int,
+        notes: String,
+        credentials: HarvestCredentials
+    ) async throws {
+        var request = makeRequest(
+            path: "invoices/\(invoiceId)",
+            credentials: credentials
+        )
+        request.httpMethod = "PATCH"
+
+        let body = ["notes": notes]
+        request.httpBody = try JSONEncoder().encode(body)
+
+        let (_, response) = try await session.data(for: request)
+
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw APIError.networkError(URLError(.badServerResponse))
+        }
+
+        guard (200...299).contains(httpResponse.statusCode) else {
+            if httpResponse.statusCode == 401 {
+                throw APIError.unauthorized
+            } else if httpResponse.statusCode == 404 {
+                throw APIError.notFound
+            }
+            throw APIError.serverError(httpResponse.statusCode)
+        }
+    }
+
     func testConnection(credentials: HarvestCredentials) async throws -> Bool {
         let request = makeRequest(
             path: "users/me",

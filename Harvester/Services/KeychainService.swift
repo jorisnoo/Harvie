@@ -14,6 +14,7 @@ actor KeychainService {
     enum KeychainKey: String {
         case harvestCredentials = "harvest_credentials"
         case creditorInfo = "creditor_info"
+        case appSettings = "app_settings"
     }
 
     enum KeychainError: Error {
@@ -104,5 +105,13 @@ actor KeychainService {
 
     func loadCreditorInfo() throws -> CreditorInfo {
         try load(for: .creditorInfo)
+    }
+
+    func saveAppSettings(_ settings: AppSettings) throws {
+        try save(settings, for: .appSettings)
+    }
+
+    func loadAppSettings() throws -> AppSettings {
+        try load(for: .appSettings)
     }
 }

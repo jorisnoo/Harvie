@@ -68,6 +68,30 @@ struct SettingsView: View {
                     .frame(width: 60)
             }
 
+            Section("Downloads") {
+                Picker("Save behavior", selection: $viewModel.appSettings.downloadBehavior) {
+                    ForEach(DownloadBehavior.allCases, id: \.self) { behavior in
+                        Text(behavior.displayName).tag(behavior)
+                    }
+                }
+                .pickerStyle(.radioGroup)
+
+                if viewModel.appSettings.downloadBehavior == .useDefaultFolder {
+                    HStack {
+                        Text(viewModel.appSettings.defaultDownloadPath ?? "Not set")
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
+                            .truncationMode(.middle)
+
+                        Spacer()
+
+                        Button("Choose...") {
+                            viewModel.selectDownloadFolder()
+                        }
+                    }
+                }
+            }
+
             if let error = viewModel.saveError {
                 Section {
                     Text(error)
@@ -77,7 +101,7 @@ struct SettingsView: View {
         }
         .formStyle(.grouped)
         .padding()
-        .frame(minWidth: 450, minHeight: 500)
+        .frame(minWidth: 450, minHeight: 550)
         .toolbar {
             ToolbarItem(placement: .cancellationAction) {
                 Button("Cancel") {

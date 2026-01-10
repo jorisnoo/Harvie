@@ -16,6 +16,7 @@ final class SettingsViewModel {
     )
 
     var creditorInfo: CreditorInfo = .empty
+    var appSettings: AppSettings = .default
 
     var isTestingConnection = false
     var connectionTestResult: ConnectionTestResult?
@@ -42,6 +43,12 @@ final class SettingsViewModel {
         } catch {
             creditorInfo = .empty
         }
+
+        do {
+            appSettings = try await keychainService.loadAppSettings()
+        } catch {
+            appSettings = .default
+        }
     }
 
     func saveSettings() async {
@@ -51,6 +58,7 @@ final class SettingsViewModel {
         do {
             try await keychainService.saveHarvestCredentials(harvestCredentials)
             try await keychainService.saveCreditorInfo(creditorInfo)
+            try await keychainService.saveAppSettings(appSettings)
         } catch {
             saveError = "Failed to save settings: \(error.localizedDescription)"
         }
@@ -75,5 +83,26 @@ final class SettingsViewModel {
         }
 
         isTestingConnection = false
+    }
+
+    func selectDownloadFolder() {
+        let panel = NSOpenPanel()
+        panel.canChooseFiles = false
+        panel.canChooseDirectories = true
+        panel.allowsMultipleSelection = false
+        panel.message = "Select default download folder for invoices"
+        panel.prompt = "Select"
+
+        if panel.runModal() == .OK, let url = panel.url {
+            appSettings.defaultDownloadPath = url.path
+            // Create security-scoped bookmark for sandboxed access
+            if let bookmarkData = try? url.bookmarkData(
+                options: .withSecurityScope,
+                includingResourceValuesForKeys: nil,
+                relativeTo: nil
+            ) {
+                appSettings.downloadBookmarkData = bookmarkData
+            }
+        }
     }
 }

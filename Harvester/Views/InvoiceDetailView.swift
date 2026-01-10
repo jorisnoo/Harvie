@@ -13,9 +13,14 @@ struct InvoiceDetailView: View {
     @State private var isProcessing = false
     @State private var error: String?
     @State private var showingSuccess = false
+    @State private var savedFilePath: String?
+    @State private var editedNotes: String = ""
+    @State private var isSavingNotes = false
+    @State private var notesSaved = false
 
     private let pdfService = PDFService.shared
     private let keychainService = KeychainService.shared
+    private let apiService = HarvestAPIService.shared
 
     private var formattedAmount: String {
         let formatter = NumberFormatter()
@@ -43,15 +48,33 @@ struct InvoiceDetailView: View {
                     lineItemsSection(lineItems)
                 }
 
-                if let notes = invoice.notes, !notes.isEmpty {
-                    notesSection(notes)
-                }
-
-                actionSection
+                notesSection
             }
             .padding()
         }
         .navigationTitle("Invoice \(invoice.number)")
+        .onAppear {
+            editedNotes = invoice.notes ?? ""
+        }
+        .toolbar {
+            ToolbarItem(placement: .primaryAction) {
+                Button {
+                    Task {
+                        await downloadWithQRBill()
+                    }
+                } label: {
+                    if isProcessing {
+                        ProgressView()
+                            .scaleEffect(0.7)
+                    } else {
+                        Label("Download with QR Bill", systemImage: "qrcode")
+                    }
+                }
+                .buttonStyle(.borderedProminent)
+                .disabled(isProcessing)
+                .help("Download invoice PDF with Swiss QR bill")
+            }
+        }
         .alert("Error", isPresented: .init(
             get: { error != nil },
             set: { if !$0 { error = nil } }
@@ -61,30 +84,38 @@ struct InvoiceDetailView: View {
             Text(error ?? "")
         }
         .alert("Success", isPresented: $showingSuccess) {
-            Button("OK") { }
+            if let path = savedFilePath {
+                Button("Show in Finder") {
+                    NSWorkspace.shared.selectFile(path, inFileViewerRootedAtPath: "")
+                }
+            }
+            Button("OK", role: .cancel) { }
         } message: {
-            Text("Invoice with QR bill saved successfully.")
+            if let path = savedFilePath {
+                Text("Invoice saved to:\n\(path)")
+            } else {
+                Text("Invoice with QR bill saved successfully.")
+            }
         }
     }
 
     private var headerSection: some View {
-        HStack {
-            VStack(alignment: .leading, spacing: 4) {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
                 Text(invoice.number)
                     .font(.largeTitle)
                     .fontWeight(.bold)
 
-                if let subject = invoice.subject {
-                    Text(subject)
-                        .font(.headline)
-                        .foregroundStyle(.secondary)
-                }
+                Spacer()
+
+                StateIndicator(state: invoice.state)
             }
 
-            Spacer()
-
-            StateIndicator(state: invoice.state)
-                .scaleEffect(1.5)
+            if let subject = invoice.subject {
+                Text(subject)
+                    .font(.headline)
+                    .foregroundStyle(.secondary)
+            }
         }
     }
 
@@ -113,7 +144,6 @@ struct InvoiceDetailView: View {
                         .foregroundStyle(.secondary)
                     Text(formattedDueAmount)
                         .fontWeight(.bold)
-                        .foregroundStyle(invoice.state == .open ? .red : .primary)
                 }
 
                 if let tax = invoice.tax, let taxAmount = invoice.taxAmount {
@@ -150,7 +180,6 @@ struct InvoiceDetailView: View {
                     Text("Due Date:")
                         .foregroundStyle(.secondary)
                     Text(invoice.dueDate.formatted(date: .long, time: .omitted))
-                        .foregroundStyle(invoice.dueDate < Date() && invoice.state == .open ? .red : .primary)
                 }
 
                 if let sentAt = invoice.sentAt {
@@ -180,14 +209,9 @@ struct InvoiceDetailView: View {
                 ForEach(items) { item in
                     HStack(alignment: .top) {
                         VStack(alignment: .leading, spacing: 2) {
-                            Text(item.kind.capitalized)
-                                .font(.headline)
-
-                            if let description = item.description {
+                            if let description = item.description, !description.isEmpty {
                                 Text(description)
-                                    .font(.subheadline)
-                                    .foregroundStyle(.secondary)
-                                    .lineLimit(2)
+                                    .font(.headline)
                             }
 
                             Text("\(item.quantity.formatted()) x \(formatCurrency(item.unitPrice))")
@@ -210,47 +234,66 @@ struct InvoiceDetailView: View {
         }
     }
 
-    private func notesSection(_ notes: String) -> some View {
-        GroupBox("Notes") {
-            Text(notes)
-                .frame(maxWidth: .infinity, alignment: .leading)
+    private var notesSection: some View {
+        GroupBox {
+            VStack(alignment: .leading, spacing: 8) {
+                TextEditor(text: $editedNotes)
+                    .font(.body)
+                    .frame(minHeight: 80)
+                    .scrollContentBackground(.hidden)
+                    .onChange(of: editedNotes) {
+                        notesSaved = false
+                    }
+
+                if editedNotes != (invoice.notes ?? "") {
+                    HStack {
+                        Spacer()
+                        if notesSaved {
+                            Label("Saved", systemImage: "checkmark.circle.fill")
+                                .foregroundStyle(.green)
+                                .font(.caption)
+                        }
+                        Button {
+                            Task {
+                                await saveNotes()
+                            }
+                        } label: {
+                            if isSavingNotes {
+                                ProgressView()
+                                    .scaleEffect(0.7)
+                            } else {
+                                Text("Save Notes")
+                            }
+                        }
+                        .disabled(isSavingNotes)
+                    }
+                }
+            }
+        } label: {
+            Text("Notes")
         }
     }
 
-    private var actionSection: some View {
-        GroupBox {
-            VStack(spacing: 12) {
-                Button {
-                    Task {
-                        await downloadWithQRBill()
-                    }
-                } label: {
-                    HStack {
-                        if isProcessing {
-                            ProgressView()
-                                .scaleEffect(0.8)
-                        }
-                        Image(systemName: "doc.badge.plus")
-                        Text("Download with QR Bill")
-                    }
-                    .frame(maxWidth: .infinity)
-                }
-                .buttonStyle(.borderedProminent)
-                .controlSize(.large)
-                .disabled(isProcessing)
-
-                Text("Downloads the invoice PDF from Harvest and appends a Swiss QR bill payment slip.")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.center)
-            }
-            .frame(maxWidth: .infinity)
+    private func saveNotes() async {
+        isSavingNotes = true
+        do {
+            let credentials = try await keychainService.loadHarvestCredentials()
+            try await apiService.updateInvoiceNotes(
+                invoiceId: invoice.id,
+                notes: editedNotes,
+                credentials: credentials
+            )
+            notesSaved = true
+        } catch {
+            self.error = "Failed to save notes: \(error.localizedDescription)"
         }
+        isSavingNotes = false
     }
 
     private func downloadWithQRBill() async {
         isProcessing = true
         error = nil
+        savedFilePath = nil
 
         do {
             let credentials = try await keychainService.loadHarvestCredentials()
@@ -268,20 +311,76 @@ struct InvoiceDetailView: View {
                 creditorInfo: creditorInfo
             )
 
+            // Load app settings to determine save behavior
+            let appSettings: AppSettings
+            do {
+                appSettings = try await keychainService.loadAppSettings()
+            } catch {
+                appSettings = .default
+            }
+
             await MainActor.run {
-                showSavePanel(for: pdf)
+                savePDF(pdf, settings: appSettings)
             }
         } catch {
             self.error = error.localizedDescription
+            isProcessing = false
         }
-
-        isProcessing = false
     }
 
-    private func showSavePanel(for document: PDFDocument) {
+    private var invoiceFileName: String {
+        let sanitizedClient = invoice.client.name
+            .lowercased()
+            .replacingOccurrences(of: " ", with: "_")
+            .replacingOccurrences(of: "/", with: "_")
+            .filter { $0.isLetter || $0.isNumber || $0 == "_" }
+        return "Rechnung_\(invoice.number)_\(sanitizedClient).pdf"
+    }
+
+    private func savePDF(_ document: PDFDocument, settings: AppSettings) {
+        let fileName = invoiceFileName
+
+        if settings.downloadBehavior == .useDefaultFolder,
+           let folderURL = settings.downloadURL {
+            // Start accessing security-scoped resource
+            let hasAccess = folderURL.startAccessingSecurityScopedResource()
+            defer {
+                if hasAccess {
+                    folderURL.stopAccessingSecurityScopedResource()
+                }
+            }
+
+            let fileURL = folderURL.appendingPathComponent(fileName)
+
+            // If file exists, add a number
+            var finalURL = fileURL
+            var counter = 1
+            let baseName = fileName.replacingOccurrences(of: ".pdf", with: "")
+            while FileManager.default.fileExists(atPath: finalURL.path) {
+                finalURL = folderURL.appendingPathComponent("\(baseName)_\(counter).pdf")
+                counter += 1
+            }
+
+            // Save synchronously while we have access
+            do {
+                guard document.write(to: finalURL) else {
+                    self.error = "Failed to write PDF file."
+                    isProcessing = false
+                    return
+                }
+                savedFilePath = finalURL.path
+                showingSuccess = true
+                isProcessing = false
+            }
+        } else {
+            showSavePanel(for: document, suggestedName: fileName)
+        }
+    }
+
+    private func showSavePanel(for document: PDFDocument, suggestedName: String) {
         let savePanel = NSSavePanel()
         savePanel.allowedContentTypes = [.pdf]
-        savePanel.nameFieldStringValue = "Invoice-\(invoice.number)-QR.pdf"
+        savePanel.nameFieldStringValue = suggestedName
         savePanel.title = "Save Invoice with QR Bill"
 
         savePanel.begin { response in
@@ -290,14 +389,19 @@ struct InvoiceDetailView: View {
                     do {
                         try await pdfService.savePDF(document, to: url)
                         await MainActor.run {
+                            savedFilePath = url.path
                             showingSuccess = true
+                            isProcessing = false
                         }
                     } catch {
                         await MainActor.run {
                             self.error = error.localizedDescription
+                            isProcessing = false
                         }
                     }
                 }
+            } else {
+                isProcessing = false
             }
         }
     }

@@ -51,3 +51,49 @@ struct CreditorInfo: Codable {
         )
     }
 }
+
+enum DownloadBehavior: String, Codable, CaseIterable {
+    case askEachTime = "ask"
+    case useDefaultFolder = "default"
+
+    var displayName: String {
+        switch self {
+        case .askEachTime:
+            return "Ask each time"
+        case .useDefaultFolder:
+            return "Save to default folder"
+        }
+    }
+}
+
+struct AppSettings: Codable {
+    var downloadBehavior: DownloadBehavior
+    var defaultDownloadPath: String?
+    var downloadBookmarkData: Data?
+
+    static var `default`: AppSettings {
+        AppSettings(
+            downloadBehavior: .useDefaultFolder,
+            defaultDownloadPath: NSSearchPathForDirectoriesInDomains(.downloadsDirectory, .userDomainMask, true).first,
+            downloadBookmarkData: nil
+        )
+    }
+
+    var downloadURL: URL? {
+        // Try to resolve from bookmark first (for sandboxed access)
+        if let bookmarkData = downloadBookmarkData {
+            var isStale = false
+            if let url = try? URL(
+                resolvingBookmarkData: bookmarkData,
+                options: .withSecurityScope,
+                relativeTo: nil,
+                bookmarkDataIsStale: &isStale
+            ) {
+                return url
+            }
+        }
+        // Fallback to path (works for Downloads folder)
+        guard let path = defaultDownloadPath else { return nil }
+        return URL(fileURLWithPath: path)
+    }
+}

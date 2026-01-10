@@ -90,10 +90,6 @@ struct InvoiceRowView: View {
         invoice.dueDate.formatted(date: .abbreviated, time: .omitted)
     }
 
-    private var isOverdue: Bool {
-        invoice.state == .open && invoice.dueDate < Date()
-    }
-
     var body: some View {
         HStack {
             VStack(alignment: .leading, spacing: 4) {
@@ -110,12 +106,11 @@ struct InvoiceRowView: View {
             VStack(alignment: .trailing, spacing: 4) {
                 Text(formattedAmount)
                     .font(.headline)
-                    .foregroundStyle(isOverdue ? .red : .primary)
 
                 HStack(spacing: 4) {
                     Text("Due: \(formattedDate)")
                         .font(.caption)
-                        .foregroundStyle(isOverdue ? .red : .secondary)
+                        .foregroundStyle(.secondary)
 
                     StateIndicator(state: invoice.state)
                 }
