@@ -4,6 +4,7 @@
 //
 
 import SwiftUI
+import SwiftData
 
 @main
 struct HarvesterApp: App {
@@ -16,5 +17,6 @@ struct HarvesterApp: App {
         .commands {
             CommandGroup(replacing: .newItem) { }
         }
+        .modelContainer(for: CachedInvoice.self)
     }
 }

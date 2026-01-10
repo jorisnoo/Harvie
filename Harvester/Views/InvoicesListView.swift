@@ -68,6 +68,7 @@ struct InvoicesListView: View {
             }
         }
         .navigationTitle("Invoices")
+        .navigationSubtitle(viewModel.isRefreshing ? "Updating..." : "")
         .overlay {
             if viewModel.isExporting {
                 ExportProgressOverlay(

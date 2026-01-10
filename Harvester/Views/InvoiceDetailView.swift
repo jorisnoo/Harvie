@@ -14,6 +14,14 @@ struct InvoiceDetailView: View {
     @State private var error: String?
     @State private var showingSuccess = false
     @State private var savedFilePath: String?
+
+    // Subject editing
+    @State private var editedSubject: String = ""
+    @State private var lastSavedSubject: String = ""
+    @State private var isSavingSubject = false
+    @State private var subjectSaved = false
+
+    // Notes editing
     @State private var editedNotes: String = ""
     @State private var lastSavedNotes: String = ""
     @State private var isSavingNotes = false
@@ -55,10 +63,15 @@ struct InvoiceDetailView: View {
         }
         .navigationTitle("Invoice \(invoice.number)")
         .task {
+            editedSubject = invoice.subject ?? ""
+            lastSavedSubject = invoice.subject ?? ""
             editedNotes = invoice.notes ?? ""
             lastSavedNotes = invoice.notes ?? ""
             if let creditorInfo = try? await keychainService.loadCreditorInfo() {
                 creditorName = creditorInfo.name
+            }
+            if let settings = try? await keychainService.loadAppSettings() {
+                appSettings = settings
             }
         }
         .toolbar {
@@ -116,12 +129,56 @@ struct InvoiceDetailView: View {
                 StateIndicator(state: invoice.state)
             }
 
-            if let subject = invoice.subject {
-                Text(subject)
+            HStack {
+                TextField("Invoice title", text: $editedSubject)
                     .font(.headline)
                     .foregroundStyle(.secondary)
+                    .textFieldStyle(.plain)
+                    .onChange(of: editedSubject) {
+                        subjectSaved = false
+                    }
+
+                if editedSubject != lastSavedSubject {
+                    if subjectSaved {
+                        Image(systemName: "checkmark.circle.fill")
+                            .foregroundStyle(.green)
+                    }
+
+                    Button {
+                        Task {
+                            await saveSubject()
+                        }
+                    } label: {
+                        if isSavingSubject {
+                            ProgressView()
+                                .scaleEffect(0.6)
+                        } else {
+                            Image(systemName: "checkmark.circle")
+                        }
+                    }
+                    .buttonStyle(.borderless)
+                    .disabled(isSavingSubject)
+                    .help("Save title")
+                }
             }
         }
+    }
+
+    private func saveSubject() async {
+        isSavingSubject = true
+        do {
+            let credentials = try await keychainService.loadHarvestCredentials()
+            try await apiService.updateInvoiceSubject(
+                invoiceId: invoice.id,
+                subject: editedSubject,
+                credentials: credentials
+            )
+            lastSavedSubject = editedSubject
+            subjectSaved = true
+        } catch {
+            self.error = "Failed to save title: \(error.localizedDescription)"
+        }
+        isSavingSubject = false
     }
 
     private var clientSection: some View {
@@ -335,16 +392,15 @@ struct InvoiceDetailView: View {
     }
 
     @State private var creditorName: String = ""
+    @State private var appSettings: AppSettings = .default
 
     private var invoiceFileName: String {
-        let sanitizedNumber = invoice.number
-            .replacingOccurrences(of: "/", with: "-")
-        let sanitizedCreditor = creditorName
-            .lowercased()
-            .replacingOccurrences(of: " ", with: "_")
-            .replacingOccurrences(of: "/", with: "_")
-            .filter { $0.isLetter || $0.isNumber || $0 == "_" }
-        return "Rechnung_\(sanitizedNumber)_\(sanitizedCreditor).pdf"
+        appSettings.generateFilename(
+            invoiceNumber: invoice.number,
+            creditorName: creditorName,
+            clientName: invoice.client.name,
+            issueDate: invoice.issueDate
+        )
     }
 
     private func savePDF(_ document: PDFDocument, settings: AppSettings) {

@@ -70,13 +70,32 @@ struct AppSettings: Codable {
     var downloadBehavior: DownloadBehavior
     var defaultDownloadPath: String?
     var downloadBookmarkData: Data?
+    var filenamePattern: String
+
+    static let defaultFilenamePattern = "Rechnung_{number}_{creditor}"
 
     static var `default`: AppSettings {
         AppSettings(
             downloadBehavior: .useDefaultFolder,
             defaultDownloadPath: NSSearchPathForDirectoriesInDomains(.downloadsDirectory, .userDomainMask, true).first,
-            downloadBookmarkData: nil
+            downloadBookmarkData: nil,
+            filenamePattern: defaultFilenamePattern
         )
+    }
+
+    init(downloadBehavior: DownloadBehavior, defaultDownloadPath: String?, downloadBookmarkData: Data?, filenamePattern: String = defaultFilenamePattern) {
+        self.downloadBehavior = downloadBehavior
+        self.defaultDownloadPath = defaultDownloadPath
+        self.downloadBookmarkData = downloadBookmarkData
+        self.filenamePattern = filenamePattern
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        downloadBehavior = try container.decode(DownloadBehavior.self, forKey: .downloadBehavior)
+        defaultDownloadPath = try container.decodeIfPresent(String.self, forKey: .defaultDownloadPath)
+        downloadBookmarkData = try container.decodeIfPresent(Data.self, forKey: .downloadBookmarkData)
+        filenamePattern = try container.decodeIfPresent(String.self, forKey: .filenamePattern) ?? Self.defaultFilenamePattern
     }
 
     var downloadURL: URL? {
@@ -95,5 +114,31 @@ struct AppSettings: Codable {
         // Fallback to path (works for Downloads folder)
         guard let path = defaultDownloadPath else { return nil }
         return URL(fileURLWithPath: path)
+    }
+
+    func generateFilename(
+        invoiceNumber: String,
+        creditorName: String,
+        clientName: String,
+        issueDate: Date
+    ) -> String {
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateFormat = "yyyy-MM-dd"
+
+        let sanitize: (String) -> String = { input in
+            input
+                .lowercased()
+                .replacingOccurrences(of: " ", with: "_")
+                .replacingOccurrences(of: "/", with: "-")
+                .filter { $0.isLetter || $0.isNumber || $0 == "_" || $0 == "-" }
+        }
+
+        var filename = filenamePattern
+        filename = filename.replacingOccurrences(of: "{number}", with: invoiceNumber.replacingOccurrences(of: "/", with: "-"))
+        filename = filename.replacingOccurrences(of: "{creditor}", with: sanitize(creditorName))
+        filename = filename.replacingOccurrences(of: "{client}", with: sanitize(clientName))
+        filename = filename.replacingOccurrences(of: "{date}", with: dateFormatter.string(from: issueDate))
+
+        return filename + ".pdf"
     }
 }

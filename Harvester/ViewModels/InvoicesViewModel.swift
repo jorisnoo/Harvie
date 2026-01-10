@@ -5,6 +5,7 @@
 
 import Foundation
 import SwiftUI
+import SwiftData
 import PDFKit
 import AppKit
 
@@ -30,6 +31,7 @@ final class InvoicesViewModel {
     var selectedInvoice: Invoice?
     var selectedInvoiceIDs: Set<Int> = []
     var isLoading = false
+    var isRefreshing = false
     var error: String?
     var stateFilter: InvoiceState? = .open
     var sortOption: InvoiceSortOption = .issueDate
@@ -43,6 +45,8 @@ final class InvoicesViewModel {
     var exportError: String?
     var showExportSuccess = false
     var exportedCount = 0
+
+    var modelContext: ModelContext?
 
     private let apiService = HarvestAPIService.shared
     private let keychainService = KeychainService.shared
@@ -67,8 +71,19 @@ final class InvoicesViewModel {
     }
 
     func loadInvoices() async {
-        isLoading = true
         error = nil
+
+        // First, load from cache for instant display
+        if let context = modelContext {
+            loadFromCache(context: context)
+        }
+
+        // Show loading indicator only if cache is empty
+        if invoices.isEmpty {
+            isLoading = true
+        } else {
+            isRefreshing = true
+        }
 
         do {
             let credentials = try await keychainService.loadHarvestCredentials()
@@ -77,6 +92,7 @@ final class InvoicesViewModel {
                 hasValidCredentials = false
                 error = "Please configure your Harvest API credentials in Settings."
                 isLoading = false
+                isRefreshing = false
                 return
             }
 
@@ -88,14 +104,65 @@ final class InvoicesViewModel {
             )
 
             invoices = fetchedInvoices
+
+            // Update cache
+            if let context = modelContext {
+                updateCache(with: fetchedInvoices, context: context)
+            }
         } catch KeychainService.KeychainError.notFound {
             hasValidCredentials = false
             error = "Please configure your Harvest API credentials in Settings."
         } catch {
-            self.error = error.localizedDescription
+            // Only show error if we don't have cached data
+            if invoices.isEmpty {
+                self.error = error.localizedDescription
+            }
         }
 
         isLoading = false
+        isRefreshing = false
+    }
+
+    private func loadFromCache(context: ModelContext) {
+        let descriptor = FetchDescriptor<CachedInvoice>(
+            sortBy: [SortDescriptor(\.issueDate, order: .reverse)]
+        )
+
+        do {
+            let cached = try context.fetch(descriptor)
+
+            // Filter by state if needed
+            let filtered: [CachedInvoice]
+            if let stateFilter = stateFilter {
+                filtered = cached.filter { $0.stateRaw == stateFilter.rawValue }
+            } else {
+                filtered = cached
+            }
+
+            invoices = filtered.map { $0.toInvoice() }
+        } catch {
+            print("Failed to load from cache: \(error)")
+        }
+    }
+
+    private func updateCache(with invoices: [Invoice], context: ModelContext) {
+        // Fetch existing cached invoices
+        let descriptor = FetchDescriptor<CachedInvoice>()
+        let existing = (try? context.fetch(descriptor)) ?? []
+        let existingById = Dictionary(uniqueKeysWithValues: existing.map { ($0.id, $0) })
+
+        // Update or insert
+        for invoice in invoices {
+            if let cached = existingById[invoice.id] {
+                cached.update(from: invoice)
+            } else {
+                let cached = CachedInvoice(from: invoice)
+                context.insert(cached)
+            }
+        }
+
+        // Save changes
+        try? context.save()
     }
 
     func refresh() async {
@@ -157,6 +224,13 @@ final class InvoicesViewModel {
 
             let total = invoicesToExport.count
 
+            let appSettings: AppSettings
+            do {
+                appSettings = try await keychainService.loadAppSettings()
+            } catch {
+                appSettings = .default
+            }
+
             for (index, invoice) in invoicesToExport.enumerated() {
                 exportProgressMessage = "Exporting \(invoice.number)..."
                 exportProgress = Double(index) / Double(total)
@@ -173,7 +247,12 @@ final class InvoicesViewModel {
                     document = try await pdfService.downloadPDF(from: pdfURL)
                 }
 
-                let fileName = generateFileName(for: invoice, creditorName: creditorInfo?.name ?? "")
+                let fileName = appSettings.generateFilename(
+                    invoiceNumber: invoice.number,
+                    creditorName: creditorInfo?.name ?? "",
+                    clientName: invoice.client.name,
+                    issueDate: invoice.issueDate
+                )
                 let fileURL = folderURL.appendingPathComponent(fileName)
 
                 try await pdfService.savePDF(document, to: fileURL)
@@ -188,20 +267,5 @@ final class InvoicesViewModel {
         }
 
         isExporting = false
-    }
-
-    private func generateFileName(for invoice: Invoice, creditorName: String) -> String {
-        let sanitizedNumber = invoice.number
-            .replacingOccurrences(of: "/", with: "-")
-        let sanitizedCreditor = creditorName
-            .lowercased()
-            .replacingOccurrences(of: " ", with: "_")
-            .replacingOccurrences(of: "/", with: "_")
-            .filter { $0.isLetter || $0.isNumber || $0 == "_" }
-
-        if sanitizedCreditor.isEmpty {
-            return "Rechnung_\(sanitizedNumber).pdf"
-        }
-        return "Rechnung_\(sanitizedNumber)_\(sanitizedCreditor).pdf"
     }
 }
