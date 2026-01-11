@@ -71,6 +71,7 @@ struct AppSettings: Codable {
     var defaultDownloadPath: String?
     var downloadBookmarkData: Data?
     var filenamePattern: String
+    var isDemoMode: Bool
 
     static let defaultFilenamePattern = "Rechnung_{number}_{creditor}"
 
@@ -79,15 +80,17 @@ struct AppSettings: Codable {
             downloadBehavior: .useDefaultFolder,
             defaultDownloadPath: NSSearchPathForDirectoriesInDomains(.downloadsDirectory, .userDomainMask, true).first,
             downloadBookmarkData: nil,
-            filenamePattern: defaultFilenamePattern
+            filenamePattern: defaultFilenamePattern,
+            isDemoMode: false
         )
     }
 
-    init(downloadBehavior: DownloadBehavior, defaultDownloadPath: String?, downloadBookmarkData: Data?, filenamePattern: String = defaultFilenamePattern) {
+    init(downloadBehavior: DownloadBehavior, defaultDownloadPath: String?, downloadBookmarkData: Data?, filenamePattern: String = defaultFilenamePattern, isDemoMode: Bool = false) {
         self.downloadBehavior = downloadBehavior
         self.defaultDownloadPath = defaultDownloadPath
         self.downloadBookmarkData = downloadBookmarkData
         self.filenamePattern = filenamePattern
+        self.isDemoMode = isDemoMode
     }
 
     init(from decoder: Decoder) throws {
@@ -96,6 +99,7 @@ struct AppSettings: Codable {
         defaultDownloadPath = try container.decodeIfPresent(String.self, forKey: .defaultDownloadPath)
         downloadBookmarkData = try container.decodeIfPresent(Data.self, forKey: .downloadBookmarkData)
         filenamePattern = try container.decodeIfPresent(String.self, forKey: .filenamePattern) ?? Self.defaultFilenamePattern
+        isDemoMode = try container.decodeIfPresent(Bool.self, forKey: .isDemoMode) ?? false
     }
 
     var downloadURL: URL? {

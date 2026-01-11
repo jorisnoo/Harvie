@@ -291,6 +291,10 @@ struct DownloadsSettings: View {
                 .font(.caption)
                 .foregroundStyle(.secondary)
             }
+
+            Section("Demo") {
+                Toggle("Demo Mode", isOn: $viewModel.appSettings.isDemoMode)
+            }
         }
         .formStyle(.grouped)
     }

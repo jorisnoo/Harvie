@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100">
+  <!-- Background circle -->
+  <circle cx="50" cy="50" r="45" fill="#FF8B24"/>
+
+  <!-- QR finder patterns (3 corners) -->
+  <rect x="15" y="15" width="20" height="20" rx="3" fill="white"/>
+  <rect x="18" y="18" width="14" height="14" rx="2" fill="#FF8B24"/>
+  <rect x="21" y="21" width="8" height="8" rx="1" fill="white"/>
+
+  <rect x="65" y="15" width="20" height="20" rx="3" fill="white"/>
+  <rect x="68" y="18" width="14" height="14" rx="2" fill="#FF8B24"/>
+  <rect x="71" y="21" width="8" height="8" rx="1" fill="white"/>
+
+  <rect x="15" y="65" width="20" height="20" rx="3" fill="white"/>
+  <rect x="18" y="68" width="14" height="14" rx="2" fill="#FF8B24"/>
+  <rect x="21" y="71" width="8" height="8" rx="1" fill="white"/>
+
+  <!-- Swiss cross in 4th position -->
+  <rect x="65" y="65" width="20" height="20" rx="3" fill="#E53935"/>
+  <rect x="72" y="68" width="6" height="14" fill="white"/>
+  <rect x="68" y="72" width="14" height="6" fill="white"/>
+
+  <!-- Central data dots -->
+  <rect x="40" y="20" width="6" height="6" rx="1" fill="white"/>
+  <rect x="52" y="20" width="6" height="6" rx="1" fill="white"/>
+  <rect x="20" y="40" width="6" height="6" rx="1" fill="white"/>
+  <rect x="20" y="52" width="6" height="6" rx="1" fill="white"/>
+  <rect x="74" y="40" width="6" height="6" rx="1" fill="white"/>
+  <rect x="74" y="52" width="6" height="6" rx="1" fill="white"/>
+  <rect x="40" y="74" width="6" height="6" rx="1" fill="white"/>
+  <rect x="52" y="74" width="6" height="6" rx="1" fill="white"/>
+
+  <!-- Center accent -->
+  <rect x="40" y="40" width="20" height="20" rx="2" fill="white"/>
+  <rect x="44" y="44" width="12" height="12" rx="1" fill="#FF8B24"/>
+</svg>

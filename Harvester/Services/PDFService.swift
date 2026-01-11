@@ -3,6 +3,7 @@
 //  Harvester
 //
 
+import AppKit
 import Foundation
 import PDFKit
 
@@ -130,6 +131,140 @@ actor PDFService {
             town: "",
             country: "CH"
         )
+    }
+
+    func createDemoInvoiceWithQRBill(
+        invoice: Invoice,
+        creditorInfo: CreditorInfo
+    ) async throws -> PDFDocument {
+        let debtorAddress = StructuredAddress(
+            name: invoice.client.name,
+            streetName: "Musterstrasse",
+            buildingNumber: "1",
+            postalCode: "8000",
+            town: "Zürich",
+            country: "CH"
+        )
+
+        let (demoPDF, qrBillPage) = try await MainActor.run {
+            // Create a simple placeholder PDF for demo mode
+            let pdf = createDemoInvoicePDF(invoice: invoice, creditorInfo: creditorInfo)
+
+            let qrBillService = QRBillService()
+            let qrBillRenderer = QRBillRenderer()
+
+            let qrBillData = try qrBillService.createQRBillData(
+                invoice: invoice,
+                creditorInfo: creditorInfo,
+                debtorAddress: debtorAddress
+            )
+
+            guard let qrImage = qrBillService.generateQRCodeImage(from: qrBillData) else {
+                throw PDFError.qrBillGenerationFailed
+            }
+
+            guard let page = qrBillRenderer.renderQRBillPage(data: qrBillData, qrImage: qrImage) else {
+                throw PDFError.qrBillGenerationFailed
+            }
+
+            return (pdf, page)
+        }
+
+        return appendQRBill(to: demoPDF, qrBillPage: qrBillPage)
+    }
+
+    @MainActor
+    private func createDemoInvoicePDF(invoice: Invoice, creditorInfo: CreditorInfo) -> PDFDocument {
+        let pageRect = CGRect(x: 0, y: 0, width: 595, height: 842) // A4
+
+        let pdfData = NSMutableData()
+        var mediaBox = pageRect
+        guard let consumer = CGDataConsumer(data: pdfData as CFMutableData),
+              let context = CGContext(consumer: consumer, mediaBox: &mediaBox, nil) else {
+            return PDFDocument()
+        }
+
+        context.beginPDFPage(nil)
+
+        // Set up graphics context for AppKit drawing
+        let nsContext = NSGraphicsContext(cgContext: context, flipped: false)
+        NSGraphicsContext.saveGraphicsState()
+        NSGraphicsContext.current = nsContext
+
+        // Draw content (coordinate system starts at bottom-left)
+        let titleFont = NSFont.systemFont(ofSize: 24, weight: .bold)
+        let titleAttributes: [NSAttributedString.Key: Any] = [.font: titleFont]
+        let titleString = creditorInfo.name as NSString
+        titleString.draw(at: CGPoint(x: 50, y: pageRect.height - 60), withAttributes: titleAttributes)
+
+        let invoiceFont = NSFont.systemFont(ofSize: 18, weight: .semibold)
+        let invoiceAttributes: [NSAttributedString.Key: Any] = [.font: invoiceFont]
+        let invoiceString = "Rechnung \(invoice.number)" as NSString
+        invoiceString.draw(at: CGPoint(x: 50, y: pageRect.height - 100), withAttributes: invoiceAttributes)
+
+        let bodyFont = NSFont.systemFont(ofSize: 12)
+        let bodyAttributes: [NSAttributedString.Key: Any] = [.font: bodyFont]
+        let clientString = invoice.client.name as NSString
+        clientString.draw(at: CGPoint(x: 50, y: pageRect.height - 140), withAttributes: bodyAttributes)
+
+        if let subject = invoice.subject {
+            let subjectString = subject as NSString
+            subjectString.draw(at: CGPoint(x: 50, y: pageRect.height - 160), withAttributes: bodyAttributes)
+        }
+
+        var yPosition = pageRect.height - 220
+        let labelFont = NSFont.systemFont(ofSize: 10, weight: .medium)
+        let grayColor = NSColor.gray
+        let labelAttributes: [NSAttributedString.Key: Any] = [.font: labelFont, .foregroundColor: grayColor]
+
+        ("Beschreibung" as NSString).draw(at: CGPoint(x: 50, y: yPosition), withAttributes: labelAttributes)
+        ("Menge" as NSString).draw(at: CGPoint(x: 350, y: yPosition), withAttributes: labelAttributes)
+        ("Betrag" as NSString).draw(at: CGPoint(x: 480, y: yPosition), withAttributes: labelAttributes)
+
+        yPosition -= 25
+
+        if let lineItems = invoice.lineItems {
+            for item in lineItems {
+                let desc = (item.description ?? "Service") as NSString
+                desc.draw(at: CGPoint(x: 50, y: yPosition), withAttributes: bodyAttributes)
+
+                let qty = String(format: "%.1f", Double(truncating: item.quantity as NSNumber)) as NSString
+                qty.draw(at: CGPoint(x: 350, y: yPosition), withAttributes: bodyAttributes)
+
+                let amount = String(format: "%.2f", Double(truncating: item.amount as NSNumber)) as NSString
+                amount.draw(at: CGPoint(x: 480, y: yPosition), withAttributes: bodyAttributes)
+
+                yPosition -= 20
+            }
+        }
+
+        yPosition -= 30
+        let totalFont = NSFont.systemFont(ofSize: 14, weight: .bold)
+        let totalAttributes: [NSAttributedString.Key: Any] = [.font: totalFont]
+
+        if let taxAmount = invoice.taxAmount {
+            let taxString = String(format: "MwSt (8.1%%): CHF %.2f", Double(truncating: taxAmount as NSNumber)) as NSString
+            taxString.draw(at: CGPoint(x: 350, y: yPosition), withAttributes: bodyAttributes)
+            yPosition -= 25
+        }
+
+        let totalString = String(format: "Total: CHF %.2f", Double(truncating: invoice.amount as NSNumber)) as NSString
+        totalString.draw(at: CGPoint(x: 350, y: yPosition), withAttributes: totalAttributes)
+
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateStyle = .medium
+
+        let issueDateString = "Rechnungsdatum: \(dateFormatter.string(from: invoice.issueDate))" as NSString
+        issueDateString.draw(at: CGPoint(x: 50, y: 150), withAttributes: bodyAttributes)
+
+        let dueDateString = "Zahlbar bis: \(dateFormatter.string(from: invoice.dueDate))" as NSString
+        dueDateString.draw(at: CGPoint(x: 50, y: 130), withAttributes: bodyAttributes)
+
+        NSGraphicsContext.restoreGraphicsState()
+        context.endPDFPage()
+        context.closePDF()
+
+        return PDFDocument(data: pdfData as Data) ?? PDFDocument()
     }
 
     private func parseAddress(_ address: String, name: String) -> StructuredAddress {

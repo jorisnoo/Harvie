@@ -370,8 +370,8 @@ struct InvoiceDetailView: View {
         error = nil
 
         do {
-            let credentials = try await keychainService.loadHarvestCredentials()
-            let creditorInfo = try await keychainService.loadCreditorInfo()
+            let settings = (try? await keychainService.loadAppSettings()) ?? .default
+            let creditorInfo = (try? await keychainService.loadCreditorInfo()) ?? DemoDataProvider.defaultCreditorInfo
 
             guard creditorInfo.isValid else {
                 error = "Please configure your creditor information in Settings."
@@ -379,11 +379,20 @@ struct InvoiceDetailView: View {
                 return
             }
 
-            let pdf = try await pdfService.createInvoiceWithQRBill(
-                invoice: invoice,
-                credentials: credentials,
-                creditorInfo: creditorInfo
-            )
+            let pdf: PDFDocument
+            if settings.isDemoMode {
+                pdf = try await pdfService.createDemoInvoiceWithQRBill(
+                    invoice: invoice,
+                    creditorInfo: creditorInfo
+                )
+            } else {
+                let credentials = try await keychainService.loadHarvestCredentials()
+                pdf = try await pdfService.createInvoiceWithQRBill(
+                    invoice: invoice,
+                    credentials: credentials,
+                    creditorInfo: creditorInfo
+                )
+            }
 
             let tempURL = FileManager.default.temporaryDirectory
                 .appendingPathComponent("\(invoiceFileName).pdf")
@@ -406,8 +415,8 @@ struct InvoiceDetailView: View {
         savedFilePath = nil
 
         do {
-            let credentials = try await keychainService.loadHarvestCredentials()
-            let creditorInfo = try await keychainService.loadCreditorInfo()
+            let settings = (try? await keychainService.loadAppSettings()) ?? .default
+            let creditorInfo = (try? await keychainService.loadCreditorInfo()) ?? DemoDataProvider.defaultCreditorInfo
 
             guard creditorInfo.isValid else {
                 error = "Please configure your creditor information in Settings."
@@ -415,13 +424,20 @@ struct InvoiceDetailView: View {
                 return
             }
 
-            let pdf = try await pdfService.createInvoiceWithQRBill(
-                invoice: invoice,
-                credentials: credentials,
-                creditorInfo: creditorInfo
-            )
-
-            let settings = (try? await keychainService.loadAppSettings()) ?? .default
+            let pdf: PDFDocument
+            if settings.isDemoMode {
+                pdf = try await pdfService.createDemoInvoiceWithQRBill(
+                    invoice: invoice,
+                    creditorInfo: creditorInfo
+                )
+            } else {
+                let credentials = try await keychainService.loadHarvestCredentials()
+                pdf = try await pdfService.createInvoiceWithQRBill(
+                    invoice: invoice,
+                    credentials: credentials,
+                    creditorInfo: creditorInfo
+                )
+            }
 
             await MainActor.run {
                 savePDF(pdf, settings: settings)

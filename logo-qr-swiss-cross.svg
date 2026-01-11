@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100">
+  <!-- QR Code outer frame -->
+  <rect x="5" y="5" width="25" height="25" rx="3" fill="#FF8B24"/>
+  <rect x="8" y="8" width="19" height="19" rx="2" fill="white"/>
+  <rect x="11" y="11" width="13" height="13" rx="1" fill="#FF8B24"/>
+
+  <rect x="70" y="5" width="25" height="25" rx="3" fill="#FF8B24"/>
+  <rect x="73" y="8" width="19" height="19" rx="2" fill="white"/>
+  <rect x="76" y="11" width="13" height="13" rx="1" fill="#FF8B24"/>
+
+  <rect x="5" y="70" width="25" height="25" rx="3" fill="#FF8B24"/>
+  <rect x="8" y="73" width="19" height="19" rx="2" fill="white"/>
+  <rect x="11" y="76" width="13" height="13" rx="1" fill="#FF8B24"/>
+
+  <!-- QR data pattern dots -->
+  <rect x="35" y="8" width="6" height="6" rx="1" fill="#FF8B24"/>
+  <rect x="47" y="8" width="6" height="6" rx="1" fill="#FF8B24"/>
+  <rect x="59" y="8" width="6" height="6" rx="1" fill="#FF8B24"/>
+
+  <rect x="8" y="35" width="6" height="6" rx="1" fill="#FF8B24"/>
+  <rect x="8" y="47" width="6" height="6" rx="1" fill="#FF8B24"/>
+  <rect x="8" y="59" width="6" height="6" rx="1" fill="#FF8B24"/>
+
+  <rect x="86" y="35" width="6" height="6" rx="1" fill="#FF8B24"/>
+  <rect x="86" y="47" width="6" height="6" rx="1" fill="#FF8B24"/>
+  <rect x="86" y="59" width="6" height="6" rx="1" fill="#FF8B24"/>
+
+  <rect x="35" y="86" width="6" height="6" rx="1" fill="#FF8B24"/>
+  <rect x="47" y="86" width="6" height="6" rx="1" fill="#FF8B24"/>
+  <rect x="59" y="86" width="6" height="6" rx="1" fill="#FF8B24"/>
+  <rect x="71" y="86" width="6" height="6" rx="1" fill="#FF8B24"/>
+  <rect x="83" y="86" width="6" height="6" rx="1" fill="#FF8B24"/>
+
+  <!-- Swiss Cross in center -->
+  <rect x="35" y="35" width="30" height="30" rx="2" fill="#E53935"/>
+  <rect x="44" y="39" width="12" height="22" fill="white"/>
+  <rect x="39" y="44" width="22" height="12" fill="white"/>
+</svg>

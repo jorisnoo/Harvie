@@ -77,6 +77,13 @@ final class InvoicesViewModel {
     func loadInvoices() async {
         error = nil
 
+        // Check for demo mode first
+        let appSettings = (try? await keychainService.loadAppSettings()) ?? .default
+        if appSettings.isDemoMode {
+            loadDemoInvoices()
+            return
+        }
+
         // First, load from cache for instant display
         if let context = modelContext {
             loadFromCache(context: context)
@@ -131,6 +138,20 @@ final class InvoicesViewModel {
             }
         }
 
+        isLoading = false
+        isRefreshing = false
+    }
+
+    private func loadDemoInvoices() {
+        hasValidCredentials = true
+        var demoInvoices = DemoDataProvider.invoices
+
+        // Apply state filter if set
+        if let filter = stateFilter {
+            demoInvoices = demoInvoices.filter { $0.state == filter }
+        }
+
+        invoices = demoInvoices
         isLoading = false
         isRefreshing = false
     }
