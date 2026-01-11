@@ -10,6 +10,13 @@ struct InvoicesListView: View {
     @Binding var showingSettings: Bool
     var sidebarVisible: Bool = true
 
+    private var sortFilterMenuLabel: String {
+        if let month = viewModel.selectedMonth {
+            return month.formatted(.dateTime.month(.abbreviated).year())
+        }
+        return "Sort & Filter"
+    }
+
     var body: some View {
         Group {
             if viewModel.isLoading && viewModel.invoices.isEmpty {
@@ -96,25 +103,56 @@ struct InvoicesListView: View {
             if sidebarVisible {
                 ToolbarItemGroup(placement: .automatic) {
                     Menu {
-                        ForEach(InvoiceSortOption.allCases, id: \.self) { option in
-                            Button {
-                                if viewModel.sortOption == option {
-                                    viewModel.sortDirection.toggle()
-                                } else {
-                                    viewModel.sortOption = option
-                                    viewModel.sortDirection = .descending
+                        Section("Sort By") {
+                            ForEach(InvoiceSortOption.allCases, id: \.self) { option in
+                                Button {
+                                    if viewModel.sortOption == option {
+                                        viewModel.sortDirection.toggle()
+                                    } else {
+                                        viewModel.sortOption = option
+                                        viewModel.sortDirection = .descending
+                                    }
+                                } label: {
+                                    HStack {
+                                        Text(option.rawValue)
+                                        if viewModel.sortOption == option {
+                                            Image(systemName: viewModel.sortDirection == .ascending ? "chevron.up" : "chevron.down")
+                                        }
+                                    }
                                 }
+                            }
+                        }
+
+                        Divider()
+
+                        Section("Filter by Month") {
+                            Button {
+                                viewModel.selectedMonth = nil
                             } label: {
                                 HStack {
-                                    Text(option.rawValue)
-                                    if viewModel.sortOption == option {
-                                        Image(systemName: viewModel.sortDirection == .ascending ? "chevron.up" : "chevron.down")
+                                    Text("All Months")
+                                    if viewModel.selectedMonth == nil {
+                                        Image(systemName: "checkmark")
+                                    }
+                                }
+                            }
+
+                            ForEach(viewModel.availableMonths, id: \.self) { month in
+                                Button {
+                                    viewModel.selectedMonth = month
+                                } label: {
+                                    HStack {
+                                        Text(month.formatted(.dateTime.month(.wide).year()))
+                                        if let selected = viewModel.selectedMonth,
+                                           Calendar.current.isDate(selected, equalTo: month, toGranularity: .month) {
+                                            Image(systemName: "checkmark")
+                                        }
                                     }
                                 }
                             }
                         }
                     } label: {
-                        Label("Sort", systemImage: "arrow.up.arrow.down")
+                        Label(sortFilterMenuLabel, systemImage: "line.3.horizontal.decrease.circle")
                     }
 
                     Picker("Filter", selection: $viewModel.stateFilter) {

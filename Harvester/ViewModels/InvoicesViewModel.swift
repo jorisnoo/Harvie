@@ -37,7 +37,17 @@ final class InvoicesViewModel {
     // For multiselect: var stateFilters: Set<InvoiceState> = [.open]
     var sortOption: InvoiceSortOption = .issueDate
     var sortDirection: SortDirection = .descending
+    var selectedMonth: Date?
     var hasValidCredentials = false
+
+    var availableMonths: [Date] {
+        let calendar = Calendar.current
+        let now = Date()
+        return (0..<12).compactMap { monthsAgo in
+            calendar.date(byAdding: .month, value: -monthsAgo, to: now)
+                .flatMap { calendar.date(from: calendar.dateComponents([.year, .month], from: $0)) }
+        }
+    }
 
     // Batch export state
     var isExporting = false
@@ -54,7 +64,25 @@ final class InvoicesViewModel {
     private let pdfService = PDFService.shared
 
     var sortedInvoices: [Invoice] {
-        invoices.sorted { lhs, rhs in
+        var filtered = invoices
+
+        if let month = selectedMonth {
+            let calendar = Calendar.current
+            filtered = filtered.filter { invoice in
+                let dateToCheck: Date
+                switch sortOption {
+                case .issueDate:
+                    dateToCheck = invoice.issueDate
+                case .dueDate:
+                    dateToCheck = invoice.dueDate
+                case .paidDate:
+                    dateToCheck = invoice.paidAt ?? invoice.paidDate ?? invoice.issueDate
+                }
+                return calendar.isDate(dateToCheck, equalTo: month, toGranularity: .month)
+            }
+        }
+
+        return filtered.sorted { lhs, rhs in
             let lhsDate: Date
             let rhsDate: Date
 
