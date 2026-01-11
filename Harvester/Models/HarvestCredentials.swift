@@ -73,7 +73,7 @@ struct AppSettings: Codable {
     var filenamePattern: String
     var isDemoMode: Bool
 
-    static let defaultFilenamePattern = "Rechnung_{number}_{creditor}"
+    static let defaultFilenamePattern = "{date}_{number}_{creditor}"
 
     static var `default`: AppSettings {
         AppSettings(
@@ -124,10 +124,11 @@ struct AppSettings: Codable {
         invoiceNumber: String,
         creditorName: String,
         clientName: String,
-        issueDate: Date
+        issueDate: Date,
+        prefixDate: Date? = nil
     ) -> String {
         let dateFormatter = DateFormatter()
-        dateFormatter.dateFormat = "yyyy-MM-dd"
+        dateFormatter.dateFormat = "yyyyMMdd"
 
         let sanitize: (String) -> String = { input in
             input
@@ -137,11 +138,13 @@ struct AppSettings: Codable {
                 .filter { $0.isLetter || $0.isNumber || $0 == "_" || $0 == "-" }
         }
 
+        let dateToUse = prefixDate ?? issueDate
+
         var filename = filenamePattern
         filename = filename.replacingOccurrences(of: "{number}", with: invoiceNumber.replacingOccurrences(of: "/", with: "-"))
         filename = filename.replacingOccurrences(of: "{creditor}", with: sanitize(creditorName))
         filename = filename.replacingOccurrences(of: "{client}", with: sanitize(clientName))
-        filename = filename.replacingOccurrences(of: "{date}", with: dateFormatter.string(from: issueDate))
+        filename = filename.replacingOccurrences(of: "{date}", with: dateFormatter.string(from: dateToUse))
 
         return filename + ".pdf"
     }

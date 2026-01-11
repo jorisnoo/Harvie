@@ -24,6 +24,13 @@ enum SortDirection {
     }
 }
 
+enum DateFilterPeriod: String, CaseIterable {
+    case month = "Month"
+    case quarter = "Quarter"
+    case halfYear = "Half Year"
+    case year = "Year"
+}
+
 @Observable
 @MainActor
 final class InvoicesViewModel {
@@ -37,15 +44,47 @@ final class InvoicesViewModel {
     // For multiselect: var stateFilters: Set<InvoiceState> = [.open]
     var sortOption: InvoiceSortOption = .issueDate
     var sortDirection: SortDirection = .descending
-    var selectedMonth: Date?
+    var filterPeriod: DateFilterPeriod = .month
+    var selectedPeriod: Date?
     var hasValidCredentials = false
 
-    var availableMonths: [Date] {
+    var availablePeriods: [Date] {
         let calendar = Calendar.current
         let now = Date()
-        return (0..<12).compactMap { monthsAgo in
-            calendar.date(byAdding: .month, value: -monthsAgo, to: now)
-                .flatMap { calendar.date(from: calendar.dateComponents([.year, .month], from: $0)) }
+
+        switch filterPeriod {
+        case .month:
+            return (0..<12).compactMap { monthsAgo in
+                calendar.date(byAdding: .month, value: -monthsAgo, to: now)
+                    .flatMap { calendar.date(from: calendar.dateComponents([.year, .month], from: $0)) }
+            }
+        case .quarter:
+            return (0..<8).compactMap { quartersAgo in
+                calendar.date(byAdding: .quarter, value: -quartersAgo, to: now)
+                    .flatMap { date in
+                        let month = calendar.component(.month, from: date)
+                        let quarterStartMonth = ((month - 1) / 3) * 3 + 1
+                        var components = calendar.dateComponents([.year], from: date)
+                        components.month = quarterStartMonth
+                        return calendar.date(from: components)
+                    }
+            }
+        case .halfYear:
+            return (0..<4).compactMap { halvesAgo in
+                calendar.date(byAdding: .month, value: -halvesAgo * 6, to: now)
+                    .flatMap { date in
+                        let month = calendar.component(.month, from: date)
+                        let halfStartMonth = month <= 6 ? 1 : 7
+                        var components = calendar.dateComponents([.year], from: date)
+                        components.month = halfStartMonth
+                        return calendar.date(from: components)
+                    }
+            }
+        case .year:
+            return (0..<5).compactMap { yearsAgo in
+                calendar.date(byAdding: .year, value: -yearsAgo, to: now)
+                    .flatMap { calendar.date(from: calendar.dateComponents([.year], from: $0)) }
+            }
         }
     }
 
@@ -66,7 +105,7 @@ final class InvoicesViewModel {
     var sortedInvoices: [Invoice] {
         var filtered = invoices
 
-        if let month = selectedMonth {
+        if let period = selectedPeriod {
             let calendar = Calendar.current
             filtered = filtered.filter { invoice in
                 let dateToCheck: Date
@@ -78,7 +117,7 @@ final class InvoicesViewModel {
                 case .paidDate:
                     dateToCheck = invoice.paidAt ?? invoice.paidDate ?? invoice.issueDate
                 }
-                return calendar.isDate(dateToCheck, equalTo: month, toGranularity: .month)
+                return isDate(dateToCheck, inSamePeriodAs: period, calendar: calendar)
             }
         }
 
@@ -283,9 +322,9 @@ final class InvoicesViewModel {
 
         do {
             let credentials = try await keychainService.loadHarvestCredentials()
-            let creditorInfo = withQRBill ? try await keychainService.loadCreditorInfo() : nil
+            let creditorInfo = try await keychainService.loadCreditorInfo()
 
-            if withQRBill, let info = creditorInfo, !info.isValid {
+            if withQRBill, !creditorInfo.isValid {
                 exportError = "Please configure your creditor information in Settings."
                 isExporting = false
                 return
@@ -299,22 +338,30 @@ final class InvoicesViewModel {
                 exportProgress = Double(index) / Double(total)
 
                 let document: PDFDocument
-                if withQRBill, let info = creditorInfo {
+                if withQRBill {
                     document = try await pdfService.createInvoiceWithQRBill(
                         invoice: invoice,
                         credentials: credentials,
-                        creditorInfo: info
+                        creditorInfo: creditorInfo
                     )
                 } else {
                     let pdfURL = apiService.buildPDFURL(for: invoice, subdomain: credentials.subdomain)
                     document = try await pdfService.downloadPDF(from: pdfURL)
                 }
 
+                let prefixDate: Date = switch sortOption {
+                case .issueDate, .dueDate:
+                    invoice.issueDate
+                case .paidDate:
+                    invoice.paidAt ?? invoice.paidDate ?? invoice.issueDate
+                }
+
                 let fileName = appSettings.generateFilename(
                     invoiceNumber: invoice.number,
-                    creditorName: creditorInfo?.name ?? "",
+                    creditorName: creditorInfo.name,
                     clientName: invoice.client.name,
-                    issueDate: invoice.issueDate
+                    issueDate: invoice.issueDate,
+                    prefixDate: prefixDate
                 )
                 let fileURL = folderURL.appendingPathComponent(fileName)
 
@@ -330,5 +377,44 @@ final class InvoicesViewModel {
         }
 
         isExporting = false
+    }
+
+    private func isDate(_ date: Date, inSamePeriodAs period: Date, calendar: Calendar) -> Bool {
+        switch filterPeriod {
+        case .month:
+            return calendar.isDate(date, equalTo: period, toGranularity: .month)
+        case .quarter:
+            let dateQuarter = (calendar.component(.month, from: date) - 1) / 3
+            let periodQuarter = (calendar.component(.month, from: period) - 1) / 3
+            let dateYear = calendar.component(.year, from: date)
+            let periodYear = calendar.component(.year, from: period)
+            return dateQuarter == periodQuarter && dateYear == periodYear
+        case .halfYear:
+            let dateHalf = calendar.component(.month, from: date) <= 6 ? 1 : 2
+            let periodHalf = calendar.component(.month, from: period) <= 6 ? 1 : 2
+            let dateYear = calendar.component(.year, from: date)
+            let periodYear = calendar.component(.year, from: period)
+            return dateHalf == periodHalf && dateYear == periodYear
+        case .year:
+            return calendar.isDate(date, equalTo: period, toGranularity: .year)
+        }
+    }
+
+    func formatPeriod(_ date: Date) -> String {
+        let calendar = Calendar.current
+        let year = calendar.component(.year, from: date)
+
+        switch filterPeriod {
+        case .month:
+            return date.formatted(.dateTime.month(.wide).year())
+        case .quarter:
+            let quarter = (calendar.component(.month, from: date) - 1) / 3 + 1
+            return "Q\(quarter) \(year)"
+        case .halfYear:
+            let half = calendar.component(.month, from: date) <= 6 ? 1 : 2
+            return "H\(half) \(year)"
+        case .year:
+            return "\(year)"
+        }
     }
 }

@@ -11,8 +11,8 @@ struct InvoicesListView: View {
     var sidebarVisible: Bool = true
 
     private var sortFilterMenuLabel: String {
-        if let month = viewModel.selectedMonth {
-            return month.formatted(.dateTime.month(.abbreviated).year())
+        if let period = viewModel.selectedPeriod {
+            return viewModel.formatPeriod(period)
         }
         return "Sort & Filter"
     }
@@ -125,26 +125,45 @@ struct InvoicesListView: View {
 
                         Divider()
 
-                        Section("Filter by Month") {
+                        Section("Filter Period") {
+                            ForEach(DateFilterPeriod.allCases, id: \.self) { period in
+                                Button {
+                                    if viewModel.filterPeriod != period {
+                                        viewModel.filterPeriod = period
+                                        viewModel.selectedPeriod = nil
+                                    }
+                                } label: {
+                                    HStack {
+                                        Text(period.rawValue)
+                                        if viewModel.filterPeriod == period {
+                                            Image(systemName: "checkmark")
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        Divider()
+
+                        Section("Filter by \(viewModel.filterPeriod.rawValue)") {
                             Button {
-                                viewModel.selectedMonth = nil
+                                viewModel.selectedPeriod = nil
                             } label: {
                                 HStack {
-                                    Text("All Months")
-                                    if viewModel.selectedMonth == nil {
+                                    Text("All")
+                                    if viewModel.selectedPeriod == nil {
                                         Image(systemName: "checkmark")
                                     }
                                 }
                             }
 
-                            ForEach(viewModel.availableMonths, id: \.self) { month in
+                            ForEach(viewModel.availablePeriods, id: \.self) { period in
                                 Button {
-                                    viewModel.selectedMonth = month
+                                    viewModel.selectedPeriod = period
                                 } label: {
                                     HStack {
-                                        Text(month.formatted(.dateTime.month(.wide).year()))
-                                        if let selected = viewModel.selectedMonth,
-                                           Calendar.current.isDate(selected, equalTo: month, toGranularity: .month) {
+                                        Text(viewModel.formatPeriod(period))
+                                        if let selected = viewModel.selectedPeriod, selected == period {
                                             Image(systemName: "checkmark")
                                         }
                                     }
