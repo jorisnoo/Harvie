@@ -349,7 +349,7 @@ final class InvoicesViewModel {
                     document = try await pdfService.downloadPDF(from: pdfURL)
                 }
 
-                let prefixDate: Date = switch sortOption {
+                let date: Date = switch sortOption {
                 case .issueDate, .dueDate:
                     invoice.issueDate
                 case .paidDate:
@@ -360,8 +360,10 @@ final class InvoicesViewModel {
                     invoiceNumber: invoice.number,
                     creditorName: creditorInfo.name,
                     clientName: invoice.client.name,
+                    date: date,
                     issueDate: invoice.issueDate,
-                    prefixDate: prefixDate
+                    dueDate: invoice.dueDate,
+                    paidDate: invoice.paidAt ?? invoice.paidDate
                 )
                 let fileURL = folderURL.appendingPathComponent(fileName)
 

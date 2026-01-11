@@ -454,8 +454,10 @@ struct InvoiceDetailView: View {
             invoiceNumber: invoice.number,
             creditorName: creditorName,
             clientName: invoice.client.name,
+            date: invoice.issueDate,
             issueDate: invoice.issueDate,
-            prefixDate: invoice.issueDate
+            dueDate: invoice.dueDate,
+            paidDate: invoice.paidAt ?? invoice.paidDate
         )
     }
 

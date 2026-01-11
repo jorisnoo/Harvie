@@ -236,8 +236,10 @@ struct DownloadsSettings: View {
             invoiceNumber: "2024-001",
             creditorName: viewModel.creditorInfo.name.isEmpty ? "Company" : viewModel.creditorInfo.name,
             clientName: "Example Client",
+            date: Date(),
             issueDate: Date(),
-            prefixDate: Date()
+            dueDate: Date(),
+            paidDate: Date()
         )
     }
 
@@ -287,7 +289,10 @@ struct DownloadsSettings: View {
                     Text("{number} - Invoice number")
                     Text("{creditor} - Your company name")
                     Text("{client} - Client name")
-                    Text("{date} - Date (YYYYMMDD, issue or payment date based on sort)")
+                    Text("{date} - Date based on sort (YYYYMMDD)")
+                    Text("{issueDate} - Issue date (YYYYMMDD)")
+                    Text("{dueDate} - Due date (YYYYMMDD)")
+                    Text("{paidDate} - Paid date (YYYYMMDD)")
                 }
                 .font(.caption)
                 .foregroundStyle(.secondary)
