@@ -87,7 +87,7 @@ struct Invoice: Codable, Identifiable, Hashable {
     }
 }
 
-enum InvoiceState: String, Codable {
+enum InvoiceState: String, Codable, CaseIterable {
     case draft
     case open
     case paid

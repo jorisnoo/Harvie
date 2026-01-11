@@ -34,6 +34,7 @@ final class InvoicesViewModel {
     var isRefreshing = false
     var error: String?
     var stateFilter: InvoiceState? = .open
+    // For multiselect: var stateFilters: Set<InvoiceState> = [.open]
     var sortOption: InvoiceSortOption = .issueDate
     var sortDirection: SortDirection = .descending
     var hasValidCredentials = false
@@ -108,6 +109,14 @@ final class InvoicesViewModel {
 
             invoices = fetchedInvoices
 
+            // For multiselect filtering:
+            // let fetchedInvoices = try await apiService.fetchAllInvoices(credentials: credentials, states: stateFilters)
+            // if stateFilters.isEmpty {
+            //     invoices = fetchedInvoices
+            // } else {
+            //     invoices = fetchedInvoices.filter { stateFilters.contains($0.state) }
+            // }
+
             // Update cache
             if let context = modelContext {
                 updateCache(with: fetchedInvoices, context: context)
@@ -136,13 +145,21 @@ final class InvoicesViewModel {
 
             // Filter by state if needed
             let filtered: [CachedInvoice]
-            if let stateFilter = stateFilter {
+            if let stateFilter {
                 filtered = cached.filter { $0.stateRaw == stateFilter.rawValue }
             } else {
                 filtered = cached
             }
 
             invoices = filtered.map { $0.toInvoice() }
+
+            // For multiselect filtering:
+            // if stateFilters.isEmpty {
+            //     filtered = cached
+            // } else {
+            //     let rawValues = stateFilters.map { $0.rawValue }
+            //     filtered = cached.filter { rawValues.contains($0.stateRaw) }
+            // }
         } catch {
             print("Failed to load from cache: \(error)")
         }

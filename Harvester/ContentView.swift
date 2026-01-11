@@ -14,7 +14,7 @@ struct ContentView: View {
 
     var body: some View {
         NavigationSplitView(columnVisibility: $columnVisibility) {
-            InvoicesListView(viewModel: viewModel, sidebarVisible: columnVisibility != .detailOnly)
+            InvoicesListView(viewModel: viewModel, showingSettings: $showingSettings, sidebarVisible: columnVisibility != .detailOnly)
                 .navigationSplitViewColumnWidth(min: 280, ideal: 320, max: 400)
         } detail: {
             if viewModel.selectedInvoiceIDs.count > 1 {
@@ -31,31 +31,6 @@ struct ContentView: View {
                     systemImage: "doc.text",
                     description: Text("Choose an invoice from the list to view details and generate a QR bill.")
                 )
-            }
-        }
-        .toolbar {
-            ToolbarItem(placement: .primaryAction) {
-                Menu {
-                    Button {
-                        Task {
-                            await viewModel.refresh()
-                        }
-                    } label: {
-                        Label("Refresh", systemImage: "arrow.clockwise")
-                    }
-                    .disabled(viewModel.isLoading)
-
-                    Divider()
-
-                    Button {
-                        showingSettings = true
-                    } label: {
-                        Label("Settings", systemImage: "gear")
-                    }
-                    .keyboardShortcut(",", modifiers: .command)
-                } label: {
-                    Label("More", systemImage: "ellipsis.circle")
-                }
             }
         }
         .sheet(isPresented: $showingSettings) {

@@ -168,6 +168,19 @@ actor HarvestAPIService {
         return allInvoices
     }
 
+    func fetchAllInvoices(
+        credentials: HarvestCredentials,
+        states: Set<InvoiceState>
+    ) async throws -> [Invoice] {
+        // If exactly one state selected, use the optimized single-state fetch
+        if states.count == 1, let state = states.first {
+            return try await fetchAllInvoices(credentials: credentials, state: state)
+        }
+
+        // For empty, multiple, or all states: fetch all invoices without filter
+        return try await fetchAllInvoices(credentials: credentials, state: nil)
+    }
+
     func fetchInvoice(
         id: Int,
         credentials: HarvestCredentials

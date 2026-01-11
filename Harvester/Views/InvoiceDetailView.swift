@@ -60,7 +60,7 @@ struct InvoiceDetailView: View {
             .padding()
         }
         .navigationTitle("Invoice \(invoice.number)")
-        .task {
+        .task(id: invoice.id) {
             editedSubject = invoice.subject ?? ""
             lastSavedSubject = invoice.subject ?? ""
             editedNotes = invoice.notes ?? ""

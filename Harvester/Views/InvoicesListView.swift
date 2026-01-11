@@ -7,6 +7,7 @@ import SwiftUI
 
 struct InvoicesListView: View {
     @Bindable var viewModel: InvoicesViewModel
+    @Binding var showingSettings: Bool
     var sidebarVisible: Bool = true
 
     var body: some View {
@@ -39,7 +40,7 @@ struct InvoicesListView: View {
                 }
             } else {
                 List(viewModel.sortedInvoices, selection: $viewModel.selectedInvoiceIDs) { invoice in
-                    InvoiceRowView(invoice: invoice)
+                    InvoiceRowView(invoice: invoice, sortOption: viewModel.sortOption)
                         .tag(invoice.id)
                 }
                 .contextMenu(forSelectionType: Int.self) { selectedIDs in
@@ -125,6 +126,48 @@ struct InvoicesListView: View {
                         Text("All").tag(InvoiceState?.none)
                     }
                     .pickerStyle(.menu)
+
+                    // For multiselect:
+                    // Menu {
+                    //     ForEach(InvoiceState.allCases, id: \.self) { state in
+                    //         Button {
+                    //             if viewModel.stateFilters.contains(state) {
+                    //                 viewModel.stateFilters.remove(state)
+                    //             } else {
+                    //                 viewModel.stateFilters.insert(state)
+                    //             }
+                    //         } label: {
+                    //             HStack {
+                    //                 Text(state.displayName)
+                    //                 if viewModel.stateFilters.contains(state) {
+                    //                     Image(systemName: "checkmark")
+                    //                 }
+                    //             }
+                    //         }
+                    //     }
+                    //     Divider()
+                    //     Button("Clear Filter") {
+                    //         viewModel.stateFilters.removeAll()
+                    //     }
+                    // } label: {
+                    //     Label("Filter", systemImage: viewModel.stateFilters.isEmpty ? "line.3.horizontal.decrease.circle" : "line.3.horizontal.decrease.circle.fill")
+                    // }
+
+                    Button {
+                        Task {
+                            await viewModel.refresh()
+                        }
+                    } label: {
+                        Label("Refresh", systemImage: "arrow.clockwise")
+                    }
+                    .disabled(viewModel.isLoading)
+
+                    Button {
+                        showingSettings = true
+                    } label: {
+                        Label("Settings", systemImage: "gear")
+                    }
+                    .keyboardShortcut(",", modifiers: .command)
                 }
             }
         }
@@ -133,6 +176,7 @@ struct InvoicesListView: View {
                 await viewModel.loadInvoices()
             }
         }
+        // For multiselect: .onChange(of: viewModel.stateFilters) { ... }
         .onChange(of: viewModel.selectedInvoiceIDs) {
             // Update single selection for detail view when selection changes
             if viewModel.selectedInvoiceIDs.count == 1,
@@ -175,13 +219,30 @@ struct ExportProgressOverlay: View {
 
 struct InvoiceRowView: View {
     let invoice: Invoice
+    var sortOption: InvoiceSortOption = .issueDate
 
     private var formattedAmount: String {
         CurrencyFormatter.format(invoice.dueAmount, currency: invoice.currency)
     }
 
+    private var dateLabel: String {
+        switch sortOption {
+        case .issueDate: "Issued"
+        case .dueDate: "Due"
+        case .paidDate: "Paid"
+        }
+    }
+
+    private var dateValue: Date {
+        switch sortOption {
+        case .issueDate: invoice.issueDate
+        case .dueDate: invoice.dueDate
+        case .paidDate: invoice.paidAt ?? invoice.paidDate ?? invoice.issueDate
+        }
+    }
+
     private var formattedDate: String {
-        invoice.dueDate.formatted(date: .abbreviated, time: .omitted)
+        dateValue.formatted(date: .abbreviated, time: .omitted)
     }
 
     var body: some View {
@@ -202,7 +263,7 @@ struct InvoiceRowView: View {
                     .font(.headline)
 
                 HStack(spacing: 4) {
-                    Text("Due: \(formattedDate)")
+                    Text("\(dateLabel): \(formattedDate)")
                         .font(.caption)
                         .foregroundStyle(.secondary)
 
@@ -240,6 +301,6 @@ struct StateIndicator: View {
 
 #Preview {
     NavigationStack {
-        InvoicesListView(viewModel: InvoicesViewModel())
+        InvoicesListView(viewModel: InvoicesViewModel(), showingSettings: .constant(false))
     }
 }
