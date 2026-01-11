@@ -86,8 +86,9 @@ struct InvoiceDetailView: View {
                         Label("Preview", systemImage: "eye")
                     }
                 }
+                .keyboardShortcut(.space, modifiers: [])
                 .disabled(isPreviewing || isProcessing)
-                .help("Preview invoice PDF with Swiss QR bill")
+                .help("Preview invoice PDF with Swiss QR bill (Space)")
             }
 
             ToolbarItem(placement: .primaryAction) {

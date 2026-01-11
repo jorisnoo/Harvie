@@ -1,25 +1,50 @@
 {
-  "fill" : {
-    "automatic-gradient" : "srgb:1.00000,0.54717,0.14178,1.00000"
-  },
+  "fill-specializations" : [
+    {
+      "value" : {
+        "automatic-gradient" : "display-p3:0.90918,0.40698,0.16931,1.00000"
+      }
+    },
+    {
+      "appearance" : "dark",
+      "value" : {
+        "automatic-gradient" : "display-p3:0.50000,0.22351,0.10088,1.00000"
+      }
+    }
+  ],
   "groups" : [
     {
       "layers" : [
         {
           "blend-mode" : "normal",
-          "fill" : "automatic",
+          "fill" : {
+            "solid" : "display-p3:1.00000,0.98253,0.97584,1.00000"
+          },
           "glass" : false,
           "hidden" : false,
-          "image-name" : "qrcode.svg",
-          "name" : "qrcode",
+          "image-name" : "qrcode@2x.png",
+          "name" : "qrcode@2x",
           "position" : {
-            "scale" : 20,
+            "scale" : 1,
             "translation-in-points" : [
               0,
               0
             ]
           }
         }
+      ],
+      "shadow" : {
+        "kind" : "neutral",
+        "opacity" : 0.5
+      },
+      "translucency" : {
+        "enabled" : true,
+        "value" : 0.5
+      }
+    },
+    {
+      "layers" : [
+
       ],
       "shadow" : {
         "kind" : "neutral",

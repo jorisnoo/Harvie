@@ -126,14 +126,16 @@ struct QRBillRenderer {
             if let streetLine = debtor.streetLine {
                 y = drawText(context: context, text: streetLine, x: leftMargin, y: y, fontSize: 8, bold: false, maxWidth: maxWidth, wrap: true)
             }
-            _ = drawText(context: context, text: debtor.cityLine, x: leftMargin, y: y, fontSize: 8, bold: false, maxWidth: maxWidth, wrap: true)
+            y = drawText(context: context, text: debtor.cityLine, x: leftMargin, y: y, fontSize: 8, bold: false, maxWidth: maxWidth, wrap: true)
         } else {
             y = drawText(context: context, text: Labels.payableByPlaceholder, x: leftMargin, y: y, fontSize: 6, bold: true, maxWidth: maxWidth)
             drawCornerMarks(context: context, xMM: marginMM, yMM: y / mmToPoints - 20, widthMM: 52, heightMM: 20)
+            y -= 20 * mmToPoints
         }
 
-        // Currency and Amount at bottom
-        let bottomY: CGFloat = 20 * mmToPoints
+        // Currency and Amount - position below debtor address with minimum bottom margin
+        let minBottomY: CGFloat = 7 * mmToPoints
+        let bottomY = max(minBottomY, y - 5 * mmToPoints)
         _ = drawText(context: context, text: Labels.currency, x: leftMargin, y: bottomY + 10, fontSize: 6, bold: true, maxWidth: 20 * mmToPoints)
         _ = drawText(context: context, text: data.currency, x: leftMargin, y: bottomY, fontSize: 8, bold: false, maxWidth: 20 * mmToPoints)
 
