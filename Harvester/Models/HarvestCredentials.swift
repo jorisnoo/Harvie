@@ -71,9 +71,18 @@ struct AppSettings: Codable {
     var defaultDownloadPath: String?
     var downloadBookmarkData: Data?
     var filenamePattern: String
+    var dateFormat: String
     var isDemoMode: Bool
 
+    // Persisted filter/sort state
+    var lastSortOption: String?
+    var lastSortAscending: Bool?
+    var lastFilterPeriod: String?
+    var lastSelectedPeriod: Date?
+    var lastStateFilter: String?
+
     static let defaultFilenamePattern = "{date}_{number}_{creditor}"
+    static let defaultDateFormat = "YYMMDD"
 
     static var `default`: AppSettings {
         AppSettings(
@@ -81,15 +90,17 @@ struct AppSettings: Codable {
             defaultDownloadPath: NSSearchPathForDirectoriesInDomains(.downloadsDirectory, .userDomainMask, true).first,
             downloadBookmarkData: nil,
             filenamePattern: defaultFilenamePattern,
+            dateFormat: defaultDateFormat,
             isDemoMode: false
         )
     }
 
-    init(downloadBehavior: DownloadBehavior, defaultDownloadPath: String?, downloadBookmarkData: Data?, filenamePattern: String = defaultFilenamePattern, isDemoMode: Bool = false) {
+    init(downloadBehavior: DownloadBehavior, defaultDownloadPath: String?, downloadBookmarkData: Data?, filenamePattern: String = defaultFilenamePattern, dateFormat: String = defaultDateFormat, isDemoMode: Bool = false) {
         self.downloadBehavior = downloadBehavior
         self.defaultDownloadPath = defaultDownloadPath
         self.downloadBookmarkData = downloadBookmarkData
         self.filenamePattern = filenamePattern
+        self.dateFormat = dateFormat
         self.isDemoMode = isDemoMode
     }
 
@@ -99,7 +110,13 @@ struct AppSettings: Codable {
         defaultDownloadPath = try container.decodeIfPresent(String.self, forKey: .defaultDownloadPath)
         downloadBookmarkData = try container.decodeIfPresent(Data.self, forKey: .downloadBookmarkData)
         filenamePattern = try container.decodeIfPresent(String.self, forKey: .filenamePattern) ?? Self.defaultFilenamePattern
+        dateFormat = try container.decodeIfPresent(String.self, forKey: .dateFormat) ?? Self.defaultDateFormat
         isDemoMode = try container.decodeIfPresent(Bool.self, forKey: .isDemoMode) ?? false
+        lastSortOption = try container.decodeIfPresent(String.self, forKey: .lastSortOption)
+        lastSortAscending = try container.decodeIfPresent(Bool.self, forKey: .lastSortAscending)
+        lastFilterPeriod = try container.decodeIfPresent(String.self, forKey: .lastFilterPeriod)
+        lastSelectedPeriod = try container.decodeIfPresent(Date.self, forKey: .lastSelectedPeriod)
+        lastStateFilter = try container.decodeIfPresent(String.self, forKey: .lastStateFilter)
     }
 
     var downloadURL: URL? {
@@ -120,6 +137,17 @@ struct AppSettings: Codable {
         return URL(fileURLWithPath: path)
     }
 
+    private func formatDate(_ date: Date) -> String {
+        let dateFormatter = DateFormatter()
+        // Convert user format (YYYY, YY, MM, DD) to DateFormatter format (yyyy, yy, MM, dd)
+        let format = dateFormat
+            .replacingOccurrences(of: "YYYY", with: "yyyy")
+            .replacingOccurrences(of: "YY", with: "yy")
+            .replacingOccurrences(of: "DD", with: "dd")
+        dateFormatter.dateFormat = format
+        return dateFormatter.string(from: date)
+    }
+
     func generateFilename(
         invoiceNumber: String,
         creditorName: String,
@@ -129,9 +157,6 @@ struct AppSettings: Codable {
         dueDate: Date,
         paidDate: Date?
     ) -> String {
-        let dateFormatter = DateFormatter()
-        dateFormatter.dateFormat = "yyyyMMdd"
-
         let sanitize: (String) -> String = { input in
             input
                 .lowercased()
@@ -144,10 +169,10 @@ struct AppSettings: Codable {
         filename = filename.replacingOccurrences(of: "{number}", with: invoiceNumber.replacingOccurrences(of: "/", with: "-"))
         filename = filename.replacingOccurrences(of: "{creditor}", with: sanitize(creditorName))
         filename = filename.replacingOccurrences(of: "{client}", with: sanitize(clientName))
-        filename = filename.replacingOccurrences(of: "{date}", with: dateFormatter.string(from: date))
-        filename = filename.replacingOccurrences(of: "{issueDate}", with: dateFormatter.string(from: issueDate))
-        filename = filename.replacingOccurrences(of: "{dueDate}", with: dateFormatter.string(from: dueDate))
-        filename = filename.replacingOccurrences(of: "{paidDate}", with: paidDate.map { dateFormatter.string(from: $0) } ?? "")
+        filename = filename.replacingOccurrences(of: "{date}", with: formatDate(date))
+        filename = filename.replacingOccurrences(of: "{issueDate}", with: formatDate(issueDate))
+        filename = filename.replacingOccurrences(of: "{dueDate}", with: formatDate(dueDate))
+        filename = filename.replacingOccurrences(of: "{paidDate}", with: paidDate.map { formatDate($0) } ?? "")
 
         return filename + ".pdf"
     }

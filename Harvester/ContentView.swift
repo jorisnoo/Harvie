@@ -38,8 +38,17 @@ struct ContentView: View {
                 SettingsView()
             }
         }
+        .overlay {
+            if viewModel.isExporting {
+                ExportProgressOverlay(
+                    progress: viewModel.exportProgress,
+                    message: viewModel.exportProgressMessage
+                )
+            }
+        }
         .task {
             viewModel.modelContext = modelContext
+            await viewModel.loadSavedState()
             await viewModel.loadInvoices()
         }
     }

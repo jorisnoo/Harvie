@@ -78,14 +78,6 @@ struct InvoicesListView: View {
         }
         .navigationTitle("Invoices")
         .navigationSubtitle(viewModel.isRefreshing ? "Updating..." : "")
-        .overlay {
-            if viewModel.isExporting {
-                ExportProgressOverlay(
-                    progress: viewModel.exportProgress,
-                    message: viewModel.exportProgressMessage
-                )
-            }
-        }
         .alert("Export Error", isPresented: .init(
             get: { viewModel.exportError != nil },
             set: { if !$0 { viewModel.exportError = nil } }
@@ -231,7 +223,20 @@ struct InvoicesListView: View {
         .onChange(of: viewModel.stateFilter) {
             Task {
                 await viewModel.loadInvoices()
+                await viewModel.saveState()
             }
+        }
+        .onChange(of: viewModel.sortOption) {
+            Task { await viewModel.saveState() }
+        }
+        .onChange(of: viewModel.sortDirection) {
+            Task { await viewModel.saveState() }
+        }
+        .onChange(of: viewModel.filterPeriod) {
+            Task { await viewModel.saveState() }
+        }
+        .onChange(of: viewModel.selectedPeriod) {
+            Task { await viewModel.saveState() }
         }
         // For multiselect: .onChange(of: viewModel.stateFilters) { ... }
         .onChange(of: viewModel.selectedInvoiceIDs) {

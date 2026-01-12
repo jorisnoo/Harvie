@@ -275,6 +275,13 @@ struct DownloadsSettings: View {
                         .multilineTextAlignment(.trailing)
                 }
 
+                LabeledContent("Date format") {
+                    TextField("", text: $viewModel.appSettings.dateFormat)
+                        .font(.system(.body, design: .monospaced))
+                        .multilineTextAlignment(.trailing)
+                        .frame(width: 100)
+                }
+
                 LabeledContent("Preview") {
                     Text(filenamePreview)
                         .foregroundStyle(.secondary)
@@ -289,10 +296,15 @@ struct DownloadsSettings: View {
                     Text("{number} - Invoice number")
                     Text("{creditor} - Your company name")
                     Text("{client} - Client name")
-                    Text("{date} - Date based on sort (YYYYMMDD)")
-                    Text("{issueDate} - Issue date (YYYYMMDD)")
-                    Text("{dueDate} - Due date (YYYYMMDD)")
-                    Text("{paidDate} - Paid date (YYYYMMDD)")
+                    Text("{date} - Date based on sort")
+                    Text("{issueDate} - Issue date")
+                    Text("{dueDate} - Due date")
+                    Text("{paidDate} - Paid date")
+
+                    Text("Date format components:")
+                        .fontWeight(.medium)
+                        .padding(.top, 4)
+                    Text("YYYY (4-digit year), YY (2-digit year), MM (month), DD (day)")
                 }
                 .font(.caption)
                 .foregroundStyle(.secondary)

@@ -102,6 +102,42 @@ final class InvoicesViewModel {
     private let keychainService = KeychainService.shared
     private let pdfService = PDFService.shared
 
+    func loadSavedState() async {
+        guard let settings = try? await keychainService.loadAppSettings() else { return }
+
+        if let sortOptionRaw = settings.lastSortOption,
+           let savedSortOption = InvoiceSortOption(rawValue: sortOptionRaw) {
+            sortOption = savedSortOption
+        }
+
+        if let ascending = settings.lastSortAscending {
+            sortDirection = ascending ? .ascending : .descending
+        }
+
+        if let filterPeriodRaw = settings.lastFilterPeriod,
+           let savedFilterPeriod = DateFilterPeriod(rawValue: filterPeriodRaw) {
+            filterPeriod = savedFilterPeriod
+        }
+
+        selectedPeriod = settings.lastSelectedPeriod
+
+        if let stateFilterRaw = settings.lastStateFilter {
+            stateFilter = InvoiceState(rawValue: stateFilterRaw)
+        }
+    }
+
+    func saveState() async {
+        guard var settings = try? await keychainService.loadAppSettings() else { return }
+
+        settings.lastSortOption = sortOption.rawValue
+        settings.lastSortAscending = sortDirection == .ascending
+        settings.lastFilterPeriod = filterPeriod.rawValue
+        settings.lastSelectedPeriod = selectedPeriod
+        settings.lastStateFilter = stateFilter?.rawValue
+
+        try? await keychainService.saveAppSettings(settings)
+    }
+
     var sortedInvoices: [Invoice] {
         var filtered = invoices
 
@@ -334,7 +370,7 @@ final class InvoicesViewModel {
             let appSettings = (try? await keychainService.loadAppSettings()) ?? .default
 
             for (index, invoice) in invoicesToExport.enumerated() {
-                exportProgressMessage = "Exporting \(invoice.number)..."
+                exportProgressMessage = "Exporting \(index + 1) of \(total): \(invoice.number)"
                 exportProgress = Double(index) / Double(total)
 
                 let document: PDFDocument
