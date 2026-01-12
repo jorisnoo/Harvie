@@ -221,6 +221,7 @@ struct InvoicesListView: View {
             }
         }
         .onChange(of: viewModel.stateFilter) {
+            viewModel.deselectAll()
             Task {
                 await viewModel.loadInvoices()
                 await viewModel.saveState()
@@ -233,9 +234,11 @@ struct InvoicesListView: View {
             Task { await viewModel.saveState() }
         }
         .onChange(of: viewModel.filterPeriod) {
+            viewModel.deselectAll()
             Task { await viewModel.saveState() }
         }
         .onChange(of: viewModel.selectedPeriod) {
+            viewModel.deselectAll()
             Task { await viewModel.saveState() }
         }
         // For multiselect: .onChange(of: viewModel.stateFilters) { ... }
