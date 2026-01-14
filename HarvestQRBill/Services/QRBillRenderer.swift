@@ -169,10 +169,10 @@ struct QRBillRenderer {
         // Draw Swiss cross in center of QR code
         drawSwissCross(context: context, centerX: qrX + qrSize / 2, centerY: qrY + qrSize / 2)
 
-        // Text column to the right of QR code
+        // Text column to the right of QR code (aligned with QR code top)
         let textColumnX = leftMargin + qrSize + 5 * mmToPoints
         let textColumnMaxWidth = (pageWidthMM - sectionStartMM - marginMM - qrCodeSizeMM - 10) * mmToPoints
-        var textY = y - 3 * mmToPoints
+        var textY = y
 
         // Konto / Zahlbar an
         textY = drawText(context: context, text: Labels.accountPayableTo, x: textColumnX, y: textY, fontSize: 8, bold: true, maxWidth: textColumnMaxWidth)
@@ -214,7 +214,7 @@ struct QRBillRenderer {
         }
 
         // Währung und Betrag at bottom left of payment section
-        let bottomY: CGFloat = 16 * mmToPoints
+        let bottomY: CGFloat = 20 * mmToPoints
         _ = drawText(context: context, text: Labels.currency, x: leftMargin, y: bottomY + 12, fontSize: 8, bold: true, maxWidth: 50 * mmToPoints)
         _ = drawText(context: context, text: data.currency, x: leftMargin, y: bottomY, fontSize: 10, bold: false, maxWidth: 50 * mmToPoints)
 

@@ -33,7 +33,11 @@ struct ContentView: View {
                 )
             }
         }
-        .sheet(isPresented: $showingSettings) {
+        .sheet(isPresented: $showingSettings, onDismiss: {
+            Task {
+                await viewModel.reloadCreditorInfo()
+            }
+        }) {
             NavigationStack {
                 SettingsView()
             }

@@ -17,6 +17,7 @@ struct InvoiceDetailView: View {
     @State private var showingSuccess = false
     @State private var savedFilePath: String?
     @State private var creditorName: String = ""
+    @State private var canExportWithQRBill = false
     @State private var appSettings: AppSettings = .default
 
     // Subject editing
@@ -67,6 +68,7 @@ struct InvoiceDetailView: View {
             lastSavedNotes = invoice.notes ?? ""
             if let creditorInfo = try? await keychainService.loadCreditorInfo() {
                 creditorName = creditorInfo.name
+                canExportWithQRBill = creditorInfo.isValid
             }
             if let settings = try? await keychainService.loadAppSettings() {
                 appSettings = settings
@@ -87,8 +89,8 @@ struct InvoiceDetailView: View {
                     }
                 }
                 .keyboardShortcut(.space, modifiers: [])
-                .disabled(isPreviewing || isProcessing)
-                .help("Preview invoice PDF with Swiss QR bill (Space)")
+                .disabled(isPreviewing || isProcessing || !canExportWithQRBill)
+                .help(canExportWithQRBill ? "Preview invoice PDF with Swiss QR bill (Space)" : "Configure creditor info in Settings first")
             }
 
             ToolbarItem(placement: .primaryAction) {
@@ -105,8 +107,8 @@ struct InvoiceDetailView: View {
                     }
                 }
                 .buttonStyle(.borderedProminent)
-                .disabled(isProcessing || isPreviewing)
-                .help("Download invoice PDF with Swiss QR bill")
+                .disabled(isProcessing || isPreviewing || !canExportWithQRBill)
+                .help(canExportWithQRBill ? "Download invoice PDF with Swiss QR bill" : "Configure creditor info in Settings first")
             }
         }
         .alert("Error", isPresented: .init(

@@ -63,6 +63,7 @@ struct InvoicesListView: View {
                         } label: {
                             Label("Export with QR Bill", systemImage: "square.and.arrow.down")
                         }
+                        .disabled(!viewModel.canExportWithQRBill)
 
                         Button {
                             Task {
@@ -82,6 +83,25 @@ struct InvoicesListView: View {
         }
         .navigationTitle("Invoices")
         .navigationSubtitle(viewModel.isRefreshing ? "Updating..." : "")
+        .safeAreaInset(edge: .top) {
+            if !viewModel.canExportWithQRBill && !viewModel.invoices.isEmpty {
+                HStack(spacing: 8) {
+                    Image(systemName: "exclamationmark.triangle.fill")
+                        .foregroundStyle(.orange)
+                    Text("Configure creditor info in Settings to enable QR bill export.")
+                        .font(.callout)
+                    Spacer()
+                    Button("Settings") {
+                        showingSettings = true
+                    }
+                    .buttonStyle(.bordered)
+                    .controlSize(.small)
+                }
+                .padding(.horizontal)
+                .padding(.vertical, 8)
+                .background(.orange.opacity(0.1))
+            }
+        }
         .alert("Export Error", isPresented: .init(
             get: { viewModel.exportError != nil },
             set: { if !$0 { viewModel.exportError = nil } }

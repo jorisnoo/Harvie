@@ -99,6 +99,13 @@ final class InvoicesViewModel {
         }
     }
 
+    // Creditor info for export validation
+    var creditorInfo: CreditorInfo = .empty
+
+    var canExportWithQRBill: Bool {
+        creditorInfo.isValid
+    }
+
     // Batch export state
     var isExporting = false
     var exportProgress: Double = 0
@@ -114,6 +121,11 @@ final class InvoicesViewModel {
     private let pdfService = PDFService.shared
 
     func loadSavedState() async {
+        // Load creditor info for export validation
+        if let loadedCreditorInfo = try? await keychainService.loadCreditorInfo() {
+            creditorInfo = loadedCreditorInfo
+        }
+
         guard let settings = try? await keychainService.loadAppSettings() else { return }
 
         if let sortOptionRaw = settings.lastSortOption,
@@ -134,6 +146,12 @@ final class InvoicesViewModel {
 
         if let stateFilterRaw = settings.lastStateFilter {
             stateFilter = InvoiceState(rawValue: stateFilterRaw)
+        }
+    }
+
+    func reloadCreditorInfo() async {
+        if let loadedCreditorInfo = try? await keychainService.loadCreditorInfo() {
+            creditorInfo = loadedCreditorInfo
         }
     }
 
