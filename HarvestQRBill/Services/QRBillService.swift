@@ -9,23 +9,29 @@ import CoreImage
 struct QRBillService {
     enum ValidationError: Error, LocalizedError {
         case invalidIBAN
+        case qrIBANNotSupported
         case invalidCreditorAddress
         case invalidAmount
         case invalidCurrency
         case invalidReference
+        case messageTooLong
 
         var errorDescription: String? {
             switch self {
             case .invalidIBAN:
                 return "Invalid IBAN format."
+            case .qrIBANNotSupported:
+                return "QR-IBAN is not supported. Please use a regular Swiss IBAN."
             case .invalidCreditorAddress:
                 return "Creditor address is incomplete."
             case .invalidAmount:
-                return "Invalid amount."
+                return "Amount must be between 0.01 and 999,999,999.99."
             case .invalidCurrency:
                 return "Currency must be CHF or EUR."
             case .invalidReference:
                 return "Invalid creditor reference format."
+            case .messageTooLong:
+                return "Combined message and billing info must not exceed 140 characters."
             }
         }
     }
@@ -37,6 +43,11 @@ struct QRBillService {
     ) throws -> QRBillData {
         guard IBANValidator.validate(creditorInfo.iban) else {
             throw ValidationError.invalidIBAN
+        }
+
+        // QR-IBAN requires QRR reference type, which we don't support (SCOR only)
+        if IBANValidator.isQRIBAN(creditorInfo.iban) {
+            throw ValidationError.qrIBANNotSupported
         }
 
         guard creditorInfo.isValid else {
@@ -88,6 +99,10 @@ struct QRBillService {
         return context.createCGImage(scaledImage, from: scaledImage.extent)
     }
 
+    private static let minAmount: Decimal = 0.01
+    private static let maxAmount: Decimal = 999_999_999.99
+    private static let maxMessageLength = 140
+
     func validate(_ data: QRBillData) -> [ValidationError] {
         var errors: [ValidationError] = []
 
@@ -95,12 +110,18 @@ struct QRBillService {
             errors.append(.invalidIBAN)
         }
 
+        if IBANValidator.isQRIBAN(data.creditorIBAN) {
+            errors.append(.qrIBANNotSupported)
+        }
+
         if !data.creditorAddress.isValid {
             errors.append(.invalidCreditorAddress)
         }
 
-        if let amount = data.amount, amount < 0 {
-            errors.append(.invalidAmount)
+        if let amount = data.amount {
+            if amount < Self.minAmount || amount > Self.maxAmount {
+                errors.append(.invalidAmount)
+            }
         }
 
         if !["CHF", "EUR"].contains(data.currency) {
@@ -111,6 +132,12 @@ struct QRBillService {
            !reference.isEmpty,
            !CreditorReferenceGenerator.validate(reference) {
             errors.append(.invalidReference)
+        }
+
+        // Combined message and billing info must not exceed 140 characters
+        let messageLength = (data.unstructuredMessage ?? "").count + (data.billingInfo ?? "").count
+        if messageLength > Self.maxMessageLength {
+            errors.append(.messageTooLong)
         }
 
         return errors

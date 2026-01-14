@@ -10,8 +10,12 @@ struct HarvestCredentials: Codable {
     var accountId: String
     var subdomain: String
 
+    var canTestConnection: Bool {
+        !accessToken.isEmpty && !accountId.isEmpty
+    }
+
     var isValid: Bool {
-        !accessToken.isEmpty && !accountId.isEmpty && !subdomain.isEmpty
+        canTestConnection && !subdomain.isEmpty
     }
 }
 

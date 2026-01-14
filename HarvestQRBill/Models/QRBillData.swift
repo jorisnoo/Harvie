@@ -55,7 +55,8 @@ struct QRBillData {
         if let debtorAddress {
             lines.append(contentsOf: debtorAddress.toPayloadLines())
         } else {
-            lines.append("S")
+            // Per Swiss QR-bill spec: all 7 debtor address lines must be empty when no debtor
+            lines.append("")
             lines.append("")
             lines.append("")
             lines.append("")

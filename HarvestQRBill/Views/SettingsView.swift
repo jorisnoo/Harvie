@@ -120,12 +120,6 @@ struct HarvestSettings: View {
                     TextField("", text: $viewModel.harvestCredentials.accountId)
                         .multilineTextAlignment(.trailing)
                 }
-
-                LabeledContent("Subdomain") {
-                    TextField("", text: $viewModel.harvestCredentials.subdomain)
-                        .textContentType(.URL)
-                        .multilineTextAlignment(.trailing)
-                }
             }
 
             Section {
@@ -135,7 +129,7 @@ struct HarvestSettings: View {
                             await viewModel.testConnection()
                         }
                     }
-                    .disabled(viewModel.isTestingConnection || !viewModel.harvestCredentials.isValid)
+                    .disabled(viewModel.isTestingConnection || !viewModel.harvestCredentials.canTestConnection)
 
                     if viewModel.isTestingConnection {
                         ProgressView()
@@ -152,6 +146,13 @@ struct HarvestSettings: View {
                                 .foregroundStyle(.red)
                                 .help(message)
                         }
+                    }
+                }
+
+                if !viewModel.harvestCredentials.subdomain.isEmpty {
+                    LabeledContent("Subdomain") {
+                        Text(viewModel.harvestCredentials.subdomain)
+                            .foregroundStyle(.secondary)
                     }
                 }
             }

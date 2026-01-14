@@ -54,8 +54,8 @@ final class SettingsViewModel {
     }
 
     func testConnection() async {
-        guard harvestCredentials.isValid else {
-            connectionTestResult = .failure("Please fill in all Harvest credentials.")
+        guard harvestCredentials.canTestConnection else {
+            connectionTestResult = .failure("Please fill in Access Token and Account ID.")
             return
         }
 
@@ -64,7 +64,13 @@ final class SettingsViewModel {
 
         do {
             let success = try await apiService.testConnection(credentials: harvestCredentials)
-            connectionTestResult = success ? .success : .failure("Connection failed.")
+            if success {
+                let company = try await apiService.fetchCompany(credentials: harvestCredentials)
+                harvestCredentials.subdomain = company.subdomain
+                connectionTestResult = .success
+            } else {
+                connectionTestResult = .failure("Connection failed.")
+            }
         } catch {
             connectionTestResult = .failure(error.localizedDescription)
         }

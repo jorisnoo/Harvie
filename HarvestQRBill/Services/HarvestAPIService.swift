@@ -266,4 +266,29 @@ actor HarvestAPIService {
 
         return httpResponse.statusCode == 200
     }
+
+    func fetchCompany(credentials: HarvestCredentials) async throws -> Company {
+        let request = makeRequest(
+            path: "company",
+            credentials: credentials
+        )
+
+        return try await perform(request)
+    }
+}
+
+struct Company: Decodable {
+    let baseUri: String
+    let fullDomain: String
+    let name: String
+
+    var subdomain: String {
+        fullDomain.components(separatedBy: ".").first ?? ""
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case baseUri = "base_uri"
+        case fullDomain = "full_domain"
+        case name
+    }
 }
