@@ -12,6 +12,8 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		CF0243E12F1F6FBA004AD884 /* .shipmarkrc.yml */ = {isa = PBXFileReference; lastKnownFileType = text.yaml; path = .shipmarkrc.yml; sourceTree = "<group>"; };
+		CF0243E22F1F6FBA004AD884 /* version.yml */ = {isa = PBXFileReference; lastKnownFileType = text.yaml; path = version.yml; sourceTree = "<group>"; };
 		CFC06FAE2F12C02400DBAFCB /* HarvestQRBill.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = HarvestQRBill.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		CFC071392F130E6000DBAFCB /* AppIcon.icon */ = {isa = PBXFileReference; lastKnownFileType = folder.iconcomposer.icon; path = AppIcon.icon; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -39,6 +41,8 @@
 		CFC06FA52F12C02400DBAFCB = {
 			isa = PBXGroup;
 			children = (
+				CF0243E12F1F6FBA004AD884 /* .shipmarkrc.yml */,
+				CF0243E22F1F6FBA004AD884 /* version.yml */,
 				CFC071392F130E6000DBAFCB /* AppIcon.icon */,
 				CFC06FB02F12C02400DBAFCB /* HarvestQRBill */,
 				CFC06FAF2F12C02400DBAFCB /* Products */,

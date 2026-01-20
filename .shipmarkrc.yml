@@ -1,0 +1,33 @@
+changelog:
+  file: CHANGELOG.md
+  types:
+    feat: Features
+    fix: Bug Fixes
+    docs: Documentation
+    refactor: Code Refactoring
+    perf: Performance Improvements
+    test: Tests
+    build: Build System
+    ci: Continuous Integration
+    chore: Chores
+  includeHash: true
+  includeDate: true
+  includeAuthor: false
+
+version:
+  files:
+    - path: version.yml
+      key: version
+  tagPrefix: ""
+  tagMessage: "Release {version}"
+  commitMessage: "chore(release): {version}"
+
+commits:
+  conventional: true
+  allowCustomTypes: true
+
+git:
+  push: true
+  pushTags: true
+  signTags: true
+  signCommits: true
