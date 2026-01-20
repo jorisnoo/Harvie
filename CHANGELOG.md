@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.3](https://github.com/jorisnoo/HarvestQRBill/releases/tag/v0.1.3) (2026-01-20)
+
+### Bug Fixes
+
+- use git-auto-commit-action for version sync ([9d93ca9](https://github.com/jorisnoo/HarvestQRBill/commit/9d93ca9c9e318df0d98b608e774e36bed9a1123c))
 ## [0.1.2](https://github.com/jorisnoo/HarvestQRBill/releases/tag/v0.1.2) (2026-01-20)
 
 ### Documentation
