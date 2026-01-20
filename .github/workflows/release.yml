@@ -3,7 +3,7 @@ name: Build, Sign, Notarize and Release
 on:
   push:
     tags:
-      - 'v*'
+      - '[0-9]*'
 
 jobs:
   build:
@@ -12,10 +12,27 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Extract version from tag
         id: version
-        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+        run: echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+
+      - name: Sync version to Xcode project
+        run: |
+          VERSION="${{ steps.version.outputs.VERSION }}"
+          echo "Syncing version $VERSION to Xcode project..."
+          sed -i '' "s/MARKETING_VERSION = [^;]*;/MARKETING_VERSION = $VERSION;/g" \
+            HarvestQRBill.xcodeproj/project.pbxproj
+
+      - name: Commit version sync
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add HarvestQRBill.xcodeproj/project.pbxproj
+          git diff --staged --quiet || git commit -m "chore: sync version ${{ steps.version.outputs.VERSION }} to Xcode"
+          git push origin HEAD:main
 
       - name: Import code signing certificate
         env:
@@ -108,11 +125,21 @@ jobs:
         run: |
           spctl -a -vvv -t install "$RUNNER_TEMP/HarvestQRBill-${{ steps.version.outputs.VERSION }}.dmg"
 
-      - name: Upload DMG to GitHub Release
-        uses: softprops/action-gh-release@v2
-        with:
-          files: ${{ runner.temp }}/HarvestQRBill-${{ steps.version.outputs.VERSION }}.dmg
-          generate_release_notes: true
+      - name: Extract release notes from CHANGELOG
+        id: changelog
+        run: |
+          # Extract notes for current version from CHANGELOG.md
+          VERSION="${{ steps.version.outputs.VERSION }}"
+          # Get content between this version header and the next version header
+          awk "/^## .*${VERSION}/,/^## .*[0-9]+\.[0-9]+\.[0-9]+/{if(/^## .*[0-9]+\.[0-9]+\.[0-9]+/ && !/^## .*${VERSION}/)exit; print}" CHANGELOG.md > $RUNNER_TEMP/release_notes.md
+          cat $RUNNER_TEMP/release_notes.md
+
+      - name: Create GitHub Release
+        run: |
+          gh release create "${{ steps.version.outputs.VERSION }}" \
+            "$RUNNER_TEMP/HarvestQRBill-${{ steps.version.outputs.VERSION }}.dmg" \
+            --title "Release ${{ steps.version.outputs.VERSION }}" \
+            --notes-file "$RUNNER_TEMP/release_notes.md"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 

@@ -20,7 +20,7 @@ version:
       key: version
   tagPrefix: ""
   tagMessage: "Release {version}"
-  commitMessage: "chore(release): {version}"
+  commitMessage: "release: {version}"
 
 commits:
   conventional: true
