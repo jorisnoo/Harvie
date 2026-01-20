@@ -90,6 +90,34 @@ jobs:
             -exportOptionsPlist $RUNNER_TEMP/ExportOptions.plist \
             -exportPath $RUNNER_TEMP/export
 
+      - name: Create ZIP for AppUpdater
+        run: |
+          cd "$RUNNER_TEMP/export"
+          ditto -c -k --keepParent "HarvestQRBill.app" "$RUNNER_TEMP/HarvestQRBill-${{ steps.version.outputs.VERSION }}.zip"
+
+      - name: Notarize ZIP
+        env:
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_APP_PASSWORD: ${{ secrets.APPLE_APP_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          xcrun notarytool submit \
+            "$RUNNER_TEMP/HarvestQRBill-${{ steps.version.outputs.VERSION }}.zip" \
+            --apple-id "$APPLE_ID" \
+            --password "$APPLE_APP_PASSWORD" \
+            --team-id "$APPLE_TEAM_ID" \
+            --wait
+
+      - name: Staple app inside ZIP
+        run: |
+          xcrun stapler staple "$RUNNER_TEMP/export/HarvestQRBill.app"
+
+      - name: Recreate ZIP with stapled app
+        run: |
+          rm "$RUNNER_TEMP/HarvestQRBill-${{ steps.version.outputs.VERSION }}.zip"
+          cd "$RUNNER_TEMP/export"
+          ditto -c -k --keepParent "HarvestQRBill.app" "$RUNNER_TEMP/HarvestQRBill-${{ steps.version.outputs.VERSION }}.zip"
+
       - name: Install create-dmg
         run: brew install create-dmg
 
@@ -119,7 +147,7 @@ jobs:
             --team-id "$APPLE_TEAM_ID" \
             --wait
 
-      - name: Staple notarization ticket
+      - name: Staple notarization ticket to DMG
         run: |
           xcrun stapler staple "$RUNNER_TEMP/HarvestQRBill-${{ steps.version.outputs.VERSION }}.dmg"
 
@@ -140,6 +168,7 @@ jobs:
         run: |
           gh release create "${{ steps.version.outputs.VERSION }}" \
             "$RUNNER_TEMP/HarvestQRBill-${{ steps.version.outputs.VERSION }}.dmg" \
+            "$RUNNER_TEMP/HarvestQRBill-${{ steps.version.outputs.VERSION }}.zip" \
             --title "Release ${{ steps.version.outputs.VERSION }}" \
             --notes-file "$RUNNER_TEMP/release_notes.md"
         env:

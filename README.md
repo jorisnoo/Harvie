@@ -6,7 +6,7 @@
 <h1 align="center">HarvestQRBill</h1>
 
 <p align="center">
-  A macOS app that generates Swiss QR Bills for your Harvest invoices.
+  A macOS app that generates Swiss QR Bills for [Harvest](https://www.getharvest.com/) invoices.
 </p>
 
 <p align="center">
