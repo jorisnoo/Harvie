@@ -314,6 +314,10 @@ struct DownloadsSettings: View {
             Section("Demo") {
                 Toggle("Demo Mode", isOn: $viewModel.appSettings.isDemoMode)
             }
+
+            Color.clear
+                .frame(height: 60)
+                .listRowBackground(Color.clear)
         }
         .formStyle(.grouped)
     }

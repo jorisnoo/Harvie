@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		CF02441E2F1F7D2A004AD884 /* AppUpdater in Frameworks */ = {isa = PBXBuildFile; productRef = CF02441D2F1F7D2A004AD884 /* AppUpdater */; };
+		CF02445C2F1F7F51004AD884 /* logo.png in Resources */ = {isa = PBXBuildFile; fileRef = CF02445B2F1F7F51004AD884 /* logo.png */; };
 		CFC0703F2F12C51800DBAFCB /* QRCode in Frameworks */ = {isa = PBXBuildFile; productRef = CFC06FC12F12C10000DBAFCB /* QRCode */; };
 		CFC0713A2F130E6000DBAFCB /* AppIcon.icon in Resources */ = {isa = PBXBuildFile; fileRef = CFC071392F130E6000DBAFCB /* AppIcon.icon */; };
 /* End PBXBuildFile section */
@@ -18,8 +19,7 @@
 		CF0244172F1F789D004AD884 /* release.yml */ = {isa = PBXFileReference; lastKnownFileType = text.yaml; path = release.yml; sourceTree = "<group>"; };
 		CF02441F2F1F7D3D004AD884 /* CHANGELOG.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = CHANGELOG.md; sourceTree = "<group>"; };
 		CF0244202F1F7D3D004AD884 /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
-		CF0244212F1F7D7E004AD884 /* AppIcon.icon */ = {isa = PBXFileReference; lastKnownFileType = folder.iconcomposer.icon; path = AppIcon.icon; sourceTree = "<group>"; };
-		CF0244222F1F7D7E004AD884 /* AppIcon.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = AppIcon.png; sourceTree = "<group>"; };
+		CF02445B2F1F7F51004AD884 /* logo.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = logo.png; sourceTree = "<group>"; };
 		CFC06FAE2F12C02400DBAFCB /* HarvestQRBill.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = HarvestQRBill.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		CFC071392F130E6000DBAFCB /* AppIcon.icon */ = {isa = PBXFileReference; lastKnownFileType = folder.iconcomposer.icon; path = AppIcon.icon; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -64,8 +64,7 @@
 		CF0244232F1F7D7E004AD884 /* assets */ = {
 			isa = PBXGroup;
 			children = (
-				CF0244212F1F7D7E004AD884 /* AppIcon.icon */,
-				CF0244222F1F7D7E004AD884 /* AppIcon.png */,
+				CF02445B2F1F7F51004AD884 /* logo.png */,
 			);
 			path = assets;
 			sourceTree = "<group>";
@@ -164,6 +163,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				CFC0713A2F130E6000DBAFCB /* AppIcon.icon in Resources */,
+				CF02445C2F1F7F51004AD884 /* logo.png in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

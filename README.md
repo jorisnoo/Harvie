@@ -21,7 +21,7 @@
 
 <!-- TODO: Add screenshot -->
 <p align="center">
-  <img src="assets/screenshot.png" alt="Screenshot" width="800">
+  <img src="assets/screenshot.jpg" alt="Screenshot" width="800">
 </p>
 
 ## Features
