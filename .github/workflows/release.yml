@@ -5,6 +5,9 @@ on:
     tags:
       - '[0-9]*'
 
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: macos-latest
@@ -27,12 +30,11 @@ jobs:
             HarvestQRBill.xcodeproj/project.pbxproj
 
       - name: Commit version sync
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add HarvestQRBill.xcodeproj/project.pbxproj
-          git diff --staged --quiet || git commit -m "chore: sync version ${{ steps.version.outputs.VERSION }} to Xcode"
-          git push origin HEAD:main
+        uses: stefanzweifel/git-auto-commit-action@v7
+        with:
+          commit_message: "chore: sync version ${{ steps.version.outputs.VERSION }} to Xcode"
+          file_pattern: "HarvestQRBill.xcodeproj/project.pbxproj"
+          branch: main
 
       - name: Import code signing certificate
         env:
