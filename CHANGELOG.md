@@ -2,6 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.1](https://github.com/jorisnoo/HarvestQRBill/releases/tag/v0.1.1) (2026-01-20)
 ## [0.1.0](https://github.com/jorisnoo/HarvestQRBill/releases/tag/v0.1.0) (2026-01-20)
 
 ### Features
