@@ -37,6 +37,7 @@ final class InvoicesViewModel {
     var invoices: [Invoice] = []
     var selectedInvoice: Invoice?
     var selectedInvoiceIDs: Set<Int> = []
+    var isSelectionMode = false
     var isLoading = false
     var isRefreshing = false
     var error: String?
@@ -355,11 +356,28 @@ final class InvoicesViewModel {
     }
 
     func selectAll() {
-        selectedInvoiceIDs = Set(invoices.map { $0.id })
+        selectedInvoiceIDs = Set(sortedInvoices.map { $0.id })
     }
 
     func deselectAll() {
         selectedInvoiceIDs.removeAll()
+    }
+
+    func toggleSelection(for invoiceID: Int) {
+        if selectedInvoiceIDs.contains(invoiceID) {
+            selectedInvoiceIDs.remove(invoiceID)
+        } else {
+            selectedInvoiceIDs.insert(invoiceID)
+        }
+    }
+
+    func exitSelectionMode() {
+        isSelectionMode = false
+        selectedInvoiceIDs.removeAll()
+    }
+
+    func enterSelectionMode() {
+        isSelectionMode = true
     }
 
     func exportSelectedInvoices(withQRBill: Bool) async {

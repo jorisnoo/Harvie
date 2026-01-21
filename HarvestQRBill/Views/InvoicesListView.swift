@@ -17,6 +17,64 @@ struct InvoicesListView: View {
         return "Sort & Filter"
     }
 
+    private var listSelection: Binding<Set<Int>> {
+        viewModel.isSelectionMode
+            ? .constant(Set<Int>())
+            : $viewModel.selectedInvoiceIDs
+    }
+
+    @ViewBuilder
+    private var invoicesList: some View {
+        List(viewModel.sortedInvoices, selection: listSelection) { invoice in
+            InvoiceRowView(
+                invoice: invoice,
+                sortOption: viewModel.sortOption,
+                isSelectionMode: viewModel.isSelectionMode,
+                isSelected: viewModel.selectedInvoiceIDs.contains(invoice.id)
+            )
+            .tag(invoice.id)
+            .if(viewModel.isSelectionMode) { view in
+                view
+                    .contentShape(Rectangle())
+                    .onTapGesture {
+                        viewModel.toggleSelection(for: invoice.id)
+                    }
+            }
+        }
+        .onKeyPress(.escape) {
+            if viewModel.isSelectionMode {
+                viewModel.exitSelectionMode()
+            } else {
+                viewModel.selectedInvoiceIDs.removeAll()
+            }
+            return .handled
+        }
+        .contextMenu(forSelectionType: Int.self) { selectedIDs in
+            if !selectedIDs.isEmpty {
+                Button {
+                    Task {
+                        await viewModel.exportSelectedInvoices(withQRBill: true)
+                    }
+                } label: {
+                    Label("Export with QR Bill", systemImage: "square.and.arrow.down")
+                }
+                .disabled(!viewModel.canExportWithQRBill)
+
+                Button {
+                    Task {
+                        await viewModel.exportSelectedInvoices(withQRBill: false)
+                    }
+                } label: {
+                    Label("Export without QR Bill", systemImage: "doc.text")
+                }
+            }
+        } primaryAction: { selectedIDs in
+            if let firstID = selectedIDs.first {
+                viewModel.selectedInvoice = viewModel.invoices.first { $0.id == firstID }
+            }
+        }
+    }
+
     var body: some View {
         Group {
             if viewModel.isLoading && viewModel.invoices.isEmpty {
@@ -46,39 +104,7 @@ struct InvoicesListView: View {
                     }
                 }
             } else {
-                List(viewModel.sortedInvoices, selection: $viewModel.selectedInvoiceIDs) { invoice in
-                    InvoiceRowView(invoice: invoice, sortOption: viewModel.sortOption)
-                        .tag(invoice.id)
-                }
-                .onKeyPress(.escape) {
-                    viewModel.selectedInvoiceIDs.removeAll()
-                    return .handled
-                }
-                .contextMenu(forSelectionType: Int.self) { selectedIDs in
-                    if !selectedIDs.isEmpty {
-                        Button {
-                            Task {
-                                await viewModel.exportSelectedInvoices(withQRBill: true)
-                            }
-                        } label: {
-                            Label("Export with QR Bill", systemImage: "square.and.arrow.down")
-                        }
-                        .disabled(!viewModel.canExportWithQRBill)
-
-                        Button {
-                            Task {
-                                await viewModel.exportSelectedInvoices(withQRBill: false)
-                            }
-                        } label: {
-                            Label("Export without QR Bill", systemImage: "doc.text")
-                        }
-                    }
-                } primaryAction: { selectedIDs in
-                    // Double-click: show first selected invoice in detail
-                    if let firstID = selectedIDs.first {
-                        viewModel.selectedInvoice = viewModel.invoices.first { $0.id == firstID }
-                    }
-                }
+                invoicesList
             }
         }
         .navigationTitle("Invoices")
@@ -100,6 +126,11 @@ struct InvoicesListView: View {
                 .padding(.horizontal)
                 .padding(.vertical, 8)
                 .background(.orange.opacity(0.1))
+            }
+        }
+        .safeAreaInset(edge: .bottom) {
+            if !viewModel.invoices.isEmpty {
+                SelectionToolbar(viewModel: viewModel)
             }
         }
         .alert("Export Error", isPresented: .init(
@@ -246,7 +277,7 @@ struct InvoicesListView: View {
             }
         }
         .onChange(of: viewModel.stateFilter) {
-            viewModel.deselectAll()
+            viewModel.exitSelectionMode()
 
             if !viewModel.validSortOptions.contains(viewModel.sortOption) {
                 viewModel.sortOption = .issueDate
@@ -264,11 +295,11 @@ struct InvoicesListView: View {
             Task { await viewModel.saveState() }
         }
         .onChange(of: viewModel.filterPeriod) {
-            viewModel.deselectAll()
+            viewModel.exitSelectionMode()
             Task { await viewModel.saveState() }
         }
         .onChange(of: viewModel.selectedPeriod) {
-            viewModel.deselectAll()
+            viewModel.exitSelectionMode()
             Task { await viewModel.saveState() }
         }
         // For multiselect: .onChange(of: viewModel.stateFilters) { ... }
@@ -315,6 +346,8 @@ struct ExportProgressOverlay: View {
 struct InvoiceRowView: View {
     let invoice: Invoice
     var sortOption: InvoiceSortOption = .issueDate
+    var isSelectionMode = false
+    var isSelected = false
 
     private var formattedAmount: String {
         CurrencyFormatter.format(invoice.dueAmount, currency: invoice.currency)
@@ -342,6 +375,12 @@ struct InvoiceRowView: View {
 
     var body: some View {
         HStack {
+            if isSelectionMode {
+                Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
+                    .foregroundStyle(isSelected ? Color.accentColor : Color.secondary)
+                    .font(.title3)
+            }
+
             VStack(alignment: .leading, spacing: 4) {
                 Text(invoice.number)
                     .font(.headline)
@@ -391,6 +430,69 @@ struct StateIndicator: View {
             .background(color.opacity(0.2))
             .foregroundStyle(color)
             .clipShape(Capsule())
+    }
+}
+
+struct SelectionToolbar: View {
+    @Bindable var viewModel: InvoicesViewModel
+
+    private var selectionCountText: String {
+        let count = viewModel.selectedInvoiceIDs.count
+        return count == 1 ? "1 selected" : "\(count) selected"
+    }
+
+    private var allSelected: Bool {
+        !viewModel.sortedInvoices.isEmpty &&
+            viewModel.selectedInvoiceIDs.count == viewModel.sortedInvoices.count
+    }
+
+    var body: some View {
+        HStack {
+            if viewModel.isSelectionMode {
+                Button(allSelected ? "Deselect All" : "Select All") {
+                    if allSelected {
+                        viewModel.deselectAll()
+                    } else {
+                        viewModel.selectAll()
+                    }
+                }
+                .buttonStyle(.bordered)
+
+                Spacer()
+
+                Text(selectionCountText)
+                    .foregroundStyle(.secondary)
+                    .font(.callout)
+
+                Spacer()
+
+                Button("Done") {
+                    viewModel.exitSelectionMode()
+                }
+                .buttonStyle(.borderedProminent)
+            } else {
+                Spacer()
+
+                Button("Select") {
+                    viewModel.enterSelectionMode()
+                }
+                .buttonStyle(.bordered)
+            }
+        }
+        .padding(.horizontal)
+        .padding(.vertical, 10)
+        .background(.bar)
+    }
+}
+
+private extension View {
+    @ViewBuilder
+    func `if`<Content: View>(_ condition: Bool, transform: (Self) -> Content) -> some View {
+        if condition {
+            transform(self)
+        } else {
+            self
+        }
     }
 }
 
