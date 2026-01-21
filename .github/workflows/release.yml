@@ -72,6 +72,8 @@ jobs:
         run: |
           VERSION="${{ steps.version.outputs.VERSION }}"
           awk "/^## .*${VERSION}/,/^## .*[0-9]+\.[0-9]+\.[0-9]+/{if(/^## .*[0-9]+\.[0-9]+\.[0-9]+/ && !/^## .*${VERSION}/)exit; print}" CHANGELOG.md > $RUNNER_TEMP/release_notes.md
+          echo "" >> release_notes.md
+          echo "**Full Changelog:** https://github.com/${{ github.repository }}/blob/main/CHANGELOG.md" >> release_notes.md
           cat $RUNNER_TEMP/release_notes.md
 
       - name: Create GitHub Release
