@@ -407,7 +407,7 @@ final class InvoicesViewModel {
                         creditorInfo: creditorInfo
                     )
                 } else {
-                    let pdfURL = apiService.buildPDFURL(for: invoice, subdomain: credentials.subdomain)
+                    let pdfURL = try apiService.buildPDFURL(for: invoice, subdomain: credentials.subdomain)
                     document = try await pdfService.downloadPDF(from: pdfURL)
                 }
 

@@ -4,7 +4,10 @@
 //
 
 import Foundation
+import os.log
 import SwiftUI
+
+private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "HarvestQRBill", category: "Settings")
 
 @Observable
 @MainActor
@@ -47,7 +50,10 @@ final class SettingsViewModel {
             try await keychainService.saveCreditorInfo(creditorInfo)
             try await keychainService.saveAppSettings(appSettings)
         } catch {
-            saveError = "Failed to save settings: \(error.localizedDescription)"
+            #if DEBUG
+            logger.error("Failed to save settings: \(error.localizedDescription)")
+            #endif
+            saveError = "Failed to save settings. Please try again."
         }
 
         isSaving = false
@@ -71,8 +77,14 @@ final class SettingsViewModel {
             } else {
                 connectionTestResult = .failure("Connection failed.")
             }
+        } catch let apiError as HarvestAPIService.APIError {
+            // Use the sanitized error descriptions from APIError
+            connectionTestResult = .failure(apiError.localizedDescription)
         } catch {
-            connectionTestResult = .failure(error.localizedDescription)
+            #if DEBUG
+            logger.error("Connection test failed: \(error.localizedDescription)")
+            #endif
+            connectionTestResult = .failure("Connection failed. Please check your network.")
         }
 
         isTestingConnection = false

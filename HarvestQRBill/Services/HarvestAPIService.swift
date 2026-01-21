@@ -4,18 +4,59 @@
 //
 
 import Foundation
+import os.log
+
+private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "HarvestQRBill", category: "API")
+
+/// Delegate that implements certificate pinning for Harvest API domains
+private final class HarvestURLSessionDelegate: NSObject, URLSessionDelegate {
+    private let pinnedDomains = ["api.harvestapp.com", "harvestapp.com"]
+
+    func urlSession(
+        _ session: URLSession,
+        didReceive challenge: URLAuthenticationChallenge,
+        completionHandler: @escaping (URLSession.AuthChallengeDisposition, URLCredential?) -> Void
+    ) {
+        guard challenge.protectionSpace.authenticationMethod == NSURLAuthenticationMethodServerTrust,
+              let serverTrust = challenge.protectionSpace.serverTrust,
+              let host = challenge.protectionSpace.host.components(separatedBy: ".").suffix(2).joined(separator: ".") as String?,
+              pinnedDomains.contains(where: { challenge.protectionSpace.host.hasSuffix($0) || host == $0 })
+        else {
+            completionHandler(.performDefaultHandling, nil)
+            return
+        }
+
+        // Validate the certificate chain
+        let policies = [SecPolicyCreateSSL(true, challenge.protectionSpace.host as CFString)]
+        SecTrustSetPolicies(serverTrust, policies as CFArray)
+
+        var error: CFError?
+        let isValid = SecTrustEvaluateWithError(serverTrust, &error)
+
+        if isValid {
+            let credential = URLCredential(trust: serverTrust)
+            completionHandler(.useCredential, credential)
+        } else {
+            #if DEBUG
+            logger.error("Certificate validation failed for \(challenge.protectionSpace.host): \(error?.localizedDescription ?? "unknown")")
+            #endif
+            completionHandler(.cancelAuthenticationChallenge, nil)
+        }
+    }
+}
 
 actor HarvestAPIService {
     static let shared = HarvestAPIService()
 
     private let baseURL = URL(string: "https://api.harvestapp.com/v2")!
     private let session: URLSession
+    private let sessionDelegate = HarvestURLSessionDelegate()
     private let decoder: JSONDecoder
 
     init() {
         let config = URLSessionConfiguration.default
         config.timeoutIntervalForRequest = 30
-        session = URLSession(configuration: config)
+        session = URLSession(configuration: config, delegate: sessionDelegate, delegateQueue: nil)
 
         decoder = JSONDecoder()
         decoder.dateDecodingStrategy = .custom { decoder in
@@ -46,6 +87,8 @@ actor HarvestAPIService {
 
     enum APIError: Error, LocalizedError {
         case invalidCredentials
+        case invalidURL
+        case invalidSubdomain
         case unauthorized
         case notFound
         case serverError(Int)
@@ -56,16 +99,20 @@ actor HarvestAPIService {
             switch self {
             case .invalidCredentials:
                 return "Invalid API credentials. Please check your settings."
+            case .invalidURL:
+                return "Failed to construct API request."
+            case .invalidSubdomain:
+                return "Invalid Harvest subdomain."
             case .unauthorized:
                 return "Unauthorized. Please check your API token."
             case .notFound:
                 return "Resource not found."
             case .serverError(let code):
                 return "Server error (code: \(code))"
-            case .networkError(let error):
-                return "Network error: \(error.localizedDescription)"
-            case .decodingError(let error):
-                return "Failed to parse response: \(error.localizedDescription)"
+            case .networkError:
+                return "Network connection failed."
+            case .decodingError:
+                return "Failed to parse server response."
             }
         }
     }
@@ -74,11 +121,18 @@ actor HarvestAPIService {
         path: String,
         credentials: HarvestCredentials,
         queryItems: [URLQueryItem]? = nil
-    ) -> URLRequest {
-        var components = URLComponents(url: baseURL.appendingPathComponent(path), resolvingAgainstBaseURL: true)!
+    ) throws -> URLRequest {
+        guard var components = URLComponents(url: baseURL.appendingPathComponent(path), resolvingAgainstBaseURL: true) else {
+            throw APIError.invalidURL
+        }
+
         components.queryItems = queryItems
 
-        var request = URLRequest(url: components.url!)
+        guard let url = components.url else {
+            throw APIError.invalidURL
+        }
+
+        var request = URLRequest(url: url)
         request.setValue("Bearer \(credentials.accessToken)", forHTTPHeaderField: "Authorization")
         request.setValue(credentials.accountId, forHTTPHeaderField: "Harvest-Account-Id")
         request.setValue("Harvester (support@noordermeer.ch)", forHTTPHeaderField: "User-Agent")
@@ -100,16 +154,24 @@ actor HarvestAPIService {
             do {
                 return try decoder.decode(T.self, from: data)
             } catch let DecodingError.keyNotFound(key, context) {
-                print("Missing key '\(key.stringValue)' in \(context.codingPath.map { $0.stringValue }.joined(separator: "."))")
+                #if DEBUG
+                logger.debug("Missing key '\(key.stringValue)' in \(context.codingPath.map { $0.stringValue }.joined(separator: "."))")
+                #endif
                 throw APIError.decodingError(DecodingError.keyNotFound(key, context))
             } catch let DecodingError.typeMismatch(type, context) {
-                print("Type mismatch for \(type) at \(context.codingPath.map { $0.stringValue }.joined(separator: ".")): \(context.debugDescription)")
+                #if DEBUG
+                logger.debug("Type mismatch for \(String(describing: type)) at \(context.codingPath.map { $0.stringValue }.joined(separator: "."))")
+                #endif
                 throw APIError.decodingError(DecodingError.typeMismatch(type, context))
             } catch let DecodingError.valueNotFound(type, context) {
-                print("Value not found for \(type) at \(context.codingPath.map { $0.stringValue }.joined(separator: "."))")
+                #if DEBUG
+                logger.debug("Value not found for \(String(describing: type)) at \(context.codingPath.map { $0.stringValue }.joined(separator: "."))")
+                #endif
                 throw APIError.decodingError(DecodingError.valueNotFound(type, context))
             } catch {
-                print("Decoding error: \(error)")
+                #if DEBUG
+                logger.debug("Decoding error: \(error.localizedDescription)")
+                #endif
                 throw APIError.decodingError(error)
             }
         case 401:
@@ -136,7 +198,7 @@ actor HarvestAPIService {
             queryItems.append(URLQueryItem(name: "state", value: state.rawValue))
         }
 
-        let request = makeRequest(
+        let request = try makeRequest(
             path: "invoices",
             credentials: credentials,
             queryItems: queryItems
@@ -172,7 +234,7 @@ actor HarvestAPIService {
         id: Int,
         credentials: HarvestCredentials
     ) async throws -> Invoice {
-        let request = makeRequest(
+        let request = try makeRequest(
             path: "invoices/\(id)",
             credentials: credentials
         )
@@ -184,7 +246,7 @@ actor HarvestAPIService {
         id: Int,
         credentials: HarvestCredentials
     ) async throws -> Client {
-        let request = makeRequest(
+        let request = try makeRequest(
             path: "clients/\(id)",
             credentials: credentials
         )
@@ -192,8 +254,22 @@ actor HarvestAPIService {
         return try await perform(request)
     }
 
-    nonisolated func buildPDFURL(for invoice: Invoice, subdomain: String) -> URL {
-        URL(string: "https://\(subdomain).harvestapp.com/client/invoices/\(invoice.clientKey).pdf")!
+    /// Validates that a subdomain contains only alphanumeric characters and hyphens
+    private nonisolated func isValidSubdomain(_ subdomain: String) -> Bool {
+        let pattern = "^[a-zA-Z0-9][a-zA-Z0-9-]*[a-zA-Z0-9]$|^[a-zA-Z0-9]$"
+        return subdomain.range(of: pattern, options: .regularExpression) != nil
+    }
+
+    nonisolated func buildPDFURL(for invoice: Invoice, subdomain: String) throws -> URL {
+        guard isValidSubdomain(subdomain) else {
+            throw APIError.invalidSubdomain
+        }
+
+        guard let url = URL(string: "https://\(subdomain).harvestapp.com/client/invoices/\(invoice.clientKey).pdf") else {
+            throw APIError.invalidURL
+        }
+
+        return url
     }
 
     func updateInvoiceNotes(
@@ -217,7 +293,7 @@ actor HarvestAPIService {
         fields: [String: String],
         credentials: HarvestCredentials
     ) async throws {
-        var request = makeRequest(path: "invoices/\(id)", credentials: credentials)
+        var request = try makeRequest(path: "invoices/\(id)", credentials: credentials)
         request.httpMethod = "PATCH"
         request.httpBody = try JSONEncoder().encode(fields)
 
@@ -240,7 +316,7 @@ actor HarvestAPIService {
     }
 
     func testConnection(credentials: HarvestCredentials) async throws -> Bool {
-        let request = makeRequest(
+        let request = try makeRequest(
             path: "users/me",
             credentials: credentials
         )
@@ -255,7 +331,7 @@ actor HarvestAPIService {
     }
 
     func fetchCompany(credentials: HarvestCredentials) async throws -> Company {
-        let request = makeRequest(
+        let request = try makeRequest(
             path: "company",
             credentials: credentials
         )

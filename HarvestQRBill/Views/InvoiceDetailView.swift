@@ -3,10 +3,13 @@
 //  HarvestQRBill
 //
 
-import SwiftUI
-import PDFKit
 import AppKit
+import os.log
+import PDFKit
+import SwiftUI
 import UniformTypeIdentifiers
+
+private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "HarvestQRBill", category: "InvoiceDetail")
 
 struct InvoiceDetailView: View {
     let invoice: Invoice
@@ -193,8 +196,13 @@ struct InvoiceDetailView: View {
             )
             lastSavedSubject = editedSubject
             subjectSaved = true
+        } catch let apiError as HarvestAPIService.APIError {
+            self.error = "Failed to save title: \(apiError.localizedDescription)"
         } catch {
-            self.error = "Failed to save title: \(error.localizedDescription)"
+            #if DEBUG
+            logger.error("Failed to save subject: \(error.localizedDescription)")
+            #endif
+            self.error = "Failed to save title. Please try again."
         }
         isSavingSubject = false
     }
@@ -362,8 +370,13 @@ struct InvoiceDetailView: View {
             )
             lastSavedNotes = editedNotes
             notesSaved = true
+        } catch let apiError as HarvestAPIService.APIError {
+            self.error = "Failed to save notes: \(apiError.localizedDescription)"
         } catch {
-            self.error = "Failed to save notes: \(error.localizedDescription)"
+            #if DEBUG
+            logger.error("Failed to save notes: \(error.localizedDescription)")
+            #endif
+            self.error = "Failed to save notes. Please try again."
         }
         isSavingNotes = false
     }
@@ -402,11 +415,16 @@ struct InvoiceDetailView: View {
 
             pdf.write(to: tempURL)
 
-            await MainActor.run {
-                NSWorkspace.shared.open(tempURL)
-            }
+            NSWorkspace.shared.open(tempURL)
+        } catch let apiError as HarvestAPIService.APIError {
+            self.error = apiError.localizedDescription
+        } catch let pdfError as PDFService.PDFError {
+            self.error = pdfError.localizedDescription
         } catch {
-            self.error = error.localizedDescription
+            #if DEBUG
+            logger.error("Preview failed: \(error.localizedDescription)")
+            #endif
+            self.error = "Failed to generate preview. Please try again."
         }
 
         isPreviewing = false
@@ -445,14 +463,23 @@ struct InvoiceDetailView: View {
             await MainActor.run {
                 savePDF(pdf, settings: settings)
             }
+        } catch let apiError as HarvestAPIService.APIError {
+            self.error = apiError.localizedDescription
+            isProcessing = false
+        } catch let pdfError as PDFService.PDFError {
+            self.error = pdfError.localizedDescription
+            isProcessing = false
         } catch {
-            self.error = error.localizedDescription
+            #if DEBUG
+            logger.error("Download failed: \(error.localizedDescription)")
+            #endif
+            self.error = "Failed to download invoice. Please try again."
             isProcessing = false
         }
     }
 
     private var invoiceFileName: String {
-        appSettings.generateFilename(
+        let rawFilename = appSettings.generateFilename(
             invoiceNumber: invoice.number,
             creditorName: creditorName,
             clientName: invoice.client.name,
@@ -461,6 +488,37 @@ struct InvoiceDetailView: View {
             dueDate: invoice.dueDate,
             paidDate: invoice.paidAt ?? invoice.paidDate
         )
+
+        return sanitizeFilename(rawFilename)
+    }
+
+    /// Removes path traversal components and invalid characters from a filename
+    private func sanitizeFilename(_ filename: String) -> String {
+        var sanitized = filename
+            .replacingOccurrences(of: "..", with: "")
+            .replacingOccurrences(of: "/", with: "-")
+            .replacingOccurrences(of: "\\", with: "-")
+            .replacingOccurrences(of: ":", with: "-")
+
+        // Remove leading dots and dashes
+        while sanitized.hasPrefix(".") || sanitized.hasPrefix("-") {
+            sanitized = String(sanitized.dropFirst())
+        }
+
+        // Ensure it ends with .pdf
+        if !sanitized.lowercased().hasSuffix(".pdf") {
+            sanitized += ".pdf"
+        }
+
+        return sanitized.isEmpty ? "invoice.pdf" : sanitized
+    }
+
+    /// Validates that the final file path is within the intended folder
+    private func isValidPath(_ fileURL: URL, within folderURL: URL) -> Bool {
+        let resolvedFile = fileURL.standardizedFileURL.path
+        let resolvedFolder = folderURL.standardizedFileURL.path
+
+        return resolvedFile.hasPrefix(resolvedFolder + "/") || resolvedFile.hasPrefix(resolvedFolder)
     }
 
     private func savePDF(_ document: PDFDocument, settings: AppSettings) {
@@ -473,12 +531,30 @@ struct InvoiceDetailView: View {
 
             let fileURL = folderURL.appendingPathComponent(fileName)
 
+            // Validate path traversal - ensure file stays within the intended folder
+            guard isValidPath(fileURL, within: folderURL) else {
+                if hasAccess {
+                    folderURL.stopAccessingSecurityScopedResource()
+                }
+                showSavePanel(for: document, suggestedName: "invoice.pdf")
+                return
+            }
+
             // If file exists, add a number
             var finalURL = fileURL
             var counter = 1
             let baseName = fileName.replacingOccurrences(of: ".pdf", with: "")
             while FileManager.default.fileExists(atPath: finalURL.path) {
-                finalURL = folderURL.appendingPathComponent("\(baseName)_\(counter).pdf")
+                let numberedName = "\(baseName)_\(counter).pdf"
+                finalURL = folderURL.appendingPathComponent(numberedName)
+                // Re-validate to ensure numbered filename also stays within folder
+                guard isValidPath(finalURL, within: folderURL) else {
+                    if hasAccess {
+                        folderURL.stopAccessingSecurityScopedResource()
+                    }
+                    showSavePanel(for: document, suggestedName: "invoice.pdf")
+                    return
+                }
                 counter += 1
             }
 
@@ -518,9 +594,17 @@ struct InvoiceDetailView: View {
                             showingSuccess = true
                             isProcessing = false
                         }
-                    } catch {
+                    } catch let pdfError as PDFService.PDFError {
                         await MainActor.run {
-                            self.error = error.localizedDescription
+                            self.error = pdfError.localizedDescription
+                            isProcessing = false
+                        }
+                    } catch {
+                        #if DEBUG
+                        logger.error("Save failed: \(error.localizedDescription)")
+                        #endif
+                        await MainActor.run {
+                            self.error = "Failed to save file. Please try again."
                             isProcessing = false
                         }
                     }

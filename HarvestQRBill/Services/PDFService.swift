@@ -5,7 +5,46 @@
 
 import AppKit
 import Foundation
+import os.log
 import PDFKit
+
+private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "HarvestQRBill", category: "PDF")
+
+/// Delegate that implements certificate pinning for Harvest domains
+private final class HarvestPDFURLSessionDelegate: NSObject, URLSessionDelegate {
+    private let pinnedDomains = ["harvestapp.com"]
+
+    func urlSession(
+        _ session: URLSession,
+        didReceive challenge: URLAuthenticationChallenge,
+        completionHandler: @escaping (URLSession.AuthChallengeDisposition, URLCredential?) -> Void
+    ) {
+        guard challenge.protectionSpace.authenticationMethod == NSURLAuthenticationMethodServerTrust,
+              let serverTrust = challenge.protectionSpace.serverTrust,
+              pinnedDomains.contains(where: { challenge.protectionSpace.host.hasSuffix($0) })
+        else {
+            completionHandler(.performDefaultHandling, nil)
+            return
+        }
+
+        // Validate the certificate chain
+        let policies = [SecPolicyCreateSSL(true, challenge.protectionSpace.host as CFString)]
+        SecTrustSetPolicies(serverTrust, policies as CFArray)
+
+        var error: CFError?
+        let isValid = SecTrustEvaluateWithError(serverTrust, &error)
+
+        if isValid {
+            let credential = URLCredential(trust: serverTrust)
+            completionHandler(.useCredential, credential)
+        } else {
+            #if DEBUG
+            logger.error("Certificate validation failed for \(challenge.protectionSpace.host)")
+            #endif
+            completionHandler(.cancelAuthenticationChallenge, nil)
+        }
+    }
+}
 
 actor PDFService {
     static let shared = PDFService()
@@ -31,11 +70,12 @@ actor PDFService {
     }
 
     private let session: URLSession
+    private let sessionDelegate = HarvestPDFURLSessionDelegate()
 
     init() {
         let config = URLSessionConfiguration.default
         config.timeoutIntervalForRequest = 60
-        session = URLSession(configuration: config)
+        session = URLSession(configuration: config, delegate: sessionDelegate, delegateQueue: nil)
     }
 
     func downloadPDF(from url: URL) async throws -> PDFDocument {
@@ -71,7 +111,7 @@ actor PDFService {
     ) async throws -> PDFDocument {
         let apiService = HarvestAPIService.shared
 
-        let pdfURL = apiService.buildPDFURL(for: invoice, subdomain: credentials.subdomain)
+        let pdfURL = try apiService.buildPDFURL(for: invoice, subdomain: credentials.subdomain)
         let invoicePDF = try await downloadPDF(from: pdfURL)
 
         // Fetch client details to get address for debtor info
@@ -119,7 +159,9 @@ actor PDFService {
                 return parseAddress(addressString, name: clientName)
             }
         } catch {
-            print("Failed to fetch client details: \(error)")
+            #if DEBUG
+            logger.debug("Failed to fetch client details: \(error.localizedDescription)")
+            #endif
         }
 
         // Fallback: just use the client name without address
