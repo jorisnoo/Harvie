@@ -61,13 +61,12 @@ final class InvoicesViewModel {
             }
         case .quarter:
             return (0..<8).compactMap { quartersAgo in
-                calendar.date(byAdding: .quarter, value: -quartersAgo, to: now)
+                calendar.date(byAdding: .month, value: -quartersAgo * 3, to: now)
                     .flatMap { date in
                         let month = calendar.component(.month, from: date)
+                        let year = calendar.component(.year, from: date)
                         let quarterStartMonth = ((month - 1) / 3) * 3 + 1
-                        var components = calendar.dateComponents([.year], from: date)
-                        components.month = quarterStartMonth
-                        return calendar.date(from: components)
+                        return calendar.date(from: DateComponents(year: year, month: quarterStartMonth, day: 1))
                     }
             }
         case .halfYear:
@@ -75,10 +74,9 @@ final class InvoicesViewModel {
                 calendar.date(byAdding: .month, value: -halvesAgo * 6, to: now)
                     .flatMap { date in
                         let month = calendar.component(.month, from: date)
+                        let year = calendar.component(.year, from: date)
                         let halfStartMonth = month <= 6 ? 1 : 7
-                        var components = calendar.dateComponents([.year], from: date)
-                        components.month = halfStartMonth
-                        return calendar.date(from: components)
+                        return calendar.date(from: DateComponents(year: year, month: halfStartMonth, day: 1))
                     }
             }
         case .year:
