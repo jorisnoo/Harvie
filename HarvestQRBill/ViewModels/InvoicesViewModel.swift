@@ -42,7 +42,6 @@ final class InvoicesViewModel {
     var isRefreshing = false
     var error: String?
     var stateFilter: InvoiceState? = .open
-    // For multiselect: var stateFilters: Set<InvoiceState> = [.open]
     var sortOption: InvoiceSortOption = .issueDate
     var sortDirection: SortDirection = .descending
     var filterPeriod: DateFilterPeriod = .month
@@ -247,14 +246,6 @@ final class InvoicesViewModel {
 
             invoices = fetchedInvoices
 
-            // For multiselect filtering:
-            // let fetchedInvoices = try await apiService.fetchAllInvoices(credentials: credentials, states: stateFilters)
-            // if stateFilters.isEmpty {
-            //     invoices = fetchedInvoices
-            // } else {
-            //     invoices = fetchedInvoices.filter { stateFilters.contains($0.state) }
-            // }
-
             // Update cache
             if let context = modelContext {
                 updateCache(with: fetchedInvoices, context: context)
@@ -304,17 +295,7 @@ final class InvoicesViewModel {
             }
 
             invoices = filtered.map { $0.toInvoice() }
-
-            // For multiselect filtering:
-            // if stateFilters.isEmpty {
-            //     filtered = cached
-            // } else {
-            //     let rawValues = stateFilters.map { $0.rawValue }
-            //     filtered = cached.filter { rawValues.contains($0.stateRaw) }
-            // }
-        } catch {
-            print("Failed to load from cache: \(error)")
-        }
+        } catch { }
     }
 
     private func updateCache(with invoices: [Invoice], context: ModelContext) {
@@ -371,7 +352,7 @@ final class InvoicesViewModel {
 
     func exitSelectionMode() {
         isSelectionMode = false
-        selectedInvoiceIDs.removeAll()
+        deselectAll()
     }
 
     func enterSelectionMode() {

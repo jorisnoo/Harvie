@@ -232,32 +232,6 @@ struct InvoicesListView: View {
                     }
                     .pickerStyle(.menu)
 
-                    // For multiselect:
-                    // Menu {
-                    //     ForEach(InvoiceState.allCases, id: \.self) { state in
-                    //         Button {
-                    //             if viewModel.stateFilters.contains(state) {
-                    //                 viewModel.stateFilters.remove(state)
-                    //             } else {
-                    //                 viewModel.stateFilters.insert(state)
-                    //             }
-                    //         } label: {
-                    //             HStack {
-                    //                 Text(state.displayName)
-                    //                 if viewModel.stateFilters.contains(state) {
-                    //                     Image(systemName: "checkmark")
-                    //                 }
-                    //             }
-                    //         }
-                    //     }
-                    //     Divider()
-                    //     Button("Clear Filter") {
-                    //         viewModel.stateFilters.removeAll()
-                    //     }
-                    // } label: {
-                    //     Label("Filter", systemImage: viewModel.stateFilters.isEmpty ? "line.3.horizontal.decrease.circle" : "line.3.horizontal.decrease.circle.fill")
-                    // }
-
                     Button {
                         Task {
                             await viewModel.refresh()
@@ -302,7 +276,6 @@ struct InvoicesListView: View {
             viewModel.exitSelectionMode()
             Task { await viewModel.saveState() }
         }
-        // For multiselect: .onChange(of: viewModel.stateFilters) { ... }
         .onChange(of: viewModel.selectedInvoiceIDs) {
             // Update single selection for detail view when selection changes
             if viewModel.selectedInvoiceIDs.count == 1,
