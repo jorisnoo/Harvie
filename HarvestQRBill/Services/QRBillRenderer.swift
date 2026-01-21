@@ -193,24 +193,25 @@ struct QRBillRenderer {
             textY -= 5 * mmToPoints
         }
 
-        // Zusätzliche Informationen
-        if let message = data.unstructuredMessage, !message.isEmpty {
-            textY = drawText(context: context, text: Labels.additionalInfo, x: textColumnX, y: textY, fontSize: 8, bold: true, maxWidth: textColumnMaxWidth)
-            textY = drawText(context: context, text: message, x: textColumnX, y: textY, fontSize: 10, bold: false, maxWidth: textColumnMaxWidth)
-            textY -= 5 * mmToPoints
-        }
-
-        // Zahlbar durch
+        // Zahlbar durch (must come before Additional Information per QR-bill spec)
         if let debtor = data.debtorAddress {
             textY = drawText(context: context, text: Labels.payableBy, x: textColumnX, y: textY, fontSize: 8, bold: true, maxWidth: textColumnMaxWidth)
             textY = drawText(context: context, text: debtor.name, x: textColumnX, y: textY, fontSize: 10, bold: false, maxWidth: textColumnMaxWidth, wrap: true)
             if let streetLine = debtor.streetLine {
                 textY = drawText(context: context, text: streetLine, x: textColumnX, y: textY, fontSize: 10, bold: false, maxWidth: textColumnMaxWidth, wrap: true)
             }
-            _ = drawText(context: context, text: debtor.cityLine, x: textColumnX, y: textY, fontSize: 10, bold: false, maxWidth: textColumnMaxWidth, wrap: true)
+            textY = drawText(context: context, text: debtor.cityLine, x: textColumnX, y: textY, fontSize: 10, bold: false, maxWidth: textColumnMaxWidth, wrap: true)
+            textY -= 5 * mmToPoints
         } else {
             textY = drawText(context: context, text: Labels.payableByPlaceholder, x: textColumnX, y: textY, fontSize: 8, bold: true, maxWidth: textColumnMaxWidth)
             drawCornerMarks(context: context, xMM: textColumnX / mmToPoints, yMM: textY / mmToPoints - 25, widthMM: 65, heightMM: 25)
+            textY -= 25 * mmToPoints
+        }
+
+        // Zusätzliche Informationen
+        if let message = data.unstructuredMessage, !message.isEmpty {
+            textY = drawText(context: context, text: Labels.additionalInfo, x: textColumnX, y: textY, fontSize: 8, bold: true, maxWidth: textColumnMaxWidth)
+            _ = drawText(context: context, text: message, x: textColumnX, y: textY, fontSize: 10, bold: false, maxWidth: textColumnMaxWidth)
         }
 
         // Währung und Betrag at bottom left of payment section
@@ -258,6 +259,16 @@ struct QRBillRenderer {
     private func drawSwissCross(context: CGContext, centerX: CGFloat, centerY: CGFloat) {
         let size = swissCrossSizeMM * mmToPoints
         let halfSize = size / 2
+        let borderWidth = 1 * mmToPoints
+
+        // White border (larger square behind the black one)
+        context.setFillColor(CGColor.white)
+        context.fill(CGRect(
+            x: centerX - halfSize - borderWidth,
+            y: centerY - halfSize - borderWidth,
+            width: size + 2 * borderWidth,
+            height: size + 2 * borderWidth
+        ))
 
         // Black background square
         context.setFillColor(CGColor.black)
