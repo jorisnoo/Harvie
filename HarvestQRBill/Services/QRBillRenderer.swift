@@ -98,7 +98,7 @@ struct QRBillRenderer {
 
         // Title
         y = drawText(context: context, text: Labels.receipt, x: leftMargin, y: y, fontSize: 11, bold: true, maxWidth: maxWidth)
-        y -= 8 * mmToPoints
+        y -= 5 * mmToPoints
 
         // Account / Payable to
         y = drawText(context: context, text: Labels.accountPayableTo, x: leftMargin, y: y, fontSize: 6, bold: true, maxWidth: maxWidth)
@@ -110,13 +110,13 @@ struct QRBillRenderer {
         }
         y = drawText(context: context, text: data.creditorAddress.cityLine, x: leftMargin, y: y, fontSize: 8, bold: false, maxWidth: maxWidth)
 
-        y -= 8 * mmToPoints
+        y -= 5 * mmToPoints
 
         // Reference
         if let reference = data.reference, !reference.isEmpty {
             y = drawText(context: context, text: Labels.reference, x: leftMargin, y: y, fontSize: 6, bold: true, maxWidth: maxWidth)
             y = drawText(context: context, text: formatReference(reference), x: leftMargin, y: y, fontSize: 8, bold: false, maxWidth: maxWidth)
-            y -= 8 * mmToPoints
+            y -= 5 * mmToPoints
         }
 
         // Payable by
@@ -133,9 +133,8 @@ struct QRBillRenderer {
             y -= 20 * mmToPoints
         }
 
-        // Currency and Amount - position below debtor address with minimum bottom margin
-        let minBottomY: CGFloat = 7 * mmToPoints
-        let bottomY = max(minBottomY, y - 5 * mmToPoints)
+        // Currency and Amount - fixed position at bottom
+        let bottomY: CGFloat = 10 * mmToPoints
         _ = drawText(context: context, text: Labels.currency, x: leftMargin, y: bottomY + 10, fontSize: 6, bold: true, maxWidth: 20 * mmToPoints)
         _ = drawText(context: context, text: data.currency, x: leftMargin, y: bottomY, fontSize: 8, bold: false, maxWidth: 20 * mmToPoints)
 
@@ -157,6 +156,7 @@ struct QRBillRenderer {
 
         // Title "Zahlteil"
         y = drawText(context: context, text: Labels.paymentPart, x: leftMargin, y: y, fontSize: 11, bold: true, maxWidth: 140 * mmToPoints)
+        let titleY = y
         y -= 5 * mmToPoints
 
         // QR Code (positioned at left of payment section)
@@ -169,10 +169,10 @@ struct QRBillRenderer {
         // Draw Swiss cross in center of QR code
         drawSwissCross(context: context, centerX: qrX + qrSize / 2, centerY: qrY + qrSize / 2)
 
-        // Text column to the right of QR code (aligned with QR code top)
+        // Text column to the right of QR code (aligned with title)
         let textColumnX = leftMargin + qrSize + 5 * mmToPoints
         let textColumnMaxWidth = (pageWidthMM - sectionStartMM - marginMM - qrCodeSizeMM - 10) * mmToPoints
-        var textY = y
+        var textY = titleY
 
         // Konto / Zahlbar an
         textY = drawText(context: context, text: Labels.accountPayableTo, x: textColumnX, y: textY, fontSize: 8, bold: true, maxWidth: textColumnMaxWidth)
@@ -215,7 +215,7 @@ struct QRBillRenderer {
         }
 
         // Währung und Betrag at bottom left of payment section
-        let bottomY: CGFloat = 20 * mmToPoints
+        let bottomY: CGFloat = 10 * mmToPoints
         _ = drawText(context: context, text: Labels.currency, x: leftMargin, y: bottomY + 12, fontSize: 8, bold: true, maxWidth: 50 * mmToPoints)
         _ = drawText(context: context, text: data.currency, x: leftMargin, y: bottomY, fontSize: 10, bold: false, maxWidth: 50 * mmToPoints)
 
@@ -259,7 +259,7 @@ struct QRBillRenderer {
     private func drawSwissCross(context: CGContext, centerX: CGFloat, centerY: CGFloat) {
         let size = swissCrossSizeMM * mmToPoints
         let halfSize = size / 2
-        let borderWidth = 1 * mmToPoints
+        let borderWidth: CGFloat = 1
 
         // White border (larger square behind the black one)
         context.setFillColor(CGColor.white)
