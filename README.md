@@ -110,3 +110,9 @@ MIT License - see [LICENSE](LICENSE) for details.
 
 - [Harvest](https://www.getharvest.com/) for their excellent API
 - Swiss Payment Standards for QR Bill specifications
+
+## Disclaimer
+
+"Harvest" is a trademark of Iridesco, Inc. This project is not affiliated with or endorsed by Harvest.
+
+This project was developed with the assistance of [Claude](https://claude.ai), an AI assistant by Anthropic.
