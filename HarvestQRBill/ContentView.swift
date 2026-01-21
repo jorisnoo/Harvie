@@ -18,11 +18,7 @@ struct ContentView: View {
                 .navigationSplitViewColumnWidth(min: 280, ideal: 320, max: 400)
         } detail: {
             if viewModel.selectedInvoiceIDs.count > 1 {
-                ContentUnavailableView(
-                    "\(viewModel.selectedInvoiceIDs.count) Invoices Selected",
-                    systemImage: "doc.on.doc",
-                    description: Text("Right-click to export selected invoices.")
-                )
+                MultiSelectionView(viewModel: viewModel)
             } else if let invoice = viewModel.selectedInvoice {
                 InvoiceDetailView(invoice: invoice)
             } else {
