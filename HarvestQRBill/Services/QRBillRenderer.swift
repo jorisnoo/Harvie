@@ -48,7 +48,6 @@ struct QRBillRenderer {
     func renderQRBillPage(data: QRBillData, qrImage: CGImage) -> PDFPage? {
         let pageWidth = pageWidthMM * mmToPoints
         let pageHeight = pageHeightMM * mmToPoints
-        let qrBillHeight = qrBillHeightMM * mmToPoints
 
         let pdfData = NSMutableData()
 

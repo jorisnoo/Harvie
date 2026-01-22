@@ -6,7 +6,7 @@
 import Foundation
 import os.log
 
-private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "HarvestQRBill", category: "API")
+nonisolated(unsafe) private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "HarvestQRBill", category: "API")
 
 /// Delegate that implements certificate pinning for Harvest API domains
 private final class HarvestURLSessionDelegate: NSObject, URLSessionDelegate {
@@ -340,7 +340,7 @@ actor HarvestAPIService {
     }
 }
 
-struct Company: Decodable {
+struct Company: @preconcurrency Decodable, Sendable {
     let baseUri: String
     let fullDomain: String
     let name: String

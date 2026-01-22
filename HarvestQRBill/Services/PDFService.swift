@@ -8,7 +8,7 @@ import Foundation
 import os.log
 import PDFKit
 
-private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "HarvestQRBill", category: "PDF")
+nonisolated(unsafe) private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "HarvestQRBill", category: "PDF")
 
 /// Delegate that implements certificate pinning for Harvest domains
 private final class HarvestPDFURLSessionDelegate: NSObject, URLSessionDelegate {
