@@ -5,7 +5,7 @@
 
 import Foundation
 
-struct HarvestCredentials: @preconcurrency Codable, Sendable {
+struct HarvestCredentials: Codable, Sendable {
     var accessToken: String
     var accountId: String
     var subdomain: String
@@ -19,7 +19,7 @@ struct HarvestCredentials: @preconcurrency Codable, Sendable {
     }
 }
 
-struct CreditorInfo: @preconcurrency Codable, Sendable {
+struct CreditorInfo: Codable, Sendable {
     var iban: String
     var name: String
     var streetName: String
@@ -70,7 +70,7 @@ enum DownloadBehavior: String, Codable, CaseIterable, Sendable {
     }
 }
 
-struct AppSettings: @preconcurrency Codable, Sendable {
+struct AppSettings: Codable, Sendable {
     var downloadBehavior: DownloadBehavior
     var defaultDownloadPath: String?
     var downloadBookmarkData: Data?

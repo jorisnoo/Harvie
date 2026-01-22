@@ -5,12 +5,12 @@
 
 import Foundation
 
-struct ClientReference: @preconcurrency Codable, Identifiable, Sendable {
+struct ClientReference: Codable, Identifiable, Sendable {
     let id: Int
     let name: String
 }
 
-struct Client: @preconcurrency Codable, Identifiable, Sendable {
+struct Client: Codable, Identifiable, Sendable {
     let id: Int
     let name: String
     let isActive: Bool
@@ -27,7 +27,7 @@ struct Client: @preconcurrency Codable, Identifiable, Sendable {
     }
 }
 
-struct ClientsResponse: @preconcurrency Codable, Sendable {
+struct ClientsResponse: Codable, Sendable {
     let clients: [Client]
     let perPage: Int
     let totalPages: Int

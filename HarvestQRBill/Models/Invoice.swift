@@ -5,7 +5,7 @@
 
 import Foundation
 
-struct InvoicesResponse: @preconcurrency Codable, Sendable {
+struct InvoicesResponse: Codable, Sendable {
     let invoices: [Invoice]
     let perPage: Int
     let totalPages: Int
@@ -25,7 +25,7 @@ struct InvoicesResponse: @preconcurrency Codable, Sendable {
     }
 }
 
-struct Invoice: @preconcurrency Codable, Identifiable, Hashable, Sendable {
+struct Invoice: Codable, Identifiable, Hashable, Sendable {
     static func == (lhs: Invoice, rhs: Invoice) -> Bool {
         lhs.id == rhs.id
     }
@@ -98,7 +98,7 @@ enum InvoiceState: String, Codable, CaseIterable, Sendable {
     }
 }
 
-struct LineItem: @preconcurrency Codable, Identifiable, Sendable {
+struct LineItem: Codable, Identifiable, Sendable {
     let id: Int
     let kind: String
     let description: String?
@@ -115,7 +115,7 @@ struct LineItem: @preconcurrency Codable, Identifiable, Sendable {
     }
 }
 
-struct ProjectReference: @preconcurrency Codable, Sendable {
+struct ProjectReference: Codable, Sendable {
     let id: Int
     let name: String
     let code: String?
