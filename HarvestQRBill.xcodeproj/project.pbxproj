@@ -12,7 +12,18 @@
 		CFC0713A2F130E6000DBAFCB /* AppIcon.icon in Resources */ = {isa = PBXBuildFile; fileRef = CFC071392F130E6000DBAFCB /* AppIcon.icon */; };
 /* End PBXBuildFile section */
 
+/* Begin PBXContainerItemProxy section */
+		CF076F092F23AAB000DCF8D8 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = CFC06FA62F12C02400DBAFCB /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = CFC06FAD2F12C02400DBAFCB;
+			remoteInfo = HarvestQRBill;
+		};
+/* End PBXContainerItemProxy section */
+
 /* Begin PBXFileReference section */
+		CF076F052F23AAB000DCF8D8 /* HarvestQRBillTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = HarvestQRBillTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		CFC06FAE2F12C02400DBAFCB /* HarvestQRBill.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = HarvestQRBill.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		CFC071392F130E6000DBAFCB /* AppIcon.icon */ = {isa = PBXFileReference; lastKnownFileType = folder.iconcomposer.icon; path = AppIcon.icon; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -28,6 +39,11 @@
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
+		CF076F062F23AAB000DCF8D8 /* HarvestQRBillTests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = HarvestQRBillTests;
+			sourceTree = "<group>";
+		};
 		CFC06FB02F12C02400DBAFCB /* HarvestQRBill */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
@@ -39,6 +55,13 @@
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
+		CF076F022F23AAB000DCF8D8 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		CFC06FAB2F12C02400DBAFCB /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -56,6 +79,7 @@
 			children = (
 				CFC071392F130E6000DBAFCB /* AppIcon.icon */,
 				CFC06FB02F12C02400DBAFCB /* HarvestQRBill */,
+				CF076F062F23AAB000DCF8D8 /* HarvestQRBillTests */,
 				CFC06FAF2F12C02400DBAFCB /* Products */,
 			);
 			sourceTree = "<group>";
@@ -64,6 +88,7 @@
 			isa = PBXGroup;
 			children = (
 				CFC06FAE2F12C02400DBAFCB /* HarvestQRBill.app */,
+				CF076F052F23AAB000DCF8D8 /* HarvestQRBillTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -71,6 +96,29 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		CF076F042F23AAB000DCF8D8 /* HarvestQRBillTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = CF076F0B2F23AAB000DCF8D8 /* Build configuration list for PBXNativeTarget "HarvestQRBillTests" */;
+			buildPhases = (
+				CF076F012F23AAB000DCF8D8 /* Sources */,
+				CF076F022F23AAB000DCF8D8 /* Frameworks */,
+				CF076F032F23AAB000DCF8D8 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				CF076F0A2F23AAB000DCF8D8 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				CF076F062F23AAB000DCF8D8 /* HarvestQRBillTests */,
+			);
+			name = HarvestQRBillTests;
+			packageProductDependencies = (
+			);
+			productName = HarvestQRBillTests;
+			productReference = CF076F052F23AAB000DCF8D8 /* HarvestQRBillTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
 		CFC06FAD2F12C02400DBAFCB /* HarvestQRBill */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = CFC06FB92F12C02500DBAFCB /* Build configuration list for PBXNativeTarget "HarvestQRBill" */;
@@ -105,6 +153,10 @@
 				LastSwiftUpdateCheck = 2620;
 				LastUpgradeCheck = 2620;
 				TargetAttributes = {
+					CF076F042F23AAB000DCF8D8 = {
+						CreatedOnToolsVersion = 26.2;
+						TestTargetID = CFC06FAD2F12C02400DBAFCB;
+					};
 					CFC06FAD2F12C02400DBAFCB = {
 						CreatedOnToolsVersion = 26.2;
 					};
@@ -129,11 +181,19 @@
 			projectRoot = "";
 			targets = (
 				CFC06FAD2F12C02400DBAFCB /* HarvestQRBill */,
+				CF076F042F23AAB000DCF8D8 /* HarvestQRBillTests */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
+		CF076F032F23AAB000DCF8D8 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		CFC06FAC2F12C02400DBAFCB /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -145,6 +205,13 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		CF076F012F23AAB000DCF8D8 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		CFC06FAA2F12C02400DBAFCB /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -154,7 +221,75 @@
 		};
 /* End PBXSourcesBuildPhase section */
 
+/* Begin PBXTargetDependency section */
+		CF076F0A2F23AAB000DCF8D8 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = CFC06FAD2F12C02400DBAFCB /* HarvestQRBill */;
+			targetProxy = CF076F092F23AAB000DCF8D8 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
 /* Begin XCBuildConfiguration section */
+		CF076F0C2F23AAB000DCF8D8 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = T84UJ8Z67C;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = ch.noordermeer.HarvestQRBillTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/HarvestQRBill.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/HarvestQRBill";
+			};
+			name = Debug;
+		};
+		CF076F0D2F23AAB000DCF8D8 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = T84UJ8Z67C;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = ch.noordermeer.HarvestQRBillTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/HarvestQRBill.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/HarvestQRBill";
+			};
+			name = Release;
+		};
+		CF076F0E2F23AAB000DCF8D8 /* Release-AppStore */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = T84UJ8Z67C;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = ch.noordermeer.HarvestQRBillTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/HarvestQRBill.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/HarvestQRBill";
+			};
+			name = "Release-AppStore";
+		};
 		CFC06FB72F12C02500DBAFCB /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -446,6 +581,16 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		CF076F0B2F23AAB000DCF8D8 /* Build configuration list for PBXNativeTarget "HarvestQRBillTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				CF076F0C2F23AAB000DCF8D8 /* Debug */,
+				CF076F0D2F23AAB000DCF8D8 /* Release */,
+				CF076F0E2F23AAB000DCF8D8 /* Release-AppStore */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 		CFC06FA92F12C02400DBAFCB /* Build configuration list for PBXProject "HarvestQRBill" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
