@@ -13,6 +13,9 @@ struct HarvestQRBillApp: App {
     var body: some Scene {
         WindowGroup {
             ContentView()
+                .onAppear {
+                    Analytics.appOpened()
+                }
         }
         .windowStyle(.automatic)
         .defaultSize(width: 900, height: 600)

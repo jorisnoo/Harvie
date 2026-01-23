@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		CF02441E2F1F7D2A004AD884 /* AppUpdater in Frameworks */ = {isa = PBXBuildFile; productRef = CF02441D2F1F7D2A004AD884 /* AppUpdater */; };
+		CFA0B0032F42A000004AD884 /* AviaryInsights in Frameworks */ = {isa = PBXBuildFile; productRef = CFA0B0022F42A000004AD884 /* AviaryInsights */; };
 		CFC0713A2F130E6000DBAFCB /* AppIcon.icon in Resources */ = {isa = PBXBuildFile; fileRef = CFC071392F130E6000DBAFCB /* AppIcon.icon */; };
 /* End PBXBuildFile section */
 
@@ -30,6 +31,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				CF02441E2F1F7D2A004AD884 /* AppUpdater in Frameworks */,
+				CFA0B0032F42A000004AD884 /* AviaryInsights in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -74,6 +76,7 @@
 			name = HarvestQRBill;
 			packageProductDependencies = (
 				CF02441D2F1F7D2A004AD884 /* AppUpdater */,
+				CFA0B0022F42A000004AD884 /* AviaryInsights */,
 			);
 			productName = Harvester;
 			productReference = CFC06FAE2F12C02400DBAFCB /* HarvestQRBill.app */;
@@ -105,6 +108,7 @@
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
 				CF02441C2F1F7D2A004AD884 /* XCRemoteSwiftPackageReference "AppUpdater" */,
+				CFA0B0012F42A000004AD884 /* XCRemoteSwiftPackageReference "AviaryInsights" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = CFC06FAF2F12C02400DBAFCB /* Products */;
@@ -275,6 +279,7 @@
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SELECTED_FILES = readwrite;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = HarvestQRBill/Info.plist;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.business";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -311,6 +316,7 @@
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SELECTED_FILES = readwrite;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = HarvestQRBill/Info.plist;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.business";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -362,6 +368,14 @@
 				minimumVersion = 1.1.1;
 			};
 		};
+		CFA0B0012F42A000004AD884 /* XCRemoteSwiftPackageReference "AviaryInsights" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/brightdigit/AviaryInsights";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.0.0;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -369,6 +383,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = CF02441C2F1F7D2A004AD884 /* XCRemoteSwiftPackageReference "AppUpdater" */;
 			productName = AppUpdater;
+		};
+		CFA0B0022F42A000004AD884 /* AviaryInsights */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = CFA0B0012F42A000004AD884 /* XCRemoteSwiftPackageReference "AviaryInsights" */;
+			productName = AviaryInsights;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

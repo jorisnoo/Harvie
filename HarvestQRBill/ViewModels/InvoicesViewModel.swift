@@ -436,6 +436,7 @@ final class InvoicesViewModel {
             exportProgress = 1.0
             exportProgressMessage = "Export complete!"
             showExportSuccess = true
+            Analytics.pdfExported(count: exportedCount)
         } catch {
             exportError = error.localizedDescription
         }
