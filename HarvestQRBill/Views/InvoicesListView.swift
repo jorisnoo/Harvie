@@ -49,6 +49,19 @@ struct InvoicesListView: View {
             }
             return .handled
         }
+        .background {
+            if viewModel.isSelectionMode {
+                Button("Select All") {
+                    if viewModel.selectedInvoiceIDs.count == viewModel.sortedInvoices.count {
+                        viewModel.deselectAll()
+                    } else {
+                        viewModel.selectAll()
+                    }
+                }
+                .keyboardShortcut("a", modifiers: .command)
+                .hidden()
+            }
+        }
         .contextMenu(forSelectionType: Int.self) { selectedIDs in
             if !selectedIDs.isEmpty {
                 Button {
