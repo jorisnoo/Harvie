@@ -146,6 +146,19 @@ struct InvoicesListView: View {
         } message: {
             Text("Successfully exported \(viewModel.exportedCount) invoice(s).")
         }
+        .alert("Update Error", isPresented: .init(
+            get: { viewModel.updateError != nil },
+            set: { if !$0 { viewModel.updateError = nil } }
+        )) {
+            Button("OK") { viewModel.updateError = nil }
+        } message: {
+            Text(viewModel.updateError ?? "")
+        }
+        .alert("Update Complete", isPresented: $viewModel.showUpdateSuccess) {
+            Button("OK") { }
+        } message: {
+            Text("Successfully updated \(viewModel.updatedCount) invoice(s).")
+        }
         .toolbar {
             if sidebarVisible {
                 ToolbarItemGroup(placement: .automatic) {

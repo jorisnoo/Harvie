@@ -17,9 +17,22 @@
 		CFC071392F130E6000DBAFCB /* AppIcon.icon */ = {isa = PBXFileReference; lastKnownFileType = folder.iconcomposer.icon; path = AppIcon.icon; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		CF076F002F23A65F00DCF8D8 /* Exceptions for "HarvestQRBill" folder in "HarvestQRBill" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = CFC06FAD2F12C02400DBAFCB /* HarvestQRBill */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		CFC06FB02F12C02400DBAFCB /* HarvestQRBill */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				CF076F002F23A65F00DCF8D8 /* Exceptions for "HarvestQRBill" folder in "HarvestQRBill" target */,
+			);
 			path = HarvestQRBill;
 			sourceTree = "<group>";
 		};

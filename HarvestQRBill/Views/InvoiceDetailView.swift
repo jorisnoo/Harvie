@@ -35,6 +35,23 @@ struct InvoiceDetailView: View {
     @State private var isSavingNotes = false
     @State private var notesSaved = false
 
+    // Issue date editing (draft only)
+    @State private var editedIssueDate: Date = Date()
+    @State private var lastSavedIssueDate: Date = Date()
+    @State private var isSavingIssueDate = false
+    @State private var issueDateSaved = false
+
+    // Mark as sent / draft
+    @State private var isMarkingAsSent = false
+    @State private var showMarkAsSentSheet = false
+    @State private var showMarkAsSentSuccess = false
+    @State private var isMarkingAsDraft = false
+    @State private var showMarkAsDraftSheet = false
+    @State private var showMarkAsDraftSuccess = false
+
+    // Change issue date modal
+    @State private var showChangeDateSheet = false
+
     private let pdfService = PDFService.shared
     private let keychainService = KeychainService.shared
     private let apiService = HarvestAPIService.shared
@@ -69,6 +86,9 @@ struct InvoiceDetailView: View {
             lastSavedSubject = invoice.subject ?? ""
             editedNotes = invoice.notes ?? ""
             lastSavedNotes = invoice.notes ?? ""
+            editedIssueDate = invoice.issueDate
+            lastSavedIssueDate = invoice.issueDate
+            issueDateSaved = false
             if let creditorInfo = try? await keychainService.loadCreditorInfo() {
                 creditorName = creditorInfo.name
                 canExportWithQRBill = creditorInfo.isValid
@@ -146,6 +166,24 @@ struct InvoiceDetailView: View {
                     .fontWeight(.bold)
 
                 Spacer()
+
+                if invoice.state == .draft {
+                    Button {
+                        showMarkAsSentSheet = true
+                    } label: {
+                        Label("Mark as Sent", systemImage: "paperplane")
+                    }
+                    .disabled(isMarkingAsSent)
+                }
+
+                if invoice.state == .open {
+                    Button {
+                        showMarkAsDraftSheet = true
+                    } label: {
+                        Label("Mark as Draft", systemImage: "pencil")
+                    }
+                    .disabled(isMarkingAsDraft)
+                }
 
                 StateIndicator(state: invoice.state)
             }
@@ -258,7 +296,26 @@ struct InvoiceDetailView: View {
                 GridRow {
                     Text("Issue Date:")
                         .foregroundStyle(.secondary)
-                    Text(invoice.issueDate.formatted(date: .long, time: .omitted))
+
+                    HStack {
+                        Text(invoice.issueDate.formatted(date: .long, time: .omitted))
+
+                        if invoice.state == .draft {
+                            Button {
+                                editedIssueDate = invoice.issueDate
+                                showChangeDateSheet = true
+                            } label: {
+                                Image(systemName: "calendar")
+                            }
+                            .buttonStyle(.borderless)
+                            .help("Change issue date")
+                        }
+
+                        if issueDateSaved {
+                            Image(systemName: "checkmark.circle.fill")
+                                .foregroundStyle(.green)
+                        }
+                    }
                 }
 
                 GridRow {
@@ -286,6 +343,129 @@ struct InvoiceDetailView: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
         }
+        .sheet(isPresented: $showChangeDateSheet) {
+            ChangeDateSheet(
+                date: $editedIssueDate,
+                isSaving: isSavingIssueDate,
+                onSave: {
+                    Task {
+                        await saveIssueDate()
+                        if issueDateSaved {
+                            showChangeDateSheet = false
+                        }
+                    }
+                },
+                onCancel: {
+                    showChangeDateSheet = false
+                }
+            )
+        }
+        .sheet(isPresented: $showMarkAsSentSheet) {
+            MarkAsSentSheet(
+                invoiceNumber: invoice.number,
+                isMarking: isMarkingAsSent,
+                onConfirm: {
+                    Task {
+                        await markAsSent()
+                        if showMarkAsSentSuccess {
+                            showMarkAsSentSheet = false
+                        }
+                    }
+                },
+                onCancel: {
+                    showMarkAsSentSheet = false
+                }
+            )
+        }
+        .alert("Invoice Sent", isPresented: $showMarkAsSentSuccess) {
+            Button("OK") { }
+        } message: {
+            Text("Invoice \(invoice.number) has been marked as sent.")
+        }
+        .sheet(isPresented: $showMarkAsDraftSheet) {
+            MarkAsDraftSheet(
+                invoiceNumber: invoice.number,
+                isMarking: isMarkingAsDraft,
+                onConfirm: {
+                    Task {
+                        await markAsDraft()
+                        if showMarkAsDraftSuccess {
+                            showMarkAsDraftSheet = false
+                        }
+                    }
+                },
+                onCancel: {
+                    showMarkAsDraftSheet = false
+                }
+            )
+        }
+        .alert("Invoice Reverted", isPresented: $showMarkAsDraftSuccess) {
+            Button("OK") { }
+        } message: {
+            Text("Invoice \(invoice.number) has been reverted to draft.")
+        }
+    }
+
+    private func saveIssueDate() async {
+        isSavingIssueDate = true
+        do {
+            let credentials = try await keychainService.loadHarvestCredentials()
+            try await apiService.updateInvoiceIssueDate(
+                invoiceId: invoice.id,
+                issueDate: editedIssueDate,
+                credentials: credentials
+            )
+            lastSavedIssueDate = editedIssueDate
+            issueDateSaved = true
+        } catch let apiError as HarvestAPIService.APIError {
+            self.error = "Failed to save issue date: \(apiError.localizedDescription)"
+        } catch {
+            #if DEBUG
+            logger.error("Failed to save issue date: \(error.localizedDescription)")
+            #endif
+            self.error = "Failed to save issue date. Please try again."
+        }
+        isSavingIssueDate = false
+    }
+
+    private func markAsSent() async {
+        isMarkingAsSent = true
+        do {
+            let credentials = try await keychainService.loadHarvestCredentials()
+            try await apiService.markInvoiceAsSent(
+                invoiceId: invoice.id,
+                credentials: credentials
+            )
+            showMarkAsSentSuccess = true
+        } catch let apiError as HarvestAPIService.APIError {
+            self.error = "Failed to mark as sent: \(apiError.localizedDescription)"
+        } catch {
+            #if DEBUG
+            logger.error("Failed to mark as sent: \(error.localizedDescription)")
+            #endif
+            self.error = "Failed to mark as sent. Please try again."
+        }
+        isMarkingAsSent = false
+    }
+
+    private func markAsDraft() async {
+        isMarkingAsDraft = true
+        do {
+            let credentials = try await keychainService.loadHarvestCredentials()
+            try await apiService.markInvoiceAsDraft(
+                invoiceId: invoice.id,
+                credentials: credentials
+            )
+            showMarkAsDraftSuccess = true
+        } catch let apiError as HarvestAPIService.APIError {
+            self.error = "Failed to mark as draft: \(apiError.localizedDescription)"
+        } catch {
+            #if DEBUG
+            logger.error("Failed to mark as draft: \(error.localizedDescription)")
+            #endif
+            self.error = "Failed to mark as draft. Please try again."
+        }
+        isMarkingAsDraft = false
     }
 
     private func lineItemsSection(_ items: [LineItem]) -> some View {
@@ -617,6 +797,127 @@ struct InvoiceDetailView: View {
         }
     }
 
+}
+
+private struct ChangeDateSheet: View {
+    @Binding var date: Date
+    let isSaving: Bool
+    let onSave: () -> Void
+    let onCancel: () -> Void
+
+    private var isToday: Bool {
+        Calendar.current.isDateInToday(date)
+    }
+
+    var body: some View {
+        VStack(spacing: 20) {
+            HStack {
+                Text("Change Issue Date")
+                    .font(.headline)
+
+                Spacer()
+
+                Button("Today") {
+                    date = Date()
+                }
+                .buttonStyle(.bordered)
+                .controlSize(.small)
+                .disabled(isToday)
+            }
+
+            DatePicker(
+                "Issue Date",
+                selection: $date,
+                displayedComponents: .date
+            )
+            .datePickerStyle(.graphical)
+            .labelsHidden()
+
+            HStack {
+                Button("Cancel", role: .cancel) {
+                    onCancel()
+                }
+                .keyboardShortcut(.escape)
+
+                Button("Save") {
+                    onSave()
+                }
+                .keyboardShortcut(.return)
+                .buttonStyle(.borderedProminent)
+                .disabled(isSaving)
+            }
+        }
+        .padding()
+        .frame(width: 300)
+    }
+}
+
+private struct MarkAsSentSheet: View {
+    let invoiceNumber: String
+    let isMarking: Bool
+    let onConfirm: () -> Void
+    let onCancel: () -> Void
+
+    var body: some View {
+        VStack(spacing: 20) {
+            Text("Mark as Sent")
+                .font(.headline)
+
+            Text("Mark invoice \(invoiceNumber) as sent?")
+
+            Text("The sent date will be set to now.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+
+            HStack {
+                Button("Cancel", role: .cancel) {
+                    onCancel()
+                }
+                .keyboardShortcut(.escape)
+
+                Button("Mark as Sent") {
+                    onConfirm()
+                }
+                .keyboardShortcut(.return)
+                .buttonStyle(.borderedProminent)
+                .disabled(isMarking)
+            }
+        }
+        .padding()
+        .frame(width: 280)
+    }
+}
+
+private struct MarkAsDraftSheet: View {
+    let invoiceNumber: String
+    let isMarking: Bool
+    let onConfirm: () -> Void
+    let onCancel: () -> Void
+
+    var body: some View {
+        VStack(spacing: 20) {
+            Text("Mark as Draft")
+                .font(.headline)
+
+            Text("Revert invoice \(invoiceNumber) to draft?")
+
+            HStack {
+                Button("Cancel", role: .cancel) {
+                    onCancel()
+                }
+                .keyboardShortcut(.escape)
+
+                Button("Mark as Draft") {
+                    onConfirm()
+                }
+                .keyboardShortcut(.return)
+                .buttonStyle(.borderedProminent)
+                .disabled(isMarking)
+            }
+        }
+        .padding()
+        .frame(width: 280)
+    }
 }
 
 #Preview {

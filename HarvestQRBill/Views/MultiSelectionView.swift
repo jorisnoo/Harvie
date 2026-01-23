@@ -8,6 +8,11 @@ import SwiftUI
 struct MultiSelectionView: View {
     @Bindable var viewModel: InvoicesViewModel
 
+    @State private var batchIssueDate = Date()
+    @State private var showChangeDateSheet = false
+    @State private var showMarkAsSentSheet = false
+    @State private var showMarkAsDraftSheet = false
+
     private var selectedInvoices: [Invoice] {
         viewModel.selectedInvoices
     }
@@ -29,12 +34,107 @@ struct MultiSelectionView: View {
             headerSection
             summaryStats
             actionButtons
+
+            if viewModel.allSelectedAreDrafts {
+                draftActionsSection
+            }
+
+            if viewModel.allSelectedAreOpen {
+                openActionsSection
+            }
+
             Divider()
                 .padding(.horizontal, 40)
             invoicesList
         }
         .padding(.vertical, 32)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .sheet(isPresented: $showChangeDateSheet) {
+            BatchChangeDateSheet(
+                count: selectedInvoices.count,
+                date: $batchIssueDate,
+                isUpdating: viewModel.isUpdating,
+                onSave: {
+                    Task {
+                        await viewModel.updateIssueDateForSelected(to: batchIssueDate)
+                        if viewModel.showUpdateSuccess {
+                            showChangeDateSheet = false
+                        }
+                    }
+                },
+                onCancel: {
+                    showChangeDateSheet = false
+                }
+            )
+        }
+        .sheet(isPresented: $showMarkAsSentSheet) {
+            BatchMarkAsSentSheet(
+                count: selectedInvoices.count,
+                isUpdating: viewModel.isUpdating,
+                onConfirm: {
+                    Task {
+                        await viewModel.markSelectedAsSent()
+                        if viewModel.showUpdateSuccess {
+                            showMarkAsSentSheet = false
+                        }
+                    }
+                },
+                onCancel: {
+                    showMarkAsSentSheet = false
+                }
+            )
+        }
+        .sheet(isPresented: $showMarkAsDraftSheet) {
+            BatchMarkAsDraftSheet(
+                count: selectedInvoices.count,
+                isUpdating: viewModel.isUpdating,
+                onConfirm: {
+                    Task {
+                        await viewModel.markSelectedAsDraft()
+                        if viewModel.showUpdateSuccess {
+                            showMarkAsDraftSheet = false
+                        }
+                    }
+                },
+                onCancel: {
+                    showMarkAsDraftSheet = false
+                }
+            )
+        }
+    }
+
+    private var draftActionsSection: some View {
+        HStack(spacing: 12) {
+            Button {
+                batchIssueDate = Date()
+                showChangeDateSheet = true
+            } label: {
+                Label("Change Date", systemImage: "calendar")
+                    .frame(maxWidth: 150)
+            }
+            .buttonStyle(.bordered)
+            .disabled(viewModel.isUpdating)
+
+            Button {
+                showMarkAsSentSheet = true
+            } label: {
+                Label("Mark as Sent", systemImage: "paperplane")
+                    .frame(maxWidth: 150)
+            }
+            .buttonStyle(.bordered)
+            .disabled(viewModel.isUpdating)
+        }
+    }
+
+    private var openActionsSection: some View {
+        Button {
+            showMarkAsDraftSheet = true
+        } label: {
+            Label("Mark as Draft", systemImage: "pencil")
+                .frame(maxWidth: 150)
+        }
+        .buttonStyle(.bordered)
+        .disabled(viewModel.isUpdating)
     }
 
     private var headerSection: some View {
@@ -120,5 +220,131 @@ struct MultiSelectionView: View {
             }
             .padding(.horizontal, 40)
         }
+    }
+}
+
+private struct BatchChangeDateSheet: View {
+    let count: Int
+    @Binding var date: Date
+    let isUpdating: Bool
+    let onSave: () -> Void
+    let onCancel: () -> Void
+
+    private var isToday: Bool {
+        Calendar.current.isDateInToday(date)
+    }
+
+    var body: some View {
+        VStack(spacing: 20) {
+            HStack {
+                Text("Change Issue Date")
+                    .font(.headline)
+
+                Spacer()
+
+                Button("Today") {
+                    date = Date()
+                }
+                .buttonStyle(.bordered)
+                .controlSize(.small)
+                .disabled(isToday)
+            }
+
+            Text("Set issue date for \(count) invoice(s)")
+                .foregroundStyle(.secondary)
+
+            DatePicker(
+                "Issue Date",
+                selection: $date,
+                displayedComponents: .date
+            )
+            .datePickerStyle(.graphical)
+            .labelsHidden()
+
+            HStack {
+                Button("Cancel", role: .cancel) {
+                    onCancel()
+                }
+                .keyboardShortcut(.escape)
+
+                Button("Apply") {
+                    onSave()
+                }
+                .keyboardShortcut(.return)
+                .buttonStyle(.borderedProminent)
+                .disabled(isUpdating)
+            }
+        }
+        .padding()
+        .frame(width: 300)
+    }
+}
+
+private struct BatchMarkAsSentSheet: View {
+    let count: Int
+    let isUpdating: Bool
+    let onConfirm: () -> Void
+    let onCancel: () -> Void
+
+    var body: some View {
+        VStack(spacing: 20) {
+            Text("Mark as Sent")
+                .font(.headline)
+
+            Text("Mark \(count) invoice(s) as sent?")
+                .foregroundStyle(.secondary)
+
+            Text("The sent date will be set to the current time.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+
+            HStack {
+                Button("Cancel", role: .cancel) {
+                    onCancel()
+                }
+                .keyboardShortcut(.escape)
+
+                Button("Mark as Sent") {
+                    onConfirm()
+                }
+                .keyboardShortcut(.return)
+                .buttonStyle(.borderedProminent)
+                .disabled(isUpdating)
+            }
+        }
+        .padding()
+        .frame(width: 300)
+    }
+}
+
+private struct BatchMarkAsDraftSheet: View {
+    let count: Int
+    let isUpdating: Bool
+    let onConfirm: () -> Void
+    let onCancel: () -> Void
+
+    var body: some View {
+        VStack(spacing: 20) {
+            Text("Mark as Draft")
+                .font(.headline)
+
+            Text("Revert \(count) invoice(s) to draft?")
+
+            HStack {
+                Button("Cancel", role: .cancel) {
+                    onCancel()
+                }
+                .keyboardShortcut(.escape)
+
+                Button("Mark as Draft") {
+                    onConfirm()
+                }
+                .keyboardShortcut(.return)
+                .buttonStyle(.borderedProminent)
+                .disabled(isUpdating)
+            }
+        }
+        .padding()
+        .frame(width: 280)
     }
 }

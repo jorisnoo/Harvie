@@ -12,13 +12,7 @@ import PromiseKit
 class AppDelegate: NSObject, NSApplicationDelegate {
     #if !APP_STORE
     let updater = AppUpdater(owner: "jorisnoo", repo: "HarvestQRBill")
-    #endif
-
-    func applicationDidFinishLaunching(_ notification: Notification) {
-        // AppUpdater checks for updates daily automatically
-    }
-
-    #if !APP_STORE
+    
     @objc func checkForUpdates() {
         updater.check().catch(policy: .allErrors) { error in
             if error.isCancelled {

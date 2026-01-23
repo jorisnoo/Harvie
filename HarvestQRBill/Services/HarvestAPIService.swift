@@ -288,6 +288,62 @@ actor HarvestAPIService {
         try await updateInvoice(id: invoiceId, fields: ["subject": subject], credentials: credentials)
     }
 
+    func updateInvoiceIssueDate(
+        invoiceId: Int,
+        issueDate: Date,
+        credentials: HarvestCredentials
+    ) async throws {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd"
+        formatter.timeZone = TimeZone(identifier: "UTC")
+        let dateString = formatter.string(from: issueDate)
+
+        try await updateInvoice(id: invoiceId, fields: ["issue_date": dateString], credentials: credentials)
+    }
+
+    func markInvoiceAsSent(
+        invoiceId: Int,
+        credentials: HarvestCredentials
+    ) async throws {
+        try await sendInvoiceEvent(invoiceId: invoiceId, eventType: "send", credentials: credentials)
+    }
+
+    func markInvoiceAsDraft(
+        invoiceId: Int,
+        credentials: HarvestCredentials
+    ) async throws {
+        try await sendInvoiceEvent(invoiceId: invoiceId, eventType: "draft", credentials: credentials)
+    }
+
+    private func sendInvoiceEvent(
+        invoiceId: Int,
+        eventType: String,
+        credentials: HarvestCredentials
+    ) async throws {
+        var request = try makeRequest(path: "invoices/\(invoiceId)/messages", credentials: credentials)
+        request.httpMethod = "POST"
+
+        let body: [String: String] = ["event_type": eventType]
+        request.httpBody = try JSONEncoder().encode(body)
+
+        let (_, response) = try await session.data(for: request)
+
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw APIError.networkError(URLError(.badServerResponse))
+        }
+
+        switch httpResponse.statusCode {
+        case 200...299:
+            return
+        case 401:
+            throw APIError.unauthorized
+        case 404:
+            throw APIError.notFound
+        default:
+            throw APIError.serverError(httpResponse.statusCode)
+        }
+    }
+
     private func updateInvoice(
         id: Int,
         fields: [String: String],

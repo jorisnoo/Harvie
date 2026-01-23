@@ -112,6 +112,24 @@ final class InvoicesViewModel {
     var showExportSuccess = false
     var exportedCount = 0
 
+    // Update state (for issue date changes and mark as sent)
+    var isUpdating = false
+    var updateError: String?
+    var showUpdateSuccess = false
+    var updatedCount = 0
+
+    var allSelectedAreDrafts: Bool {
+        guard !selectedInvoiceIDs.isEmpty else { return false }
+
+        return selectedInvoices.allSatisfy { $0.state == .draft }
+    }
+
+    var allSelectedAreOpen: Bool {
+        guard !selectedInvoiceIDs.isEmpty else { return false }
+
+        return selectedInvoices.allSatisfy { $0.state == .open }
+    }
+
     var modelContext: ModelContext?
 
     private let apiService = HarvestAPIService.shared
@@ -357,6 +375,119 @@ final class InvoicesViewModel {
 
     func enterSelectionMode() {
         isSelectionMode = true
+    }
+
+    func updateIssueDate(for invoiceId: Int, to date: Date) async throws {
+        let credentials = try await keychainService.loadHarvestCredentials()
+        try await apiService.updateInvoiceIssueDate(
+            invoiceId: invoiceId,
+            issueDate: date,
+            credentials: credentials
+        )
+    }
+
+    func updateIssueDateForSelected(to date: Date) async {
+        let invoicesToUpdate = selectedInvoices.filter { $0.state == .draft }
+        guard !invoicesToUpdate.isEmpty else { return }
+
+        isUpdating = true
+        updateError = nil
+        updatedCount = 0
+
+        do {
+            let credentials = try await keychainService.loadHarvestCredentials()
+
+            for invoice in invoicesToUpdate {
+                try await apiService.updateInvoiceIssueDate(
+                    invoiceId: invoice.id,
+                    issueDate: date,
+                    credentials: credentials
+                )
+                updatedCount += 1
+            }
+
+            showUpdateSuccess = true
+
+            await loadInvoices()
+        } catch {
+            updateError = error.localizedDescription
+        }
+
+        isUpdating = false
+    }
+
+    func markAsSent(invoiceId: Int) async throws {
+        let credentials = try await keychainService.loadHarvestCredentials()
+        try await apiService.markInvoiceAsSent(
+            invoiceId: invoiceId,
+            credentials: credentials
+        )
+    }
+
+    func markSelectedAsSent() async {
+        let invoicesToUpdate = selectedInvoices.filter { $0.state == .draft }
+        guard !invoicesToUpdate.isEmpty else { return }
+
+        isUpdating = true
+        updateError = nil
+        updatedCount = 0
+
+        do {
+            let credentials = try await keychainService.loadHarvestCredentials()
+
+            for invoice in invoicesToUpdate {
+                try await apiService.markInvoiceAsSent(
+                    invoiceId: invoice.id,
+                    credentials: credentials
+                )
+                updatedCount += 1
+            }
+
+            showUpdateSuccess = true
+
+            await loadInvoices()
+        } catch {
+            updateError = error.localizedDescription
+        }
+
+        isUpdating = false
+    }
+
+    func markAsDraft(invoiceId: Int) async throws {
+        let credentials = try await keychainService.loadHarvestCredentials()
+        try await apiService.markInvoiceAsDraft(
+            invoiceId: invoiceId,
+            credentials: credentials
+        )
+    }
+
+    func markSelectedAsDraft() async {
+        let invoicesToUpdate = selectedInvoices.filter { $0.state == .open }
+        guard !invoicesToUpdate.isEmpty else { return }
+
+        isUpdating = true
+        updateError = nil
+        updatedCount = 0
+
+        do {
+            let credentials = try await keychainService.loadHarvestCredentials()
+
+            for invoice in invoicesToUpdate {
+                try await apiService.markInvoiceAsDraft(
+                    invoiceId: invoice.id,
+                    credentials: credentials
+                )
+                updatedCount += 1
+            }
+
+            showUpdateSuccess = true
+
+            await loadInvoices()
+        } catch {
+            updateError = error.localizedDescription
+        }
+
+        isUpdating = false
     }
 
     func exportSelectedInvoices(withQRBill: Bool) async {
