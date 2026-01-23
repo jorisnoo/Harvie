@@ -49,7 +49,7 @@ struct ContentView: View {
         .task {
             viewModel.modelContext = modelContext
             await viewModel.loadSavedState()
-            await viewModel.loadInvoices()
+            viewModel.loadInvoices()
         }
     }
 }

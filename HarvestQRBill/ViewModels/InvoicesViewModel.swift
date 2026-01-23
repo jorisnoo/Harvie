@@ -48,6 +48,8 @@ final class InvoicesViewModel {
     var selectedPeriod: Date?
     var hasValidCredentials = false
 
+    private var loadInvoicesTask: Task<Void, Never>?
+
     var availablePeriods: [Date] {
         let calendar = Calendar.current
         let now = Date()
@@ -222,8 +224,18 @@ final class InvoicesViewModel {
         }
     }
 
-    func loadInvoices() async {
+    func loadInvoices() {
+        loadInvoicesTask?.cancel()
+        loadInvoicesTask = Task {
+            await performLoadInvoices()
+        }
+    }
+
+    private func performLoadInvoices() async {
         error = nil
+
+        // Capture current state filter before any async work
+        let currentStateFilter = stateFilter
 
         // Check for demo mode first
         let appSettings = (try? await keychainService.loadAppSettings()) ?? .default
@@ -245,6 +257,8 @@ final class InvoicesViewModel {
         }
 
         do {
+            try Task.checkCancellation()
+
             let credentials = try await keychainService.loadHarvestCredentials()
 
             guard credentials.isValid else {
@@ -257,10 +271,19 @@ final class InvoicesViewModel {
 
             hasValidCredentials = true
 
+            try Task.checkCancellation()
+
             let fetchedInvoices = try await apiService.fetchAllInvoices(
                 credentials: credentials,
-                state: stateFilter
+                state: currentStateFilter
             )
+
+            try Task.checkCancellation()
+
+            // Verify state filter hasn't changed during the request
+            guard stateFilter == currentStateFilter else {
+                return
+            }
 
             invoices = fetchedInvoices
 
@@ -268,6 +291,8 @@ final class InvoicesViewModel {
             if let context = modelContext {
                 updateCache(with: fetchedInvoices, context: context)
             }
+        } catch is CancellationError {
+            return
         } catch KeychainService.KeychainError.notFound {
             hasValidCredentials = false
             error = "Please configure your Harvest API credentials in Settings."
@@ -336,8 +361,8 @@ final class InvoicesViewModel {
         try? context.save()
     }
 
-    func refresh() async {
-        await loadInvoices()
+    func refresh() {
+        loadInvoices()
     }
 
     func getCredentials() async throws -> HarvestCredentials {
@@ -408,7 +433,7 @@ final class InvoicesViewModel {
 
             showUpdateSuccess = true
 
-            await loadInvoices()
+            loadInvoices()
         } catch {
             updateError = error.localizedDescription
         }
@@ -445,7 +470,7 @@ final class InvoicesViewModel {
 
             showUpdateSuccess = true
 
-            await loadInvoices()
+            loadInvoices()
         } catch {
             updateError = error.localizedDescription
         }
@@ -482,7 +507,7 @@ final class InvoicesViewModel {
 
             showUpdateSuccess = true
 
-            await loadInvoices()
+            loadInvoices()
         } catch {
             updateError = error.localizedDescription
         }

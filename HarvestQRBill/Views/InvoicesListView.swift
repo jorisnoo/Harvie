@@ -99,9 +99,7 @@ struct InvoicesListView: View {
                     Text(error)
                 } actions: {
                     Button("Retry") {
-                        Task {
-                            await viewModel.loadInvoices()
-                        }
+                        viewModel.loadInvoices()
                     }
                 }
             } else if viewModel.invoices.isEmpty {
@@ -111,9 +109,7 @@ struct InvoicesListView: View {
                     Text("No \(viewModel.stateFilter?.rawValue ?? "") invoices found.")
                 } actions: {
                     Button("Refresh") {
-                        Task {
-                            await viewModel.refresh()
-                        }
+                        viewModel.refresh()
                     }
                 }
             } else {
@@ -259,9 +255,7 @@ struct InvoicesListView: View {
                     .pickerStyle(.menu)
 
                     Button {
-                        Task {
-                            await viewModel.refresh()
-                        }
+                        viewModel.refresh()
                     } label: {
                         Label("Refresh", systemImage: "arrow.clockwise")
                     }
@@ -283,8 +277,8 @@ struct InvoicesListView: View {
                 viewModel.sortOption = .issueDate
             }
 
+            viewModel.loadInvoices()
             Task {
-                await viewModel.loadInvoices()
                 await viewModel.saveState()
             }
         }
