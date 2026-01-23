@@ -17,6 +17,14 @@ enum Analytics {
         return URL(string: urlString)!
     }
 
+    private static var distribution: String {
+        #if APP_STORE
+        "app_store"
+        #else
+        "direct"
+        #endif
+    }
+
     private static let plausible: Plausible? = {
         guard isEnabled else { return nil }
         return Plausible(
@@ -27,10 +35,12 @@ enum Analytics {
 
     static func track(_ name: String, path: String = "/", props: [String: String]? = nil) {
         guard let plausible else { return }
+        var allProps = props ?? [:]
+        allProps["distribution"] = distribution
         let event = Event(
             url: "app://harvestqrbill\(path)",
             name: name,
-            props: props
+            props: allProps
         )
         plausible.postEvent(event)
     }
