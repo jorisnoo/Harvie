@@ -67,4 +67,8 @@ enum Analytics {
     static func pdfExported(count: Int = 1) {
         track("PDF Export", props: ["count": "\(count)"])
     }
+
+    static func harvestConnected() {
+        track("Harvest Connected", path: "/settings")
+    }
 }

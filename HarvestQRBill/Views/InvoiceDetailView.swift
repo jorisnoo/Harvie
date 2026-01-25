@@ -68,7 +68,6 @@ struct InvoiceDetailView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
                 headerSection
-                clientSection
                 amountsSection
 
                 if let lineItems = invoice.lineItems, !lineItems.isEmpty {
@@ -161,10 +160,7 @@ struct InvoiceDetailView: View {
 
     private var headerSection: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text(invoice.number)
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-
+            // Row 1: Subject + State + Actions
             HStack {
                 TextField("Invoice title", text: $editedSubject)
                     .font(.title2)
@@ -200,9 +196,7 @@ struct InvoiceDetailView: View {
                 Spacer()
 
                 StateIndicator(state: invoice.state)
-            }
 
-            HStack(spacing: 12) {
                 if invoice.state == .draft {
                     Button {
                         showMarkAsSentSheet = true
@@ -212,6 +206,15 @@ struct InvoiceDetailView: View {
                     .buttonStyle(.bordered)
                     .controlSize(.small)
                     .disabled(isMarkingAsSent)
+
+                    Button {
+                        editedIssueDate = invoice.issueDate
+                        showChangeDateSheet = true
+                    } label: {
+                        Label("Change Date", systemImage: "calendar")
+                    }
+                    .buttonStyle(.bordered)
+                    .controlSize(.small)
                 }
 
                 if invoice.state == .open {
@@ -225,102 +228,15 @@ struct InvoiceDetailView: View {
                     .disabled(isMarkingAsDraft)
                 }
             }
-        }
-    }
 
-    private func saveSubject() async {
-        isSavingSubject = true
-        do {
-            let credentials = try await keychainService.loadHarvestCredentials()
-            try await apiService.updateInvoiceSubject(
-                invoiceId: invoice.id,
-                subject: editedSubject,
-                credentials: credentials
-            )
-            lastSavedSubject = editedSubject
-            subjectSaved = true
-        } catch let apiError as HarvestAPIService.APIError {
-            self.error = "Failed to save title: \(apiError.localizedDescription)"
-        } catch {
-            #if DEBUG
-            logger.error("Failed to save subject: \(error.localizedDescription)")
-            #endif
-            self.error = "Failed to save title. Please try again."
-        }
-        isSavingSubject = false
-    }
-
-    private var clientSection: some View {
-        Text(invoice.client.name)
-            .font(.title3)
-            .foregroundStyle(.secondary)
-    }
-
-    private var amountsSection: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text(formattedDueAmount)
-                .font(.title)
-                .fontWeight(.bold)
-
-            if invoice.dueAmount != invoice.amount {
-                Text("of \(formattedAmount) total")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-            }
-
-            Text("Due \(invoice.dueDate.formatted(date: .long, time: .omitted))")
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-
-            if let tax = invoice.tax, let taxAmount = invoice.taxAmount {
-                Text("Incl. \(tax.formatted())% tax (\(CurrencyFormatter.format(taxAmount, currency: invoice.currency)))")
-                    .font(.caption)
-                    .foregroundStyle(.tertiary)
-            }
-
-            if let discount = invoice.discount, let discountAmount = invoice.discountAmount {
-                Text("Discount \(discount.formatted())%: -\(CurrencyFormatter.format(discountAmount, currency: invoice.currency))")
-                    .font(.caption)
-//                    .foregroundStyle(.green)
-            }
-        }
-    }
-
-    private var datesSection: some View {
-        VStack(alignment: .leading, spacing: 4) {
+            // Row 2: Metadata
             HStack(spacing: 4) {
-                Text("Issued \(invoice.issueDate.formatted(date: .long, time: .omitted))")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-
-                if invoice.state == .draft {
-                    Button {
-                        editedIssueDate = invoice.issueDate
-                        showChangeDateSheet = true
-                    } label: {
-                        Image(systemName: "calendar")
-                    }
-                    .buttonStyle(.borderless)
-                    .help("Change issue date")
-                }
-
-                if issueDateSaved {
-                    Image(systemName: "checkmark.circle.fill")
-                        .foregroundStyle(.green)
-                }
+                Text(invoice.number)
+                Text("·")
+                Text(invoice.client.name)
             }
-
-            if let sentAt = invoice.sentAt {
-                Text("Sent \(sentAt.formatted(date: .long, time: .shortened))")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-            }
-
-            if let paidAt = invoice.paidAt {
-                Text("Paid \(paidAt.formatted(date: .long, time: .shortened))")
-                    .font(.subheadline)
-                    .foregroundStyle(.green)
-            }
+            .font(.subheadline)
+            .foregroundStyle(.secondary)
         }
         .sheet(isPresented: $showChangeDateSheet) {
             ChangeDateSheet(
@@ -382,6 +298,78 @@ struct InvoiceDetailView: View {
             Button("OK") { }
         } message: {
             Text("Invoice \(invoice.number) has been reverted to draft.")
+        }
+    }
+
+    private func saveSubject() async {
+        isSavingSubject = true
+        do {
+            let credentials = try await keychainService.loadHarvestCredentials()
+            try await apiService.updateInvoiceSubject(
+                invoiceId: invoice.id,
+                subject: editedSubject,
+                credentials: credentials
+            )
+            lastSavedSubject = editedSubject
+            subjectSaved = true
+        } catch let apiError as HarvestAPIService.APIError {
+            self.error = "Failed to save title: \(apiError.localizedDescription)"
+        } catch {
+            #if DEBUG
+            logger.error("Failed to save subject: \(error.localizedDescription)")
+            #endif
+            self.error = "Failed to save title. Please try again."
+        }
+        isSavingSubject = false
+    }
+
+    private var amountsSection: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(formattedDueAmount)
+                .font(.title)
+                .fontWeight(.bold)
+
+            if invoice.dueAmount != invoice.amount {
+                Text("of \(formattedAmount) total")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+            }
+
+            Text("Issued \(invoice.issueDate.formatted(date: .long, time: .omitted))")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+
+            Text("Due \(invoice.dueDate.formatted(date: .long, time: .omitted))")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+
+            if let tax = invoice.tax, let taxAmount = invoice.taxAmount {
+                Text("Incl. \(tax.formatted())% tax (\(CurrencyFormatter.format(taxAmount, currency: invoice.currency)))")
+                    .font(.caption)
+                    .foregroundStyle(.tertiary)
+            }
+
+            if let discount = invoice.discount, let discountAmount = invoice.discountAmount {
+                Text("Discount \(discount.formatted())%: -\(CurrencyFormatter.format(discountAmount, currency: invoice.currency))")
+                    .font(.caption)
+//                    .foregroundStyle(.green)
+            }
+        }
+    }
+
+    private var datesSection: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            if let sentAt = invoice.sentAt {
+                Text("Sent \(sentAt.formatted(date: .long, time: .shortened))")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+            }
+
+            if let paidAt = invoice.paidAt {
+                Text("Paid \(paidAt.formatted(date: .long, time: .shortened))")
+                    .font(.subheadline)
+                    .foregroundStyle(.green)
+            }
         }
     }
 

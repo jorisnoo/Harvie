@@ -74,6 +74,7 @@ final class SettingsViewModel {
                 let company = try await apiService.fetchCompany(credentials: harvestCredentials)
                 harvestCredentials.subdomain = company.subdomain
                 connectionTestResult = .success
+                Analytics.harvestConnected()
             } else {
                 connectionTestResult = .failure("Connection failed.")
             }
