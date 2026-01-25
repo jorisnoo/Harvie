@@ -17,50 +17,18 @@ struct InvoicesListView: View {
         return "Sort & Filter"
     }
 
-    private var listSelection: Binding<Set<Int>> {
-        viewModel.isSelectionMode
-            ? .constant(Set<Int>())
-            : $viewModel.selectedInvoiceIDs
-    }
-
     @ViewBuilder
     private var invoicesList: some View {
-        List(viewModel.sortedInvoices, selection: listSelection) { invoice in
+        List(viewModel.sortedInvoices, selection: $viewModel.selectedInvoiceIDs) { invoice in
             InvoiceRowView(
                 invoice: invoice,
-                sortOption: viewModel.sortOption,
-                isSelectionMode: viewModel.isSelectionMode,
-                isSelected: viewModel.selectedInvoiceIDs.contains(invoice.id)
+                sortOption: viewModel.sortOption
             )
             .tag(invoice.id)
-            .if(viewModel.isSelectionMode) { view in
-                view
-                    .contentShape(Rectangle())
-                    .onTapGesture {
-                        viewModel.toggleSelection(for: invoice.id)
-                    }
-            }
         }
         .onKeyPress(.escape) {
-            if viewModel.isSelectionMode {
-                viewModel.exitSelectionMode()
-            } else {
-                viewModel.selectedInvoiceIDs.removeAll()
-            }
+            viewModel.selectedInvoiceIDs.removeAll()
             return .handled
-        }
-        .background {
-            if viewModel.isSelectionMode {
-                Button("Select All") {
-                    if viewModel.selectedInvoiceIDs.count == viewModel.sortedInvoices.count {
-                        viewModel.deselectAll()
-                    } else {
-                        viewModel.selectAll()
-                    }
-                }
-                .keyboardShortcut("a", modifiers: .command)
-                .hidden()
-            }
         }
         .contextMenu(forSelectionType: Int.self) { selectedIDs in
             if !selectedIDs.isEmpty {
@@ -135,11 +103,6 @@ struct InvoicesListView: View {
                 .padding(.horizontal)
                 .padding(.vertical, 8)
                 .background(.orange.opacity(0.1))
-            }
-        }
-        .safeAreaInset(edge: .bottom) {
-            if !viewModel.invoices.isEmpty {
-                SelectionToolbar(viewModel: viewModel)
             }
         }
         .alert("Export Error", isPresented: .init(
@@ -271,8 +234,6 @@ struct InvoicesListView: View {
             }
         }
         .onChange(of: viewModel.stateFilter) {
-            viewModel.exitSelectionMode()
-
             if !viewModel.validSortOptions.contains(viewModel.sortOption) {
                 viewModel.sortOption = .issueDate
             }
@@ -289,11 +250,9 @@ struct InvoicesListView: View {
             Task { await viewModel.saveState() }
         }
         .onChange(of: viewModel.filterPeriod) {
-            viewModel.exitSelectionMode()
             Task { await viewModel.saveState() }
         }
         .onChange(of: viewModel.selectedPeriod) {
-            viewModel.exitSelectionMode()
             Task { await viewModel.saveState() }
         }
         .onChange(of: viewModel.selectedInvoiceIDs) {
@@ -339,19 +298,9 @@ struct ExportProgressOverlay: View {
 struct InvoiceRowView: View {
     let invoice: Invoice
     var sortOption: InvoiceSortOption = .issueDate
-    var isSelectionMode = false
-    var isSelected = false
 
     private var formattedAmount: String {
         CurrencyFormatter.format(invoice.dueAmount, currency: invoice.currency)
-    }
-
-    private var dateLabel: String {
-        switch sortOption {
-        case .issueDate: "Issued"
-        case .dueDate: "Due"
-        case .paidDate: "Paid"
-        }
     }
 
     private var dateValue: Date {
@@ -368,35 +317,32 @@ struct InvoiceRowView: View {
 
     var body: some View {
         HStack {
-            if isSelectionMode {
-                Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
-                    .foregroundStyle(isSelected ? Color.accentColor : Color.secondary)
-                    .font(.title3)
-            }
-
-            VStack(alignment: .leading, spacing: 4) {
+            VStack(alignment: .leading, spacing: 2) {
                 Text(invoice.number)
                     .font(.headline)
 
                 Text(invoice.client.name)
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
+                    .lineLimit(2)
             }
 
-            Spacer()
+            Spacer(minLength: 8)
 
-            VStack(alignment: .trailing, spacing: 4) {
+            VStack(alignment: .trailing, spacing: 2) {
                 Text(formattedAmount)
-                    .font(.headline)
+                    .font(.subheadline)
+                    .fontWeight(.medium)
 
                 HStack(spacing: 4) {
-                    Text("\(dateLabel): \(formattedDate)")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                    Text(formattedDate)
+                        .font(.caption2)
+                        .foregroundStyle(.tertiary)
 
                     StateIndicator(state: invoice.state)
                 }
             }
+            .fixedSize()
         }
         .padding(.vertical, 4)
     }
@@ -426,68 +372,6 @@ struct StateIndicator: View {
     }
 }
 
-struct SelectionToolbar: View {
-    @Bindable var viewModel: InvoicesViewModel
-
-    private var selectionCountText: String {
-        let count = viewModel.selectedInvoiceIDs.count
-        return count == 1 ? "1 selected" : "\(count) selected"
-    }
-
-    private var allSelected: Bool {
-        !viewModel.sortedInvoices.isEmpty &&
-            viewModel.selectedInvoiceIDs.count == viewModel.sortedInvoices.count
-    }
-
-    var body: some View {
-        HStack {
-            if viewModel.isSelectionMode {
-                Button(allSelected ? "Deselect All" : "Select All") {
-                    if allSelected {
-                        viewModel.deselectAll()
-                    } else {
-                        viewModel.selectAll()
-                    }
-                }
-                .buttonStyle(.bordered)
-
-                Spacer()
-
-                Text(selectionCountText)
-                    .foregroundStyle(.secondary)
-                    .font(.callout)
-
-                Spacer()
-
-                Button("Done") {
-                    viewModel.exitSelectionMode()
-                }
-                .buttonStyle(.borderedProminent)
-            } else {
-                Spacer()
-
-                Button("Select") {
-                    viewModel.enterSelectionMode()
-                }
-                .buttonStyle(.bordered)
-            }
-        }
-        .padding(.horizontal)
-        .padding(.vertical, 10)
-        .background(.bar)
-    }
-}
-
-private extension View {
-    @ViewBuilder
-    func `if`<Content: View>(_ condition: Bool, transform: (Self) -> Content) -> some View {
-        if condition {
-            transform(self)
-        } else {
-            self
-        }
-    }
-}
 
 #Preview {
     NavigationStack {

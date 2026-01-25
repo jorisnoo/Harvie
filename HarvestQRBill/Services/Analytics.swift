@@ -35,6 +35,10 @@ enum Analytics {
         #endif
     }
 
+    private static var appVersion: String {
+        Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "unknown"
+    }
+
     private static let plausible: Plausible? = {
         guard isEnabled else { return nil }
         return Plausible(
@@ -47,6 +51,7 @@ enum Analytics {
         guard let plausible else { return }
         var allProps = props ?? [:]
         allProps["distribution"] = distribution
+        allProps["version"] = appVersion
         let event = Event(
             url: "app://harvestqrbill\(path)",
             name: name,

@@ -66,16 +66,16 @@ struct InvoiceDetailView: View {
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 20) {
+            VStack(alignment: .leading, spacing: 16) {
                 headerSection
                 clientSection
                 amountsSection
-                datesSection
 
                 if let lineItems = invoice.lineItems, !lineItems.isEmpty {
                     lineItemsSection(lineItems)
                 }
 
+                datesSection
                 notesSection
             }
             .padding()
@@ -126,7 +126,8 @@ struct InvoiceDetailView: View {
                         ProgressView()
                             .scaleEffect(0.7)
                     } else {
-                        Label("Download", systemImage: "square.and.arrow.down")
+                        Label("Export QR Bill", systemImage: "square.and.arrow.down")
+                            .labelStyle(.titleAndIcon)
                     }
                 }
                 .buttonStyle(.borderedProminent)
@@ -160,38 +161,14 @@ struct InvoiceDetailView: View {
 
     private var headerSection: some View {
         VStack(alignment: .leading, spacing: 8) {
-            HStack {
-                Text(invoice.number)
-                    .font(.largeTitle)
-                    .fontWeight(.bold)
-
-                Spacer()
-
-                if invoice.state == .draft {
-                    Button {
-                        showMarkAsSentSheet = true
-                    } label: {
-                        Label("Mark as Sent", systemImage: "paperplane")
-                    }
-                    .disabled(isMarkingAsSent)
-                }
-
-                if invoice.state == .open {
-                    Button {
-                        showMarkAsDraftSheet = true
-                    } label: {
-                        Label("Mark as Draft", systemImage: "pencil")
-                    }
-                    .disabled(isMarkingAsDraft)
-                }
-
-                StateIndicator(state: invoice.state)
-            }
+            Text(invoice.number)
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
 
             HStack {
                 TextField("Invoice title", text: $editedSubject)
-                    .font(.headline)
-                    .foregroundStyle(.secondary)
+                    .font(.title2)
+                    .fontWeight(.semibold)
                     .textFieldStyle(.plain)
                     .onChange(of: editedSubject) {
                         subjectSaved = false
@@ -218,6 +195,34 @@ struct InvoiceDetailView: View {
                     .buttonStyle(.borderless)
                     .disabled(isSavingSubject)
                     .help("Save title")
+                }
+
+                Spacer()
+
+                StateIndicator(state: invoice.state)
+            }
+
+            HStack(spacing: 12) {
+                if invoice.state == .draft {
+                    Button {
+                        showMarkAsSentSheet = true
+                    } label: {
+                        Label("Mark as Sent", systemImage: "paperplane")
+                    }
+                    .buttonStyle(.bordered)
+                    .controlSize(.small)
+                    .disabled(isMarkingAsSent)
+                }
+
+                if invoice.state == .open {
+                    Button {
+                        showMarkAsDraftSheet = true
+                    } label: {
+                        Label("Mark as Draft", systemImage: "pencil")
+                    }
+                    .buttonStyle(.bordered)
+                    .controlSize(.small)
+                    .disabled(isMarkingAsDraft)
                 }
             }
         }
@@ -246,102 +251,76 @@ struct InvoiceDetailView: View {
     }
 
     private var clientSection: some View {
-        GroupBox("Client") {
-            Text(invoice.client.name)
-                .frame(maxWidth: .infinity, alignment: .leading)
-        }
+        Text(invoice.client.name)
+            .font(.title3)
+            .foregroundStyle(.secondary)
     }
 
     private var amountsSection: some View {
-        GroupBox("Amounts") {
-            Grid(alignment: .leading, horizontalSpacing: 20, verticalSpacing: 8) {
-                GridRow {
-                    Text("Total:")
-                        .foregroundStyle(.secondary)
-                    Text(formattedAmount)
-                        .fontWeight(.medium)
-                }
+        VStack(alignment: .leading, spacing: 4) {
+            Text(formattedDueAmount)
+                .font(.title)
+                .fontWeight(.bold)
 
-                GridRow {
-                    Text("Due:")
-                        .foregroundStyle(.secondary)
-                    Text(formattedDueAmount)
-                        .fontWeight(.bold)
-                }
-
-                if let tax = invoice.tax, let taxAmount = invoice.taxAmount {
-                    GridRow {
-                        Text("Tax (\(tax.formatted())%):")
-                            .foregroundStyle(.secondary)
-                        Text(CurrencyFormatter.format(taxAmount, currency: invoice.currency))
-                    }
-                }
-
-                if let discount = invoice.discount, let discountAmount = invoice.discountAmount {
-                    GridRow {
-                        Text("Discount (\(discount.formatted())%):")
-                            .foregroundStyle(.secondary)
-                        Text("-\(CurrencyFormatter.format(discountAmount, currency: invoice.currency))")
-                            .foregroundStyle(.green)
-                    }
-                }
+            if invoice.dueAmount != invoice.amount {
+                Text("of \(formattedAmount) total")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
+
+            Text("Due \(invoice.dueDate.formatted(date: .long, time: .omitted))")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+
+            if let tax = invoice.tax, let taxAmount = invoice.taxAmount {
+                Text("Incl. \(tax.formatted())% tax (\(CurrencyFormatter.format(taxAmount, currency: invoice.currency)))")
+                    .font(.caption)
+                    .foregroundStyle(.tertiary)
+            }
+
+            if let discount = invoice.discount, let discountAmount = invoice.discountAmount {
+                Text("Discount \(discount.formatted())%: -\(CurrencyFormatter.format(discountAmount, currency: invoice.currency))")
+                    .font(.caption)
+//                    .foregroundStyle(.green)
+            }
         }
     }
 
     private var datesSection: some View {
-        GroupBox("Dates") {
-            Grid(alignment: .leading, horizontalSpacing: 20, verticalSpacing: 8) {
-                GridRow {
-                    Text("Issue Date:")
-                        .foregroundStyle(.secondary)
+        VStack(alignment: .leading, spacing: 4) {
+            HStack(spacing: 4) {
+                Text("Issued \(invoice.issueDate.formatted(date: .long, time: .omitted))")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
 
-                    HStack {
-                        Text(invoice.issueDate.formatted(date: .long, time: .omitted))
-
-                        if invoice.state == .draft {
-                            Button {
-                                editedIssueDate = invoice.issueDate
-                                showChangeDateSheet = true
-                            } label: {
-                                Image(systemName: "calendar")
-                            }
-                            .buttonStyle(.borderless)
-                            .help("Change issue date")
-                        }
-
-                        if issueDateSaved {
-                            Image(systemName: "checkmark.circle.fill")
-                                .foregroundStyle(.green)
-                        }
+                if invoice.state == .draft {
+                    Button {
+                        editedIssueDate = invoice.issueDate
+                        showChangeDateSheet = true
+                    } label: {
+                        Image(systemName: "calendar")
                     }
+                    .buttonStyle(.borderless)
+                    .help("Change issue date")
                 }
 
-                GridRow {
-                    Text("Due Date:")
-                        .foregroundStyle(.secondary)
-                    Text(invoice.dueDate.formatted(date: .long, time: .omitted))
-                }
-
-                if let sentAt = invoice.sentAt {
-                    GridRow {
-                        Text("Sent:")
-                            .foregroundStyle(.secondary)
-                        Text(sentAt.formatted(date: .long, time: .shortened))
-                    }
-                }
-
-                if let paidAt = invoice.paidAt {
-                    GridRow {
-                        Text("Paid:")
-                            .foregroundStyle(.secondary)
-                        Text(paidAt.formatted(date: .long, time: .shortened))
-                            .foregroundStyle(.green)
-                    }
+                if issueDateSaved {
+                    Image(systemName: "checkmark.circle.fill")
+                        .foregroundStyle(.green)
                 }
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
+
+            if let sentAt = invoice.sentAt {
+                Text("Sent \(sentAt.formatted(date: .long, time: .shortened))")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+            }
+
+            if let paidAt = invoice.paidAt {
+                Text("Paid \(paidAt.formatted(date: .long, time: .shortened))")
+                    .font(.subheadline)
+                    .foregroundStyle(.green)
+            }
         }
         .sheet(isPresented: $showChangeDateSheet) {
             ChangeDateSheet(
@@ -469,73 +448,76 @@ struct InvoiceDetailView: View {
     }
 
     private func lineItemsSection(_ items: [LineItem]) -> some View {
-        GroupBox("Line Items") {
-            VStack(alignment: .leading, spacing: 12) {
-                ForEach(items) { item in
-                    HStack(alignment: .top) {
-                        VStack(alignment: .leading, spacing: 2) {
-                            if let description = item.description, !description.isEmpty {
-                                Text(description)
-                                    .font(.headline)
-                            }
+        VStack(alignment: .leading, spacing: 0) {
+            Divider()
+                .padding(.vertical, 12)
 
-                            Text("\(item.quantity.formatted()) x \(CurrencyFormatter.format(item.unitPrice, currency: invoice.currency))")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
+            ForEach(items) { item in
+                HStack(alignment: .top) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        if let description = item.description, !description.isEmpty {
+                            Text(description)
+                                .font(.body)
                         }
 
-                        Spacer()
-
-                        Text(CurrencyFormatter.format(item.amount, currency: invoice.currency))
-                            .fontWeight(.medium)
+                        Text("\(item.quantity.formatted()) × \(CurrencyFormatter.format(item.unitPrice, currency: invoice.currency))")
+                            .font(.caption)
+                            .foregroundStyle(.tertiary)
                     }
 
-                    if item.id != items.last?.id {
-                        Divider()
-                    }
+                    Spacer()
+
+                    Text(CurrencyFormatter.format(item.amount, currency: invoice.currency))
+                        .font(.body)
+                        .foregroundStyle(.secondary)
+                }
+                .padding(.vertical, 8)
+
+                if item.id != items.last?.id {
+                    Divider()
                 }
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
+
+            Divider()
+                .padding(.vertical, 12)
         }
     }
 
     private var notesSection: some View {
-        GroupBox {
-            VStack(alignment: .leading, spacing: 8) {
-                TextEditor(text: $editedNotes)
-                    .font(.body)
-                    .frame(minHeight: 80)
-                    .scrollContentBackground(.hidden)
-                    .onChange(of: editedNotes) {
-                        notesSaved = false
-                    }
+        VStack(alignment: .leading, spacing: 8) {
+            TextEditor(text: $editedNotes)
+                .font(.body)
+                .foregroundStyle(.secondary)
+                .frame(minHeight: 60)
+                .scrollContentBackground(.hidden)
+                .onChange(of: editedNotes) {
+                    notesSaved = false
+                }
 
-                if editedNotes != lastSavedNotes {
-                    HStack {
-                        Spacer()
-                        if notesSaved {
-                            Label("Saved", systemImage: "checkmark.circle.fill")
-                                .foregroundStyle(.green)
-                                .font(.caption)
-                        }
-                        Button {
-                            Task {
-                                await saveNotes()
-                            }
-                        } label: {
-                            if isSavingNotes {
-                                ProgressView()
-                                    .scaleEffect(0.7)
-                            } else {
-                                Text("Save Notes")
-                            }
-                        }
-                        .disabled(isSavingNotes)
+            if editedNotes != lastSavedNotes {
+                HStack {
+                    Spacer()
+                    if notesSaved {
+                        Image(systemName: "checkmark.circle.fill")
+                            .foregroundStyle(.green)
                     }
+                    Button {
+                        Task {
+                            await saveNotes()
+                        }
+                    } label: {
+                        if isSavingNotes {
+                            ProgressView()
+                                .scaleEffect(0.7)
+                        } else {
+                            Text("Save")
+                        }
+                    }
+                    .buttonStyle(.bordered)
+                    .controlSize(.small)
+                    .disabled(isSavingNotes)
                 }
             }
-        } label: {
-            Text("Notes")
         }
     }
 
