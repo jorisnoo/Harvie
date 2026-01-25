@@ -2,9 +2,9 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-	<key>AnalyticsEnabled</key>
-	<false/>
 	<key>AnalyticsServerURL</key>
-	<string>https://noordermeer.ch</string>
+	<string>https://noordermeer.ch/api</string>
+	<key>AnalyticsEnabled</key>
+	<true/>
 </dict>
 </plist>

@@ -8,13 +8,23 @@ import Foundation
 
 enum Analytics {
     private static var isEnabled: Bool {
-        Bundle.main.infoDictionary?["AnalyticsEnabled"] as? Bool ?? false
+        #if DEBUG
+        return false
+        #else
+        return Bundle.main.infoDictionary?["AnalyticsEnabled"] as? Bool ?? false
+        #endif
     }
 
     private static var serverURL: URL {
         let urlString = Bundle.main.infoDictionary?["AnalyticsServerURL"] as? String
-            ?? "https://plausible.io"
+            ?? "https://plausible.io/api"
         return URL(string: urlString)!
+    }
+
+    private static var domain: String {
+        Bundle.main.infoDictionary?["AnalyticsDomain"] as? String
+            ?? Bundle.main.bundleIdentifier?.lowercased()
+            ?? "unknown"
     }
 
     private static var distribution: String {
@@ -28,7 +38,7 @@ enum Analytics {
     private static let plausible: Plausible? = {
         guard isEnabled else { return nil }
         return Plausible(
-            defaultDomain: "harvestqrbill.app",
+            defaultDomain: domain,
             serverURL: serverURL
         )
     }()
@@ -46,7 +56,7 @@ enum Analytics {
     }
 
     static func appOpened() {
-        track("App Open")
+        track("pageview")
     }
 
     static func pdfExported(count: Int = 1) {
