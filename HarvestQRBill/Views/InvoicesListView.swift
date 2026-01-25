@@ -232,20 +232,6 @@ struct InvoicesListView: View {
                         Text("All").tag(InvoiceState?.none)
                     }
                     .pickerStyle(.menu)
-
-                    Button {
-                        viewModel.refresh()
-                    } label: {
-                        Label("Refresh", systemImage: "arrow.clockwise")
-                    }
-                    .disabled(viewModel.isLoading)
-
-                    Button {
-                        showingSettings = true
-                    } label: {
-                        Label("Settings", systemImage: "gear")
-                    }
-                    .keyboardShortcut(",", modifiers: .command)
                 }
             }
         }

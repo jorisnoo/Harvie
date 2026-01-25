@@ -133,6 +133,38 @@ struct InvoiceDetailView: View {
                 .disabled(isProcessing || isPreviewing || !canExportWithQRBill)
                 .help(canExportWithQRBill ? "Download invoice PDF with Swiss QR bill" : "Configure creditor info in Settings first")
             }
+
+            ToolbarItem(placement: .primaryAction) {
+                Menu {
+                    if invoice.state == .draft {
+                        Button {
+                            showMarkAsSentSheet = true
+                        } label: {
+                            Label("Mark as Sent", systemImage: "paperplane")
+                        }
+                        .disabled(isMarkingAsSent)
+
+                        Button {
+                            editedIssueDate = invoice.issueDate
+                            showChangeDateSheet = true
+                        } label: {
+                            Label("Change Date", systemImage: "calendar")
+                        }
+                    }
+
+                    if invoice.state == .open {
+                        Button {
+                            showMarkAsDraftSheet = true
+                        } label: {
+                            Label("Mark as Draft", systemImage: "pencil")
+                        }
+                        .disabled(isMarkingAsDraft)
+                    }
+                } label: {
+                    Label("Actions", systemImage: "ellipsis.circle")
+                }
+                .disabled(invoice.state == .paid || invoice.state == .closed)
+            }
         }
         .alert("Error", isPresented: .init(
             get: { error != nil },
@@ -195,37 +227,45 @@ struct InvoiceDetailView: View {
 
                 Spacer()
 
-                StateIndicator(state: invoice.state)
+                if invoice.state == .draft || invoice.state == .open {
+                    Menu {
+                        if invoice.state == .draft {
+                            Button {
+                                showMarkAsSentSheet = true
+                            } label: {
+                                Label("Mark as Sent", systemImage: "paperplane")
+                            }
+                            .disabled(isMarkingAsSent)
 
-                if invoice.state == .draft {
-                    Button {
-                        showMarkAsSentSheet = true
-                    } label: {
-                        Label("Mark as Sent", systemImage: "paperplane")
-                    }
-                    .buttonStyle(.bordered)
-                    .controlSize(.small)
-                    .disabled(isMarkingAsSent)
+                            Button {
+                                editedIssueDate = invoice.issueDate
+                                showChangeDateSheet = true
+                            } label: {
+                                Label("Change Date", systemImage: "calendar")
+                            }
+                        }
 
-                    Button {
-                        editedIssueDate = invoice.issueDate
-                        showChangeDateSheet = true
+                        if invoice.state == .open {
+                            Button {
+                                showMarkAsDraftSheet = true
+                            } label: {
+                                Label("Mark as Draft", systemImage: "pencil")
+                            }
+                            .disabled(isMarkingAsDraft)
+                        }
                     } label: {
-                        Label("Change Date", systemImage: "calendar")
+                        HStack(spacing: 4) {
+                            StateIndicator(state: invoice.state)
+                            Image(systemName: "chevron.down")
+                                .font(.caption2)
+                                .foregroundStyle(.secondary)
+                        }
                     }
-                    .buttonStyle(.bordered)
-                    .controlSize(.small)
-                }
-
-                if invoice.state == .open {
-                    Button {
-                        showMarkAsDraftSheet = true
-                    } label: {
-                        Label("Mark as Draft", systemImage: "pencil")
-                    }
-                    .buttonStyle(.bordered)
-                    .controlSize(.small)
-                    .disabled(isMarkingAsDraft)
+                    .menuIndicator(.hidden)
+                    .buttonStyle(.plain)
+                    .fixedSize()
+                } else {
+                    StateIndicator(state: invoice.state)
                 }
             }
 

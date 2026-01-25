@@ -16,24 +16,30 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
+          ref: main
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Extract version from tag
         id: version
         run: echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
 
-      - name: Sync version to Xcode project
+      - name: Sync version to project files
         run: |
           VERSION="${{ steps.version.outputs.VERSION }}"
-          echo "Syncing version $VERSION to Xcode project..."
+          echo "Syncing version $VERSION..."
+
+          # Update Xcode project
           sed -i '' "s/MARKETING_VERSION = [^;]*;/MARKETING_VERSION = $VERSION;/g" \
             HarvestQRBill.xcodeproj/project.pbxproj
+
+          # Update version.yml
+          echo "version: $VERSION" > version.yml
 
       - name: Commit version sync
         uses: stefanzweifel/git-auto-commit-action@v7
         with:
           commit_message: "chore: sync version ${{ steps.version.outputs.VERSION }} to Xcode"
-          file_pattern: "HarvestQRBill.xcodeproj/project.pbxproj"
+          file_pattern: "HarvestQRBill.xcodeproj/project.pbxproj version.yml"
           branch: main
 
       - name: Import code signing certificate

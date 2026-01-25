@@ -6,6 +6,27 @@
 import SwiftUI
 import SwiftData
 
+// Focus keys for menu bar commands
+struct ShowSettingsKey: FocusedValueKey {
+    typealias Value = Binding<Bool>
+}
+
+struct RefreshActionKey: FocusedValueKey {
+    typealias Value = () -> Void
+}
+
+extension FocusedValues {
+    var showSettings: Binding<Bool>? {
+        get { self[ShowSettingsKey.self] }
+        set { self[ShowSettingsKey.self] = newValue }
+    }
+
+    var refreshAction: (() -> Void)? {
+        get { self[RefreshActionKey.self] }
+        set { self[RefreshActionKey.self] = newValue }
+    }
+}
+
 struct ContentView: View {
     @Environment(\.modelContext) private var modelContext
     @State private var viewModel = InvoicesViewModel()
@@ -29,6 +50,8 @@ struct ContentView: View {
                 )
             }
         }
+        .focusedValue(\.showSettings, $showingSettings)
+        .focusedValue(\.refreshAction) { viewModel.refresh() }
         .sheet(isPresented: $showingSettings, onDismiss: {
             Task {
                 await viewModel.reloadCreditorInfo()
