@@ -25,6 +25,22 @@ struct InvoicesListView: View {
                 sortOption: viewModel.sortOption
             )
             .tag(invoice.id)
+            .simultaneousGesture(
+                TapGesture().onEnded {
+                    let modifiers = NSApp.currentEvent?.modifierFlags ?? []
+                    let hasModifiers = modifiers.contains(.command) || modifiers.contains(.shift)
+                    if !hasModifiers {
+                        viewModel.selectedInvoiceIDs = [invoice.id]
+                    }
+                }
+            )
+        }
+        .background {
+            Color.clear
+                .contentShape(Rectangle())
+                .onTapGesture {
+                    viewModel.selectedInvoiceIDs.removeAll()
+                }
         }
         .onKeyPress(.escape) {
             viewModel.selectedInvoiceIDs.removeAll()
@@ -334,13 +350,9 @@ struct InvoiceRowView: View {
                     .font(.subheadline)
                     .fontWeight(.medium)
 
-                HStack(spacing: 4) {
-                    Text(formattedDate)
-                        .font(.caption2)
-                        .foregroundStyle(.tertiary)
-
-                    StateIndicator(state: invoice.state)
-                }
+                Text(formattedDate)
+                    .font(.caption2)
+                    .foregroundStyle(.tertiary)
             }
             .fixedSize()
         }
