@@ -384,6 +384,18 @@ final class InvoicesViewModel {
         selectedInvoiceIDs.removeAll()
     }
 
+    func clearInvalidSelections() {
+        let visibleIDs = Set(sortedInvoices.map { $0.id })
+        let invalidIDs = selectedInvoiceIDs.subtracting(visibleIDs)
+
+        if !invalidIDs.isEmpty {
+            selectedInvoiceIDs.subtract(invalidIDs)
+            if let selectedInvoice, !visibleIDs.contains(selectedInvoice.id) {
+                self.selectedInvoice = nil
+            }
+        }
+    }
+
     func updateIssueDate(for invoiceId: Int, to date: Date) async throws {
         let credentials = try await keychainService.loadHarvestCredentials()
         try await apiService.updateInvoiceIssueDate(

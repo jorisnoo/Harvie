@@ -227,46 +227,7 @@ struct InvoiceDetailView: View {
 
                 Spacer()
 
-                if invoice.state == .draft || invoice.state == .open {
-                    Menu {
-                        if invoice.state == .draft {
-                            Button {
-                                showMarkAsSentSheet = true
-                            } label: {
-                                Label("Mark as Sent", systemImage: "paperplane")
-                            }
-                            .disabled(isMarkingAsSent)
-
-                            Button {
-                                editedIssueDate = invoice.issueDate
-                                showChangeDateSheet = true
-                            } label: {
-                                Label("Change Date", systemImage: "calendar")
-                            }
-                        }
-
-                        if invoice.state == .open {
-                            Button {
-                                showMarkAsDraftSheet = true
-                            } label: {
-                                Label("Mark as Draft", systemImage: "pencil")
-                            }
-                            .disabled(isMarkingAsDraft)
-                        }
-                    } label: {
-                        HStack(spacing: 4) {
-                            StateIndicator(state: invoice.state)
-                            Image(systemName: "chevron.down")
-                                .font(.caption2)
-                                .foregroundStyle(.secondary)
-                        }
-                    }
-                    .menuIndicator(.hidden)
-                    .buttonStyle(.plain)
-                    .fixedSize()
-                } else {
-                    StateIndicator(state: invoice.state)
-                }
+                StateIndicator(state: invoice.state)
             }
 
             // Row 2: Metadata

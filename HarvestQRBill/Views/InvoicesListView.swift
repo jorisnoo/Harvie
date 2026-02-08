@@ -240,21 +240,25 @@ struct InvoicesListView: View {
                 viewModel.sortOption = .issueDate
             }
 
+            viewModel.deselectAll()
             viewModel.loadInvoices()
             Task {
                 await viewModel.saveState()
             }
         }
         .onChange(of: viewModel.sortOption) {
+            viewModel.clearInvalidSelections()
             Task { await viewModel.saveState() }
         }
         .onChange(of: viewModel.sortDirection) {
             Task { await viewModel.saveState() }
         }
         .onChange(of: viewModel.filterPeriod) {
+            viewModel.clearInvalidSelections()
             Task { await viewModel.saveState() }
         }
         .onChange(of: viewModel.selectedPeriod) {
+            viewModel.clearInvalidSelections()
             Task { await viewModel.saveState() }
         }
         .onChange(of: viewModel.selectedInvoiceIDs) {
