@@ -567,6 +567,7 @@ struct InvoiceDetailView: View {
             pdf.write(to: tempURL)
 
             NSWorkspace.shared.open(tempURL)
+            Analytics.pdfPreviewed()
         } catch let apiError as HarvestAPIService.APIError {
             self.error = apiError.localizedDescription
         } catch let pdfError as PDFService.PDFError {
@@ -720,7 +721,7 @@ struct InvoiceDetailView: View {
                 savedFilePath = finalURL.path
                 showingSuccess = true
                 isProcessing = false
-                Analytics.pdfExported()
+                Analytics.pdfExported(method: "direct")
             } else {
                 // Fall back to save panel if direct save fails
                 showSavePanel(for: document, suggestedName: fileName)
@@ -745,7 +746,7 @@ struct InvoiceDetailView: View {
                             savedFilePath = url.path
                             showingSuccess = true
                             isProcessing = false
-                            Analytics.pdfExported()
+                            Analytics.pdfExported(method: "save_panel")
                         }
                     } catch let pdfError as PDFService.PDFError {
                         await MainActor.run {

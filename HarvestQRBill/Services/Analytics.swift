@@ -3,29 +3,11 @@
 //  HarvestQRBill
 //
 
-import AviaryInsights
+import Aptabase
 import Foundation
 
 enum Analytics {
-    private static var isEnabled: Bool {
-        #if DEBUG
-        return false
-        #else
-        return Bundle.main.infoDictionary?["AnalyticsEnabled"] as? Bool ?? false
-        #endif
-    }
-
-    private static var serverURL: URL {
-        let urlString = Bundle.main.infoDictionary?["AnalyticsServerURL"] as? String
-            ?? "https://plausible.io/api"
-        return URL(string: urlString)!
-    }
-
-    private static var domain: String {
-        Bundle.main.infoDictionary?["AnalyticsDomain"] as? String
-            ?? Bundle.main.bundleIdentifier?.lowercased()
-            ?? "unknown"
-    }
+    private static var isInitialized = false
 
     private static var distribution: String {
         #if APP_STORE
@@ -35,40 +17,59 @@ enum Analytics {
         #endif
     }
 
-    private static var appVersion: String {
-        Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "unknown"
+    static func initialize() {
+        #if DEBUG
+        return
+        #else
+        guard let appKey = Bundle.main.infoDictionary?["AptabaseAppKey"] as? String,
+              !appKey.isEmpty
+        else { return }
+
+        Aptabase.shared.initialize(appKey: appKey)
+        isInitialized = true
+        #endif
     }
 
-    private static let plausible: Plausible? = {
-        guard isEnabled else { return nil }
-        return Plausible(
-            defaultDomain: domain,
-            serverURL: serverURL
-        )
-    }()
+    private static func track(_ event: String, props: [String: Any] = [:]) {
+        #if DEBUG
+        return
+        #else
+        guard isInitialized else { return }
 
-    static func track(_ name: String, path: String = "/", props: [String: String]? = nil) {
-        guard let plausible else { return }
-        var allProps = props ?? [:]
+        var allProps = props
         allProps["distribution"] = distribution
-        allProps["version"] = appVersion
-        let event = Event(
-            url: "app://harvestqrbill\(path)",
-            name: name,
-            props: allProps
-        )
-        plausible.postEvent(event)
+        Aptabase.shared.trackEvent(event, with: allProps)
+        #endif
     }
 
-    static func appOpened() {
-        track("pageview")
-    }
-
-    static func pdfExported(count: Int = 1) {
-        track("PDF Export", props: ["count": "\(count)"])
+    static func appLaunched() {
+        track("app_launched")
     }
 
     static func harvestConnected() {
-        track("Harvest Connected", path: "/settings")
+        track("harvest_connected")
+    }
+
+    static func settingsSaved() {
+        track("settings_saved")
+    }
+
+    static func invoicesLoaded(count: Int) {
+        track("invoices_loaded", props: ["count": count])
+    }
+
+    static func pdfPreviewed() {
+        track("pdf_previewed")
+    }
+
+    static func pdfExported(method: String) {
+        track("pdf_exported", props: ["method": method])
+    }
+
+    static func batchExportCompleted(count: Int, withQRBill: Bool) {
+        track("batch_export_completed", props: [
+            "count": count,
+            "with_qr_bill": withQRBill,
+        ])
     }
 }

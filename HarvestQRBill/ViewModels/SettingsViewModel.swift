@@ -49,6 +49,7 @@ final class SettingsViewModel {
             try await keychainService.saveHarvestCredentials(harvestCredentials)
             try await keychainService.saveCreditorInfo(creditorInfo)
             try await keychainService.saveAppSettings(appSettings)
+            Analytics.settingsSaved()
         } catch {
             #if DEBUG
             logger.error("Failed to save settings: \(error.localizedDescription)")

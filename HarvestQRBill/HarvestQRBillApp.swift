@@ -16,7 +16,8 @@ struct HarvestQRBillApp: App {
         WindowGroup {
             ContentView()
                 .onAppear {
-                    Analytics.appOpened()
+                    Analytics.initialize()
+                    Analytics.appLaunched()
                 }
         }
         .windowStyle(.automatic)

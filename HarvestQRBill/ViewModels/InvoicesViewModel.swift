@@ -285,6 +285,7 @@ final class InvoicesViewModel {
             }
 
             invoices = fetchedInvoices
+            Analytics.invoicesLoaded(count: fetchedInvoices.count)
 
             // Update cache
             if let context = modelContext {
@@ -586,7 +587,7 @@ final class InvoicesViewModel {
             exportProgress = 1.0
             exportProgressMessage = "Export complete!"
             showExportSuccess = true
-            Analytics.pdfExported(count: exportedCount)
+            Analytics.batchExportCompleted(count: exportedCount, withQRBill: withQRBill)
         } catch {
             exportError = error.localizedDescription
         }
