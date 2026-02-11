@@ -5,7 +5,7 @@
 
 import Foundation
 
-struct HarvestCredentials: Codable, Sendable {
+struct HarvestCredentials: Codable, Sendable, Equatable {
     var accessToken: String
     var accountId: String
     var subdomain: String
@@ -19,7 +19,7 @@ struct HarvestCredentials: Codable, Sendable {
     }
 }
 
-struct CreditorInfo: Codable, Sendable {
+struct CreditorInfo: Codable, Sendable, Equatable {
     var iban: String
     var name: String
     var streetName: String
@@ -84,7 +84,7 @@ enum DownloadBehavior: String, Codable, CaseIterable, Sendable {
     }
 }
 
-struct AppSettings: Codable, Sendable {
+struct AppSettings: Codable, Sendable, Equatable {
     var downloadBehavior: DownloadBehavior
     var defaultDownloadPath: String?
     var downloadBookmarkData: Data?

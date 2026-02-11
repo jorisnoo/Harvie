@@ -24,35 +24,13 @@ struct SettingsView: View {
                 .tabItem { Label("Templates", systemImage: "doc.richtext") }
         }
         .frame(minWidth: 500, minHeight: 450)
-        .safeAreaInset(edge: .bottom) {
-            HStack {
-                Spacer()
-
-                Button("Save") {
-                    Task {
-                        await viewModel.saveSettings()
-                        if viewModel.saveError == nil {
-                            NSApp.keyWindow?.close()
-                        }
-                    }
-                }
-                .keyboardShortcut(.defaultAction)
-                .disabled(viewModel.isSaving)
-            }
-            .padding()
-            .background(.bar)
-        }
         .task {
             await viewModel.loadSettings()
         }
-        .alert("Error", isPresented: Binding(
-            get: { viewModel.saveError != nil },
-            set: { if !$0 { viewModel.saveError = nil } }
-        )) {
-            Button("OK") { viewModel.saveError = nil }
-        } message: {
-            Text(viewModel.saveError ?? "")
-        }
+        .onChange(of: viewModel.harvestCredentials) { viewModel.autoSave() }
+        .onChange(of: viewModel.creditorInfo) { viewModel.autoSave() }
+        .onChange(of: viewModel.appSettings) { viewModel.autoSave() }
+        .onDisappear { viewModel.saveImmediately() }
     }
 }
 

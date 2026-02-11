@@ -23,8 +23,6 @@ final class SettingsViewModel {
 
     var isTestingConnection = false
     var connectionTestResult: ConnectionTestResult?
-    var isSaving = false
-    var saveError: String?
 
     enum ConnectionTestResult: Equatable {
         case success
@@ -33,6 +31,7 @@ final class SettingsViewModel {
 
     private let keychainService = KeychainService.shared
     private let apiService = HarvestAPIService.shared
+    private var autoSaveTask: Task<Void, Never>?
 
     func loadSettings() async {
         harvestCredentials = (try? await keychainService.loadHarvestCredentials())
@@ -43,10 +42,21 @@ final class SettingsViewModel {
 
     static let settingsSavedNotification = Notification.Name("SettingsViewModelDidSaveSettings")
 
-    func saveSettings() async {
-        isSaving = true
-        saveError = nil
+    func autoSave() {
+        autoSaveTask?.cancel()
+        autoSaveTask = Task {
+            try? await Task.sleep(for: .milliseconds(500))
+            guard !Task.isCancelled else { return }
+            await saveSettings()
+        }
+    }
 
+    func saveImmediately() {
+        autoSaveTask?.cancel()
+        Task { await saveSettings() }
+    }
+
+    private func saveSettings() async {
         do {
             try await keychainService.saveHarvestCredentials(harvestCredentials)
             try await keychainService.saveCreditorInfo(creditorInfo)
@@ -54,13 +64,8 @@ final class SettingsViewModel {
             Analytics.settingsSaved()
             NotificationCenter.default.post(name: Self.settingsSavedNotification, object: nil)
         } catch {
-            #if DEBUG
             logger.error("Failed to save settings: \(error.localizedDescription)")
-            #endif
-            saveError = "Failed to save settings. Please try again."
         }
-
-        isSaving = false
     }
 
     func testConnection() async {
