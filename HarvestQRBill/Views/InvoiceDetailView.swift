@@ -13,6 +13,7 @@ private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "HarvestQ
 
 struct InvoiceDetailView: View {
     let invoice: Invoice
+    var onRefresh: (() -> Void)?
 
     @State private var isProcessing = false
     @State private var isPreviewing = false
@@ -385,6 +386,7 @@ struct InvoiceDetailView: View {
             )
             lastSavedIssueDate = editedIssueDate
             issueDateSaved = true
+            onRefresh?()
         } catch let apiError as HarvestAPIService.APIError {
             self.error = "Failed to save issue date: \(apiError.localizedDescription)"
         } catch {
@@ -405,6 +407,7 @@ struct InvoiceDetailView: View {
                 credentials: credentials
             )
             showMarkAsSentSuccess = true
+            onRefresh?()
         } catch let apiError as HarvestAPIService.APIError {
             self.error = "Failed to mark as sent: \(apiError.localizedDescription)"
         } catch {
@@ -425,6 +428,7 @@ struct InvoiceDetailView: View {
                 credentials: credentials
             )
             showMarkAsDraftSuccess = true
+            onRefresh?()
         } catch let apiError as HarvestAPIService.APIError {
             self.error = "Failed to mark as draft: \(apiError.localizedDescription)"
         } catch {
