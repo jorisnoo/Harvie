@@ -67,15 +67,21 @@ final class TemplatePDFService {
             padding: 0;
             box-sizing: border-box;
         }
+        html {
+            zoom: 0.75;
+        }
         html, body {
-            width: 100%;
-            min-height: 100%;
+            width: 210mm;
+            min-height: 297mm;
             font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif;
         }
         @media print {
+            html {
+                zoom: 0.75;
+            }
             html, body {
-                width: 100%;
-                min-height: 100%;
+                width: 210mm;
+                min-height: 297mm;
             }
         }
         \(css)
