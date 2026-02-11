@@ -5,62 +5,30 @@
 
 import SwiftUI
 
-enum SettingsSection: String, CaseIterable, Identifiable {
-    case harvest
-    case qrBill
-    case downloads
-
-    var id: String { rawValue }
-
-    var title: String {
-        switch self {
-        case .harvest: "Harvest"
-        case .qrBill: "QR Bill"
-        case .downloads: "Downloads"
-        }
-    }
-
-    var icon: String {
-        switch self {
-        case .harvest: "cloud"
-        case .qrBill: "qrcode"
-        case .downloads: "folder"
-        }
-    }
-}
-
 struct SettingsView: View {
     @State private var viewModel = SettingsViewModel()
-    @State private var selection: SettingsSection? = .harvest
-    @Environment(\.dismiss) private var dismiss
 
     var body: some View {
-        NavigationSplitView {
-            List(SettingsSection.allCases, selection: $selection) { section in
-                Label(section.title, systemImage: section.icon)
-                    .tag(section)
-            }
-            .navigationSplitViewColumnWidth(180)
-            .navigationTitle("Settings")
-        } detail: {
-            if let section = selection {
-                SettingsDetail(section: section, viewModel: viewModel)
-            }
+        TabView {
+            HarvestSettings(viewModel: viewModel)
+                .tabItem { Label("Harvest", systemImage: "cloud") }
+
+            QRBillSettings(viewModel: viewModel)
+                .tabItem { Label("QR Bill", systemImage: "qrcode") }
+
+            DownloadsSettings(viewModel: viewModel)
+                .tabItem { Label("Downloads", systemImage: "folder") }
         }
-        .frame(minWidth: 600, minHeight: 400)
+        .frame(minWidth: 450, minHeight: 400)
         .safeAreaInset(edge: .bottom) {
             HStack {
                 Spacer()
-                Button("Cancel") {
-                    dismiss()
-                }
-                .keyboardShortcut(.cancelAction)
 
                 Button("Save") {
                     Task {
                         await viewModel.saveSettings()
                         if viewModel.saveError == nil {
-                            dismiss()
+                            NSApp.keyWindow?.close()
                         }
                     }
                 }
@@ -80,24 +48,6 @@ struct SettingsView: View {
             Button("OK") { viewModel.saveError = nil }
         } message: {
             Text(viewModel.saveError ?? "")
-        }
-    }
-}
-
-// MARK: - Settings Detail
-
-struct SettingsDetail: View {
-    let section: SettingsSection
-    @Bindable var viewModel: SettingsViewModel
-
-    var body: some View {
-        switch section {
-        case .harvest:
-            HarvestSettings(viewModel: viewModel)
-        case .qrBill:
-            QRBillSettings(viewModel: viewModel)
-        case .downloads:
-            DownloadsSettings(viewModel: viewModel)
         }
     }
 }
@@ -316,10 +266,6 @@ struct DownloadsSettings: View {
                 Toggle("Demo Mode", isOn: $viewModel.appSettings.isDemoMode)
             }
             #endif
-
-            Color.clear
-                .frame(height: 60)
-                .listRowBackground(Color.clear)
         }
         .formStyle(.grouped)
     }

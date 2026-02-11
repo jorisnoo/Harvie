@@ -12,8 +12,6 @@ import AppUpdater
 @main
 struct HarvestQRBillApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
-    @FocusedValue(\.showSettings) var showSettings
-    @FocusedValue(\.refreshAction) var refreshAction
 
     var body: some Scene {
         WindowGroup {
@@ -28,20 +26,11 @@ struct HarvestQRBillApp: App {
         .commands {
             CommandGroup(replacing: .newItem) { }
 
-            CommandGroup(replacing: .appSettings) {
-                Button("Settings...") {
-                    showSettings?.wrappedValue = true
-                }
-                .keyboardShortcut(",", modifiers: .command)
-                .disabled(showSettings == nil)
-            }
-
             CommandGroup(after: .toolbar) {
                 Button("Refresh") {
-                    refreshAction?()
+                    NotificationCenter.default.post(name: .menuRefreshTriggered, object: nil)
                 }
                 .keyboardShortcut("r", modifiers: .command)
-                .disabled(refreshAction == nil)
             }
 
             #if !APP_STORE
@@ -51,6 +40,10 @@ struct HarvestQRBillApp: App {
             #endif
         }
         .modelContainer(for: CachedInvoice.self)
+
+        Settings {
+            SettingsView()
+        }
     }
 }
 

@@ -7,7 +7,7 @@ import SwiftUI
 
 struct InvoicesListView: View {
     @Bindable var viewModel: InvoicesViewModel
-    @Binding var showingSettings: Bool
+    @Environment(\.openSettings) private var openSettings
     var sidebarVisible: Bool = true
 
     private var sortFilterMenuLabel: String {
@@ -112,7 +112,7 @@ struct InvoicesListView: View {
                         .font(.callout)
                     Spacer()
                     Button("Settings") {
-                        showingSettings = true
+                        openSettings()
                     }
                     .buttonStyle(.bordered)
                     .controlSize(.small)
@@ -223,6 +223,7 @@ struct InvoicesListView: View {
                     } label: {
                         Label(sortFilterMenuLabel, systemImage: "line.3.horizontal.decrease.circle")
                     }
+                    .focusable(false)
 
                     Picker("Filter", selection: $viewModel.stateFilter) {
                         Text("Open").tag(InvoiceState?.some(.open))
@@ -378,6 +379,6 @@ struct StateIndicator: View {
 
 #Preview {
     NavigationStack {
-        InvoicesListView(viewModel: InvoicesViewModel(), showingSettings: .constant(false))
+        InvoicesListView(viewModel: InvoicesViewModel())
     }
 }
