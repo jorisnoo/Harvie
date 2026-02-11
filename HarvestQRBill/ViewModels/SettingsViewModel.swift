@@ -7,10 +7,6 @@ import Foundation
 import os.log
 import SwiftUI
 
-extension Notification.Name {
-    static let menuRefreshTriggered = Notification.Name("menuRefreshTriggered")
-}
-
 private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "HarvestQRBill", category: "Settings")
 
 @Observable

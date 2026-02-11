@@ -6,6 +6,17 @@
 import SwiftUI
 import SwiftData
 
+private struct RefreshActionKey: FocusedValueKey {
+    typealias Value = () -> Void
+}
+
+extension FocusedValues {
+    var refresh: (() -> Void)? {
+        get { self[RefreshActionKey.self] }
+        set { self[RefreshActionKey.self] = newValue }
+    }
+}
+
 struct ContentView: View {
     @Environment(\.modelContext) private var modelContext
     @State private var viewModel = InvoicesViewModel()
@@ -28,9 +39,7 @@ struct ContentView: View {
                 )
             }
         }
-        .onReceive(NotificationCenter.default.publisher(for: .menuRefreshTriggered)) { _ in
-            viewModel.refresh()
-        }
+        .focusedSceneValue(\.refresh) { viewModel.refresh() }
         .onReceive(NotificationCenter.default.publisher(for: NSWindow.didBecomeMainNotification)) { _ in
             Task {
                 await viewModel.reloadCreditorInfo()

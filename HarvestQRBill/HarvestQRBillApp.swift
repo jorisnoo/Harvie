@@ -12,6 +12,7 @@ import AppUpdater
 @main
 struct HarvestQRBillApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
+    @FocusedValue(\.refresh) private var refresh
 
     var body: some Scene {
         WindowGroup {
@@ -28,7 +29,7 @@ struct HarvestQRBillApp: App {
 
             CommandGroup(after: .toolbar) {
                 Button("Refresh") {
-                    NotificationCenter.default.post(name: .menuRefreshTriggered, object: nil)
+                    refresh?()
                 }
                 .keyboardShortcut("r", modifiers: .command)
             }
