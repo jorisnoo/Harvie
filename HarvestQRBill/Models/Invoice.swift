@@ -27,11 +27,12 @@ struct InvoicesResponse: Codable, Sendable {
 
 struct Invoice: Codable, Identifiable, Hashable, Sendable {
     static func == (lhs: Invoice, rhs: Invoice) -> Bool {
-        lhs.id == rhs.id
+        lhs.id == rhs.id && lhs.updatedAt == rhs.updatedAt
     }
 
     func hash(into hasher: inout Hasher) {
         hasher.combine(id)
+        hasher.combine(updatedAt)
     }
 
     let id: Int

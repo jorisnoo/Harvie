@@ -43,6 +43,7 @@ final class InvoicesViewModel {
     var stateFilter: InvoiceState? = .open
     var sortOption: InvoiceSortOption = .issueDate
     var sortDirection: SortDirection = .descending
+    var searchText = ""
     var filterPeriod: DateFilterPeriod = .month
     var selectedPeriod: Date?
     var hasValidCredentials = false
@@ -186,6 +187,13 @@ final class InvoicesViewModel {
 
     var sortedInvoices: [Invoice] {
         var filtered = invoices
+
+        if !searchText.isEmpty {
+            filtered = filtered.filter {
+                $0.number.localizedCaseInsensitiveContains(searchText) ||
+                $0.client.name.localizedCaseInsensitiveContains(searchText)
+            }
+        }
 
         if let period = selectedPeriod {
             let calendar = Calendar.current

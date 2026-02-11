@@ -100,6 +100,7 @@ struct InvoicesListView: View {
                 invoicesList
             }
         }
+        .searchable(text: $viewModel.searchText, prompt: "Filter invoices")
         .navigationTitle("Invoices")
         .navigationSubtitle(viewModel.isRefreshing ? "Updating..." : "")
         .safeAreaInset(edge: .top) {
