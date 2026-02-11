@@ -113,7 +113,7 @@
     vertical-align: top;
 }
 
-.qty-col, .rate-col, .amt-col {
+.items .qty-col, .items .rate-col, .items .amt-col {
     text-align: right;
     white-space: nowrap;
 }

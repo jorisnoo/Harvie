@@ -25,7 +25,7 @@ struct HarvestQRBillApp: App {
     }
 
     var body: some Scene {
-        WindowGroup {
+        Window("HarvestQRBill", id: "main") {
             ContentView()
                 .onAppear {
                     Analytics.initialize()
