@@ -24,6 +24,9 @@ struct SettingsView: View {
                 TemplatesSettings(viewModel: viewModel)
                     .tabItem { Label("Templates", systemImage: "doc.richtext") }
             }
+
+            FeedbackSettings()
+                .tabItem { Label("Feedback", systemImage: "bubble.left.and.text.bubble.right") }
         }
         .frame(minWidth: 500, minHeight: 450)
         .task {
@@ -301,6 +304,35 @@ struct TemplatesSettings: View {
                 .padding(.horizontal)
                 .padding(.bottom, 12)
         }
+    }
+}
+
+// MARK: - Feedback Settings
+
+struct FeedbackSettings: View {
+    var body: some View {
+        Form {
+            Section("Contact") {
+                Link(destination: URL(string: "mailto:contact@noordermeer.ch")!) {
+                    Label("contact@noordermeer.ch", systemImage: "envelope")
+                }
+
+                Text("Send us an email with questions, suggestions, or feedback.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+            Section("Report an Issue") {
+                Link(destination: URL(string: "https://github.com/jorisnoo/HarvestQRBill/issues")!) {
+                    Label("Open GitHub Issues", systemImage: "exclamationmark.bubble")
+                }
+
+                Text("Report bugs or request features on GitHub.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .formStyle(.grouped)
     }
 }
 
