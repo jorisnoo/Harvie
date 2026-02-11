@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.2.1](https://github.com/jorisnoo/HarvestQRBill/releases/tag/v0.2.1) (2026-02-11)
+
+### Features
+
+- replace full list reload with targeted invoice refresh and move GitHub repo config to Info.plist ([909cfa1](https://github.com/jorisnoo/HarvestQRBill/commit/909cfa1a16cedd45b40864e6e79830ebbfc05888))
+- add search filtering for invoices by number and client name ([581018a](https://github.com/jorisnoo/HarvestQRBill/commit/581018aaa81c7b2c37bef884982938e21aeb4da2))
+- refresh invoice list after updating issue date, marking as sent, or marking as draft ([3be5f19](https://github.com/jorisnoo/HarvestQRBill/commit/3be5f19c047ba64e1cd5b319686b1bfe500ce5e3))
+
+### Code Refactoring
+
+- add in-memory cache to KeychainService and use update-or-add instead of delete-then-add ([eefd204](https://github.com/jorisnoo/HarvestQRBill/commit/eefd204986e51628a2448f7498cf4e9bba9a3677))
 ## [0.2.0](https://github.com/jorisnoo/HarvestQRBill/releases/tag/v0.2.0) (2026-02-11)
 
 ### Features
