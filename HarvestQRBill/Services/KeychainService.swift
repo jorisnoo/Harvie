@@ -10,6 +10,7 @@ actor KeychainService {
     static let shared = KeychainService()
 
     private let service = "ch.noordermeer.HarvestQRBill"
+    private var cache: [KeychainKey: Data] = [:]
 
     enum KeychainKey: String {
         case harvestCredentials = "harvest_credentials"
@@ -35,23 +36,37 @@ actor KeychainService {
             kSecAttrAccount as String: key.rawValue
         ]
 
-        SecItemDelete(query as CFDictionary)
-
-        let addQuery: [String: Any] = [
-            kSecClass as String: kSecClassGenericPassword,
-            kSecAttrService as String: service,
-            kSecAttrAccount as String: key.rawValue,
+        let updateAttributes: [String: Any] = [
             kSecValueData as String: data
         ]
 
-        let status = SecItemAdd(addQuery as CFDictionary, nil)
+        let status = SecItemUpdate(query as CFDictionary, updateAttributes as CFDictionary)
 
-        guard status == errSecSuccess else {
+        if status == errSecItemNotFound {
+            let addQuery: [String: Any] = [
+                kSecClass as String: kSecClassGenericPassword,
+                kSecAttrService as String: service,
+                kSecAttrAccount as String: key.rawValue,
+                kSecValueData as String: data
+            ]
+
+            let addStatus = SecItemAdd(addQuery as CFDictionary, nil)
+
+            guard addStatus == errSecSuccess else {
+                throw KeychainError.saveFailed(addStatus)
+            }
+        } else if status != errSecSuccess {
             throw KeychainError.saveFailed(status)
         }
+
+        cache[key] = data
     }
 
     func load<T: Decodable>(for key: KeychainKey) throws -> T {
+        if let cached = cache[key] {
+            return try JSONDecoder().decode(T.self, from: cached)
+        }
+
         let query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: service,
@@ -74,6 +89,8 @@ actor KeychainService {
             throw KeychainError.decodingFailed
         }
 
+        cache[key] = data
+
         return try JSONDecoder().decode(T.self, from: data)
     }
 
@@ -89,6 +106,8 @@ actor KeychainService {
         guard status == errSecSuccess || status == errSecItemNotFound else {
             throw KeychainError.deleteFailed(status)
         }
+
+        cache[key] = nil
     }
 
     func saveHarvestCredentials(_ credentials: HarvestCredentials) throws {
