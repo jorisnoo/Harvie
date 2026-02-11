@@ -97,7 +97,7 @@ final class TemplateEditorViewModel {
     func updatePreview() {
         let context = TemplateContext.sampleDictionary()
         let processedHTML = TemplateEngine.render(htmlContent, with: context)
-        let css = columnVisibility.cssVariables() + "\n" + cssContent
+        let css = cssContent + "\n" + columnVisibility.cssVariables()
         previewHTML = buildPreviewDocument(html: processedHTML, css: css)
     }
 

@@ -10,9 +10,6 @@ import os.log
 private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "HarvestQRBill", category: "TemplateSeeder")
 
 struct TemplateSeeder {
-    private static let seedVersionKey = "TemplateSeeder.version"
-    private static let currentVersion = 2
-
     struct BuiltInTemplate {
         let name: String
         let htmlFile: String
@@ -27,12 +24,6 @@ struct TemplateSeeder {
 
     @MainActor
     static func seedIfNeeded(context: ModelContext) {
-        let savedVersion = UserDefaults.standard.integer(forKey: seedVersionKey)
-
-        if savedVersion >= currentVersion {
-            return
-        }
-
         let descriptor = FetchDescriptor<InvoiceTemplate>(
             predicate: #Predicate { $0.isBuiltIn == true }
         )
@@ -55,15 +46,14 @@ struct TemplateSeeder {
             #if DEBUG
             logger.debug("Seeded \(builtInTemplates.count) built-in templates")
             #endif
-        } else if savedVersion < 2 {
-            upgradeBuiltInTemplates(existingTemplates)
+        } else {
+            refreshBuiltInTemplates(existingTemplates)
         }
 
         try? context.save()
-        UserDefaults.standard.set(currentVersion, forKey: seedVersionKey)
     }
 
-    private static func upgradeBuiltInTemplates(_ templates: [InvoiceTemplate]) {
+    private static func refreshBuiltInTemplates(_ templates: [InvoiceTemplate]) {
         for template in templates {
             guard let builtIn = builtInTemplates.first(where: { $0.name == template.name }) else {
                 continue
@@ -81,7 +71,7 @@ struct TemplateSeeder {
         }
 
         #if DEBUG
-        logger.debug("Upgraded \(templates.count) built-in templates to v2")
+        logger.debug("Refreshed \(templates.count) built-in templates from bundle")
         #endif
     }
 

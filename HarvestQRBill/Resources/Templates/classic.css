@@ -19,6 +19,11 @@
     --font-size-lg: 11pt;
     --font-size-xl: 16pt;
     --font-size-2xl: 22pt;
+
+    /* Column toggles */
+    --col-qty-display: table-cell;
+    --col-price-display: table-cell;
+    --total-hours-display: none;
 }
 
 .invoice {
