@@ -13,14 +13,6 @@
   ✨<a href="https://github.com/jorisnoo/HarvestQRBill/releases/latest">Download</a>✨
 </p>
 
-<p align="center">
-  <a href="https://github.com/jorisnoo/HarvestQRBill/releases/latest">
-    <img src="https://img.shields.io/github/v/release/jorisnoo/HarvestQRBill" alt="Latest Release">
-  </a>
-  <img src="https://img.shields.io/badge/platform-macOS%2014%2B-blue" alt="Platform">
-  <img src="https://img.shields.io/badge/swift-5.9-orange" alt="Swift">
-</p>
-
 ---
 
 <p align="center">
