@@ -3,6 +3,7 @@
 //  HarvestQRBill
 //
 
+import AppKit
 import Foundation
 import PDFKit
 import WebKit
@@ -17,6 +18,20 @@ final class TemplatePDFService {
     // A4 dimensions in points (72 dpi): 595.28 x 841.89
     static let a4Width: CGFloat = 595.28
     static let a4Height: CGFloat = 841.89
+
+    /// Hidden window that provides the GPU/rendering context WKWebView needs.
+    private lazy var renderWindow: NSWindow = {
+        let window = NSWindow(
+            contentRect: CGRect(x: 0, y: 0, width: Self.a4Width, height: Self.a4Height),
+            styleMask: [.borderless],
+            backing: .buffered,
+            defer: false
+        )
+        window.alphaValue = 0
+        window.collectionBehavior = [.ignoresCycle, .stationary]
+        window.orderBack(nil)
+        return window
+    }()
 
     func renderPDF(html: String, css: String) async throws -> PDFDocument {
         let fullHTML = buildHTMLDocument(html: html, css: css)
@@ -77,6 +92,9 @@ final class TemplatePDFService {
             height: Self.a4Height
         ))
         webView.setValue(false, forKey: "drawsBackground")
+        renderWindow.contentView = webView
+
+        defer { renderWindow.contentView = nil }
 
         return try await withThrowingTaskGroup(of: PDFDocument.self) { group in
             group.addTask { @MainActor in

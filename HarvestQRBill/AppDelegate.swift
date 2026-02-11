@@ -9,6 +9,8 @@ import AppUpdater
 #endif
 
 class AppDelegate: NSObject, NSApplicationDelegate {
+    func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool { true }
+
     #if !APP_STORE
     let updater = AppUpdater(
         owner: Bundle.main.infoDictionary?["GHRepositoryOwner"] as! String,
