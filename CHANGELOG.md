@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.2.3](https://github.com/jorisnoo/HarvestQRBill/releases/tag/v0.2.3) (2026-02-11)
+
+### Code Refactoring
+
+- use focusedSceneValue instead of NotificationCenter for menu refresh action ([14560f7](https://github.com/jorisnoo/HarvestQRBill/commit/14560f78490227292587908fcfe343ed31c91413))
+- use native Settings scene and NotificationCenter instead of focused values for settings and refresh ([88f2a6f](https://github.com/jorisnoo/HarvestQRBill/commit/88f2a6fe458a17f6327da7d4e6bca036ecec6024))
 ## [0.2.2](https://github.com/jorisnoo/HarvestQRBill/releases/tag/v0.2.2) (2026-02-11)
 
 ### Features
