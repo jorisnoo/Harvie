@@ -1,13 +1,13 @@
 {
-  "originHash" : "d79ef9a555b34ec39e065a183fb0dffe78247ce9a2b70fe30aaac00bc9ebbdde",
+  "originHash" : "348625b784b2daee63a113e12bf33695b49968cce1466d1436b548fdc98c2a13",
   "pins" : [
     {
       "identity" : "appupdater",
       "kind" : "remoteSourceControl",
-      "location" : "https://github.com/mxcl/AppUpdater.git",
+      "location" : "https://github.com/jorisnoo/AppUpdater.git",
       "state" : {
-        "revision" : "1b60169700489f16cfbe2feb6b1e32ca5c9464b8",
-        "version" : "1.1.1"
+        "revision" : "2bb85cd74b7a30914b6c0f1a6c2d55947969e975",
+        "version" : "3.0.0"
       }
     },
     {
@@ -17,33 +17,6 @@
       "state" : {
         "revision" : "2de9697acd3c0f86e54b190f151d745361c31f15",
         "version" : "1.0.1"
-      }
-    },
-    {
-      "identity" : "foundation",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/PromiseKit/Foundation",
-      "state" : {
-        "revision" : "985f17fa69ee0e5b7eb3ff9be87ffc4e05fc0927",
-        "version" : "3.4.0"
-      }
-    },
-    {
-      "identity" : "path.swift",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/mxcl/Path.swift",
-      "state" : {
-        "revision" : "8e355c28e9393c42e58b18c54cace2c42c98a616",
-        "version" : "1.4.1"
-      }
-    },
-    {
-      "identity" : "promisekit",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/mxcl/PromiseKit.git",
-      "state" : {
-        "revision" : "8a98e31a47854d3180882c8068cc4d9381bf382d",
-        "version" : "6.22.1"
       }
     },
     {
@@ -85,10 +58,10 @@
     {
       "identity" : "version",
       "kind" : "remoteSourceControl",
-      "location" : "https://github.com/mxcl/Version",
+      "location" : "https://github.com/mxcl/Version.git",
       "state" : {
-        "revision" : "200046c93f6d5d78a6d72bfd9c0b27a95e9c0a2b",
-        "version" : "1.2.0"
+        "revision" : "67ce582bb9de70e1eb2ee41fd71aad3b5f86d97b",
+        "version" : "2.2.0"
       }
     }
   ],

@@ -616,10 +616,10 @@
 /* Begin XCRemoteSwiftPackageReference section */
 		CF02441C2F1F7D2A004AD884 /* XCRemoteSwiftPackageReference "AppUpdater" */ = {
 			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/mxcl/AppUpdater.git";
+			repositoryURL = "https://github.com/jorisnoo/AppUpdater.git";
 			requirement = {
 				kind = upToNextMajorVersion;
-				minimumVersion = 1.1.1;
+				minimumVersion = 3.0.0;
 			};
 		};
 		CFA0B0012F42A000004AD884 /* XCRemoteSwiftPackageReference "AviaryInsights" */ = {
