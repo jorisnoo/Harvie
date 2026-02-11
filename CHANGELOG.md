@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.2.4](https://github.com/jorisnoo/HarvestQRBill/releases/tag/v0.2.4) (2026-02-11)
+
+### Features
+
+- reload invoices and creditor info when settings are saved, add retry button to setup prompt ([3e9d676](https://github.com/jorisnoo/HarvestQRBill/commit/3e9d6768f58cc4858ffede08d3b4c9110b18fb91))
+- show setup required prompt with open settings button when credentials are missing ([705afd9](https://github.com/jorisnoo/HarvestQRBill/commit/705afd9035e3b2981ace4d363c270aaa62fc24c0))
 ## [0.2.3](https://github.com/jorisnoo/HarvestQRBill/releases/tag/v0.2.3) (2026-02-11)
 
 ### Code Refactoring
