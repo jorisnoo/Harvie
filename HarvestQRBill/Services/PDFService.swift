@@ -10,42 +10,6 @@ import PDFKit
 
 private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "HarvestQRBill", category: "PDF")
 
-/// Delegate that implements certificate pinning for Harvest domains
-private final class HarvestPDFURLSessionDelegate: NSObject, URLSessionDelegate {
-    private let pinnedDomains = ["harvestapp.com"]
-
-    func urlSession(
-        _ session: URLSession,
-        didReceive challenge: URLAuthenticationChallenge,
-        completionHandler: @escaping (URLSession.AuthChallengeDisposition, URLCredential?) -> Void
-    ) {
-        guard challenge.protectionSpace.authenticationMethod == NSURLAuthenticationMethodServerTrust,
-              let serverTrust = challenge.protectionSpace.serverTrust,
-              pinnedDomains.contains(where: { challenge.protectionSpace.host.hasSuffix($0) })
-        else {
-            completionHandler(.performDefaultHandling, nil)
-            return
-        }
-
-        // Validate the certificate chain
-        let policies = [SecPolicyCreateSSL(true, challenge.protectionSpace.host as CFString)]
-        SecTrustSetPolicies(serverTrust, policies as CFArray)
-
-        var error: CFError?
-        let isValid = SecTrustEvaluateWithError(serverTrust, &error)
-
-        if isValid {
-            let credential = URLCredential(trust: serverTrust)
-            completionHandler(.useCredential, credential)
-        } else {
-            #if DEBUG
-            logger.error("Certificate validation failed for \(challenge.protectionSpace.host)")
-            #endif
-            completionHandler(.cancelAuthenticationChallenge, nil)
-        }
-    }
-}
-
 actor PDFService {
     static let shared = PDFService()
 
@@ -70,7 +34,9 @@ actor PDFService {
     }
 
     private let session: URLSession
-    private let sessionDelegate = HarvestPDFURLSessionDelegate()
+    private let sessionDelegate = CertificatePinningDelegate(
+        pinnedDomains: ["harvestapp.com"]
+    )
 
     init() {
         let config = URLSessionConfiguration.default

@@ -8,49 +8,14 @@ import os.log
 
 private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "HarvestQRBill", category: "API")
 
-/// Delegate that implements certificate pinning for Harvest API domains
-private final class HarvestURLSessionDelegate: NSObject, URLSessionDelegate {
-    private let pinnedDomains = ["api.harvestapp.com", "harvestapp.com"]
-
-    func urlSession(
-        _ session: URLSession,
-        didReceive challenge: URLAuthenticationChallenge,
-        completionHandler: @escaping (URLSession.AuthChallengeDisposition, URLCredential?) -> Void
-    ) {
-        guard challenge.protectionSpace.authenticationMethod == NSURLAuthenticationMethodServerTrust,
-              let serverTrust = challenge.protectionSpace.serverTrust,
-              let host = challenge.protectionSpace.host.components(separatedBy: ".").suffix(2).joined(separator: ".") as String?,
-              pinnedDomains.contains(where: { challenge.protectionSpace.host.hasSuffix($0) || host == $0 })
-        else {
-            completionHandler(.performDefaultHandling, nil)
-            return
-        }
-
-        // Validate the certificate chain
-        let policies = [SecPolicyCreateSSL(true, challenge.protectionSpace.host as CFString)]
-        SecTrustSetPolicies(serverTrust, policies as CFArray)
-
-        var error: CFError?
-        let isValid = SecTrustEvaluateWithError(serverTrust, &error)
-
-        if isValid {
-            let credential = URLCredential(trust: serverTrust)
-            completionHandler(.useCredential, credential)
-        } else {
-            #if DEBUG
-            logger.error("Certificate validation failed for \(challenge.protectionSpace.host): \(error?.localizedDescription ?? "unknown")")
-            #endif
-            completionHandler(.cancelAuthenticationChallenge, nil)
-        }
-    }
-}
-
 actor HarvestAPIService {
     static let shared = HarvestAPIService()
 
     private let baseURL = URL(string: "https://api.harvestapp.com/v2")!
     private let session: URLSession
-    private let sessionDelegate = HarvestURLSessionDelegate()
+    private let sessionDelegate = CertificatePinningDelegate(
+        pinnedDomains: ["harvestapp.com"]
+    )
     private let decoder: JSONDecoder
 
     init() {
@@ -174,6 +139,25 @@ actor HarvestAPIService {
                 #endif
                 throw APIError.decodingError(error)
             }
+        case 401:
+            throw APIError.unauthorized
+        case 404:
+            throw APIError.notFound
+        default:
+            throw APIError.serverError(httpResponse.statusCode)
+        }
+    }
+
+    private func performMutation(_ request: URLRequest) async throws {
+        let (_, response) = try await session.data(for: request)
+
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw APIError.networkError(URLError(.badServerResponse))
+        }
+
+        switch httpResponse.statusCode {
+        case 200...299:
+            return
         case 401:
             throw APIError.unauthorized
         case 404:
@@ -322,26 +306,8 @@ actor HarvestAPIService {
     ) async throws {
         var request = try makeRequest(path: "invoices/\(invoiceId)/messages", credentials: credentials)
         request.httpMethod = "POST"
-
-        let body: [String: String] = ["event_type": eventType]
-        request.httpBody = try JSONEncoder().encode(body)
-
-        let (_, response) = try await session.data(for: request)
-
-        guard let httpResponse = response as? HTTPURLResponse else {
-            throw APIError.networkError(URLError(.badServerResponse))
-        }
-
-        switch httpResponse.statusCode {
-        case 200...299:
-            return
-        case 401:
-            throw APIError.unauthorized
-        case 404:
-            throw APIError.notFound
-        default:
-            throw APIError.serverError(httpResponse.statusCode)
-        }
+        request.httpBody = try JSONEncoder().encode(["event_type": eventType])
+        try await performMutation(request)
     }
 
     private func updateInvoice(
@@ -352,23 +318,7 @@ actor HarvestAPIService {
         var request = try makeRequest(path: "invoices/\(id)", credentials: credentials)
         request.httpMethod = "PATCH"
         request.httpBody = try JSONEncoder().encode(fields)
-
-        let (_, response) = try await session.data(for: request)
-
-        guard let httpResponse = response as? HTTPURLResponse else {
-            throw APIError.networkError(URLError(.badServerResponse))
-        }
-
-        switch httpResponse.statusCode {
-        case 200...299:
-            return
-        case 401:
-            throw APIError.unauthorized
-        case 404:
-            throw APIError.notFound
-        default:
-            throw APIError.serverError(httpResponse.statusCode)
-        }
+        try await performMutation(request)
     }
 
     func testConnection(credentials: HarvestCredentials) async throws -> Bool {

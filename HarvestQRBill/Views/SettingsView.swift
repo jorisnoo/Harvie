@@ -294,16 +294,21 @@ struct TemplatesSettings: View {
 
                     if viewModel.appSettings.pdfSource == .template {
                         Picker("Template", selection: $viewModel.appSettings.selectedTemplateId) {
-                            Text("None").tag(nil as UUID?)
                             ForEach(templates) { template in
                                 Text(template.name).tag(template.id as UUID?)
                             }
                         }
-
-                        if viewModel.appSettings.selectedTemplateId == nil {
-                            Text("Select a template to use for invoice generation.")
-                                .font(.caption)
-                                .foregroundStyle(.orange)
+                        .onAppear {
+                            if viewModel.appSettings.selectedTemplateId == nil,
+                               let first = templates.first {
+                                viewModel.appSettings.selectedTemplateId = first.id
+                            }
+                        }
+                        .onChange(of: templates) {
+                            if viewModel.appSettings.selectedTemplateId == nil,
+                               let first = templates.first {
+                                viewModel.appSettings.selectedTemplateId = first.id
+                            }
                         }
                     }
                 }

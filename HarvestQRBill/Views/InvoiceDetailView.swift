@@ -102,9 +102,7 @@ struct InvoiceDetailView: View {
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
                 Button {
-                    Task {
-                        await previewWithQRBill()
-                    }
+                    Task { await previewWithQRBill() }
                 } label: {
                     if isPreviewing {
                         ProgressView()
@@ -120,9 +118,7 @@ struct InvoiceDetailView: View {
 
             ToolbarItem(placement: .primaryAction) {
                 Button {
-                    Task {
-                        await downloadWithQRBill()
-                    }
+                    Task { await downloadWithQRBill() }
                 } label: {
                     if isProcessing {
                         ProgressView()
@@ -193,9 +189,10 @@ struct InvoiceDetailView: View {
         }
     }
 
+    // MARK: - Header
+
     private var headerSection: some View {
         VStack(alignment: .leading, spacing: 8) {
-            // Row 1: Subject + State + Actions
             HStack {
                 TextField("Invoice title", text: $editedSubject)
                     .font(.title2)
@@ -212,9 +209,7 @@ struct InvoiceDetailView: View {
                     }
 
                     Button {
-                        Task {
-                            await saveSubject()
-                        }
+                        Task { await saveSubject() }
                     } label: {
                         if isSavingSubject {
                             ProgressView()
@@ -233,7 +228,6 @@ struct InvoiceDetailView: View {
                 StateIndicator(state: invoice.state)
             }
 
-            // Row 2: Metadata
             HStack(spacing: 4) {
                 Text(invoice.number)
                 Text("·")
@@ -243,37 +237,46 @@ struct InvoiceDetailView: View {
             .foregroundStyle(.secondary)
         }
         .sheet(isPresented: $showChangeDateSheet) {
-            ChangeDateSheet(
-                date: $editedIssueDate,
-                isSaving: isSavingIssueDate,
-                onSave: {
+            ConfirmationSheet(
+                title: "Change Issue Date",
+                confirmLabel: "Save",
+                isProcessing: isSavingIssueDate,
+                onConfirm: {
                     Task {
                         await saveIssueDate()
-                        if issueDateSaved {
-                            showChangeDateSheet = false
-                        }
+                        if issueDateSaved { showChangeDateSheet = false }
                     }
                 },
-                onCancel: {
-                    showChangeDateSheet = false
+                onCancel: { showChangeDateSheet = false },
+                width: 300
+            ) {
+                HStack {
+                    Spacer()
+                    Button("Today") { editedIssueDate = Date() }
+                        .buttonStyle(.bordered)
+                        .controlSize(.small)
+                        .disabled(Calendar.current.isDateInToday(editedIssueDate))
                 }
-            )
+
+                DatePicker("Issue Date", selection: $editedIssueDate, displayedComponents: .date)
+                    .datePickerStyle(.graphical)
+                    .labelsHidden()
+            }
         }
         .sheet(isPresented: $showMarkAsSentSheet) {
-            MarkAsSentSheet(
-                invoiceNumber: invoice.number,
-                isMarking: isMarkingAsSent,
+            ConfirmationSheet(
+                title: "Mark as Sent",
+                message: "Mark invoice \(invoice.number) as sent?",
+                detail: "The sent date will be set to now.",
+                confirmLabel: "Mark as Sent",
+                isProcessing: isMarkingAsSent,
                 onConfirm: {
                     Task {
                         await markAsSent()
-                        if showMarkAsSentSuccess {
-                            showMarkAsSentSheet = false
-                        }
+                        if showMarkAsSentSuccess { showMarkAsSentSheet = false }
                     }
                 },
-                onCancel: {
-                    showMarkAsSentSheet = false
-                }
+                onCancel: { showMarkAsSentSheet = false }
             )
         }
         .alert("Invoice Sent", isPresented: $showMarkAsSentSuccess) {
@@ -282,20 +285,18 @@ struct InvoiceDetailView: View {
             Text("Invoice \(invoice.number) has been marked as sent.")
         }
         .sheet(isPresented: $showMarkAsDraftSheet) {
-            MarkAsDraftSheet(
-                invoiceNumber: invoice.number,
-                isMarking: isMarkingAsDraft,
+            ConfirmationSheet(
+                title: "Mark as Draft",
+                message: "Revert invoice \(invoice.number) to draft?",
+                confirmLabel: "Mark as Draft",
+                isProcessing: isMarkingAsDraft,
                 onConfirm: {
                     Task {
                         await markAsDraft()
-                        if showMarkAsDraftSuccess {
-                            showMarkAsDraftSheet = false
-                        }
+                        if showMarkAsDraftSuccess { showMarkAsDraftSheet = false }
                     }
                 },
-                onCancel: {
-                    showMarkAsDraftSheet = false
-                }
+                onCancel: { showMarkAsDraftSheet = false }
             )
         }
         .alert("Invoice Reverted", isPresented: $showMarkAsDraftSuccess) {
@@ -305,27 +306,7 @@ struct InvoiceDetailView: View {
         }
     }
 
-    private func saveSubject() async {
-        isSavingSubject = true
-        do {
-            let credentials = try await keychainService.loadHarvestCredentials()
-            try await apiService.updateInvoiceSubject(
-                invoiceId: invoice.id,
-                subject: editedSubject,
-                credentials: credentials
-            )
-            lastSavedSubject = editedSubject
-            subjectSaved = true
-        } catch let apiError as HarvestAPIService.APIError {
-            self.error = "Failed to save title: \(apiError.localizedDescription)"
-        } catch {
-            #if DEBUG
-            logger.error("Failed to save subject: \(error.localizedDescription)")
-            #endif
-            self.error = "Failed to save title. Please try again."
-        }
-        isSavingSubject = false
-    }
+    // MARK: - Amounts
 
     private var amountsSection: some View {
         VStack(alignment: .leading, spacing: 4) {
@@ -356,7 +337,6 @@ struct InvoiceDetailView: View {
             if let discount = invoice.discount, let discountAmount = invoice.discountAmount {
                 Text("Discount \(discount.formatted())%: -\(CurrencyFormatter.format(discountAmount, currency: invoice.currency))")
                     .font(.caption)
-//                    .foregroundStyle(.green)
             }
         }
     }
@@ -377,70 +357,7 @@ struct InvoiceDetailView: View {
         }
     }
 
-    private func saveIssueDate() async {
-        isSavingIssueDate = true
-        do {
-            let credentials = try await keychainService.loadHarvestCredentials()
-            try await apiService.updateInvoiceIssueDate(
-                invoiceId: invoice.id,
-                issueDate: editedIssueDate,
-                credentials: credentials
-            )
-            lastSavedIssueDate = editedIssueDate
-            issueDateSaved = true
-            onRefresh?()
-        } catch let apiError as HarvestAPIService.APIError {
-            self.error = "Failed to save issue date: \(apiError.localizedDescription)"
-        } catch {
-            #if DEBUG
-            logger.error("Failed to save issue date: \(error.localizedDescription)")
-            #endif
-            self.error = "Failed to save issue date. Please try again."
-        }
-        isSavingIssueDate = false
-    }
-
-    private func markAsSent() async {
-        isMarkingAsSent = true
-        do {
-            let credentials = try await keychainService.loadHarvestCredentials()
-            try await apiService.markInvoiceAsSent(
-                invoiceId: invoice.id,
-                credentials: credentials
-            )
-            showMarkAsSentSuccess = true
-            onRefresh?()
-        } catch let apiError as HarvestAPIService.APIError {
-            self.error = "Failed to mark as sent: \(apiError.localizedDescription)"
-        } catch {
-            #if DEBUG
-            logger.error("Failed to mark as sent: \(error.localizedDescription)")
-            #endif
-            self.error = "Failed to mark as sent. Please try again."
-        }
-        isMarkingAsSent = false
-    }
-
-    private func markAsDraft() async {
-        isMarkingAsDraft = true
-        do {
-            let credentials = try await keychainService.loadHarvestCredentials()
-            try await apiService.markInvoiceAsDraft(
-                invoiceId: invoice.id,
-                credentials: credentials
-            )
-            showMarkAsDraftSuccess = true
-            onRefresh?()
-        } catch let apiError as HarvestAPIService.APIError {
-            self.error = "Failed to mark as draft: \(apiError.localizedDescription)"
-        } catch {
-            #if DEBUG
-            logger.error("Failed to mark as draft: \(error.localizedDescription)")
-            #endif
-            self.error = "Failed to mark as draft. Please try again."
-        }
-        isMarkingAsDraft = false
-    }
+    // MARK: - Line Items
 
     private func lineItemsSection(_ items: [LineItem]) -> some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -478,6 +395,8 @@ struct InvoiceDetailView: View {
         }
     }
 
+    // MARK: - Notes
+
     private var notesSection: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("Notes")
@@ -500,9 +419,7 @@ struct InvoiceDetailView: View {
                             .foregroundStyle(.green)
                     }
                     Button {
-                        Task {
-                            await saveNotes()
-                        }
+                        Task { await saveNotes() }
                     } label: {
                         if isSavingNotes {
                             ProgressView()
@@ -519,26 +436,136 @@ struct InvoiceDetailView: View {
         }
     }
 
-    private func saveNotes() async {
-        isSavingNotes = true
+    // MARK: - API Actions
+
+    private func performAPIAction(
+        label: String,
+        action: (HarvestCredentials) async throws -> Void
+    ) async -> Bool {
         do {
             let credentials = try await keychainService.loadHarvestCredentials()
-            try await apiService.updateInvoiceNotes(
-                invoiceId: invoice.id,
-                notes: editedNotes,
-                credentials: credentials
-            )
-            lastSavedNotes = editedNotes
-            notesSaved = true
+            try await action(credentials)
+            return true
         } catch let apiError as HarvestAPIService.APIError {
-            self.error = "Failed to save notes: \(apiError.localizedDescription)"
+            self.error = "Failed to \(label): \(apiError.localizedDescription)"
         } catch {
             #if DEBUG
-            logger.error("Failed to save notes: \(error.localizedDescription)")
+            logger.error("Failed to \(label): \(error.localizedDescription)")
             #endif
-            self.error = "Failed to save notes. Please try again."
+            self.error = "Failed to \(label). Please try again."
+        }
+        return false
+    }
+
+    private func saveSubject() async {
+        isSavingSubject = true
+        let success = await performAPIAction(label: "save title") { credentials in
+            try await apiService.updateInvoiceSubject(
+                invoiceId: invoice.id, subject: editedSubject, credentials: credentials
+            )
+        }
+        if success {
+            lastSavedSubject = editedSubject
+            subjectSaved = true
+        }
+        isSavingSubject = false
+    }
+
+    private func saveNotes() async {
+        isSavingNotes = true
+        let success = await performAPIAction(label: "save notes") { credentials in
+            try await apiService.updateInvoiceNotes(
+                invoiceId: invoice.id, notes: editedNotes, credentials: credentials
+            )
+        }
+        if success {
+            lastSavedNotes = editedNotes
+            notesSaved = true
         }
         isSavingNotes = false
+    }
+
+    private func saveIssueDate() async {
+        isSavingIssueDate = true
+        let success = await performAPIAction(label: "save issue date") { credentials in
+            try await apiService.updateInvoiceIssueDate(
+                invoiceId: invoice.id, issueDate: editedIssueDate, credentials: credentials
+            )
+        }
+        if success {
+            lastSavedIssueDate = editedIssueDate
+            issueDateSaved = true
+            onRefresh?()
+        }
+        isSavingIssueDate = false
+    }
+
+    private func markAsSent() async {
+        isMarkingAsSent = true
+        let success = await performAPIAction(label: "mark as sent") { credentials in
+            try await apiService.markInvoiceAsSent(invoiceId: invoice.id, credentials: credentials)
+        }
+        if success {
+            showMarkAsSentSuccess = true
+            onRefresh?()
+        }
+        isMarkingAsSent = false
+    }
+
+    private func markAsDraft() async {
+        isMarkingAsDraft = true
+        let success = await performAPIAction(label: "mark as draft") { credentials in
+            try await apiService.markInvoiceAsDraft(invoiceId: invoice.id, credentials: credentials)
+        }
+        if success {
+            showMarkAsDraftSuccess = true
+            onRefresh?()
+        }
+        isMarkingAsDraft = false
+    }
+
+    // MARK: - PDF Generation
+
+    private func generatePDF() async throws -> (pdf: PDFDocument, settings: AppSettings) {
+        #if DEBUG
+        let creditorInfo = (try? await keychainService.loadCreditorInfo()) ?? DemoDataProvider.defaultCreditorInfo
+        #else
+        let creditorInfo = (try? await keychainService.loadCreditorInfo()) ?? .empty
+        #endif
+
+        guard creditorInfo.isValid else {
+            throw GenerationError.invalidCreditor
+        }
+
+        let settings = (try? await keychainService.loadAppSettings()) ?? .default
+
+        if settings.pdfSource == .template,
+           let templateId = settings.selectedTemplateId,
+           let template = loadTemplate(id: templateId) {
+            let credentials = try? await keychainService.loadHarvestCredentials()
+            let pdf = try await pdfService.createInvoiceFromTemplate(
+                invoice: invoice,
+                template: template,
+                creditorInfo: creditorInfo,
+                credentials: credentials
+            )
+            return (pdf, settings)
+        }
+
+        #if DEBUG
+        if settings.isDemoMode {
+            let pdf = try await pdfService.createDemoInvoiceWithQRBill(
+                invoice: invoice, creditorInfo: creditorInfo
+            )
+            return (pdf, settings)
+        }
+        #endif
+
+        let credentials = try await keychainService.loadHarvestCredentials()
+        let pdf = try await pdfService.createInvoiceWithQRBill(
+            invoice: invoice, credentials: credentials, creditorInfo: creditorInfo
+        )
+        return (pdf, settings)
     }
 
     private func previewWithQRBill() async {
@@ -546,72 +573,14 @@ struct InvoiceDetailView: View {
         error = nil
 
         do {
-            #if DEBUG
-            let creditorInfo = (try? await keychainService.loadCreditorInfo()) ?? DemoDataProvider.defaultCreditorInfo
-            #else
-            let creditorInfo = (try? await keychainService.loadCreditorInfo()) ?? .empty
-            #endif
-
-            guard creditorInfo.isValid else {
-                error = "Please configure your creditor information in Settings."
-                isPreviewing = false
-                return
-            }
-
-            let settings = (try? await keychainService.loadAppSettings()) ?? .default
-            let pdf: PDFDocument
-
-            if settings.pdfSource == .template,
-               let templateId = settings.selectedTemplateId,
-               let template = loadTemplate(id: templateId) {
-                let credentials = try? await keychainService.loadHarvestCredentials()
-                pdf = try await pdfService.createInvoiceFromTemplate(
-                    invoice: invoice,
-                    template: template,
-                    creditorInfo: creditorInfo,
-                    credentials: credentials
-                )
-            } else {
-                #if DEBUG
-                if settings.isDemoMode {
-                    pdf = try await pdfService.createDemoInvoiceWithQRBill(
-                        invoice: invoice,
-                        creditorInfo: creditorInfo
-                    )
-                } else {
-                    let credentials = try await keychainService.loadHarvestCredentials()
-                    pdf = try await pdfService.createInvoiceWithQRBill(
-                        invoice: invoice,
-                        credentials: credentials,
-                        creditorInfo: creditorInfo
-                    )
-                }
-                #else
-                let credentials = try await keychainService.loadHarvestCredentials()
-                pdf = try await pdfService.createInvoiceWithQRBill(
-                    invoice: invoice,
-                    credentials: credentials,
-                    creditorInfo: creditorInfo
-                )
-                #endif
-            }
-
+            let (pdf, _) = try await generatePDF()
             let tempURL = FileManager.default.temporaryDirectory
-                .appendingPathComponent("\(invoiceFileName).pdf")
-
+                .appendingPathComponent(invoiceFileName)
             pdf.write(to: tempURL)
-
             NSWorkspace.shared.open(tempURL)
             Analytics.pdfPreviewed()
-        } catch let apiError as HarvestAPIService.APIError {
-            self.error = apiError.localizedDescription
-        } catch let pdfError as PDFService.PDFError {
-            self.error = pdfError.localizedDescription
         } catch {
-            #if DEBUG
-            logger.error("Preview failed: \(error.localizedDescription)")
-            #endif
-            self.error = "Failed to generate preview. Please try again."
+            handlePDFError(error, context: "Preview")
         }
 
         isPreviewing = false
@@ -623,72 +592,35 @@ struct InvoiceDetailView: View {
         savedFilePath = nil
 
         do {
-            #if DEBUG
-            let creditorInfo = (try? await keychainService.loadCreditorInfo()) ?? DemoDataProvider.defaultCreditorInfo
-            #else
-            let creditorInfo = (try? await keychainService.loadCreditorInfo()) ?? .empty
-            #endif
+            let (pdf, settings) = try await generatePDF()
+            let result = try await InvoiceFileSaver.save(
+                pdf, fileName: invoiceFileName, settings: settings, pdfService: pdfService
+            )
 
-            guard creditorInfo.isValid else {
-                error = "Please configure your creditor information in Settings."
-                isProcessing = false
-                return
+            switch result {
+            case .saved(let path):
+                savedFilePath = path
+                showingSuccess = true
+            case .cancelled:
+                break
             }
-
-            let settings = (try? await keychainService.loadAppSettings()) ?? .default
-
-            let pdf: PDFDocument
-
-            if settings.pdfSource == .template,
-               let templateId = settings.selectedTemplateId,
-               let template = loadTemplate(id: templateId) {
-                let credentials = try? await keychainService.loadHarvestCredentials()
-                pdf = try await pdfService.createInvoiceFromTemplate(
-                    invoice: invoice,
-                    template: template,
-                    creditorInfo: creditorInfo,
-                    credentials: credentials
-                )
-            } else {
-                #if DEBUG
-                if settings.isDemoMode {
-                    pdf = try await pdfService.createDemoInvoiceWithQRBill(
-                        invoice: invoice,
-                        creditorInfo: creditorInfo
-                    )
-                } else {
-                    let credentials = try await keychainService.loadHarvestCredentials()
-                    pdf = try await pdfService.createInvoiceWithQRBill(
-                        invoice: invoice,
-                        credentials: credentials,
-                        creditorInfo: creditorInfo
-                    )
-                }
-                #else
-                let credentials = try await keychainService.loadHarvestCredentials()
-                pdf = try await pdfService.createInvoiceWithQRBill(
-                    invoice: invoice,
-                    credentials: credentials,
-                    creditorInfo: creditorInfo
-                )
-                #endif
-            }
-
-            await MainActor.run {
-                savePDF(pdf, settings: settings)
-            }
-        } catch let apiError as HarvestAPIService.APIError {
-            self.error = apiError.localizedDescription
-            isProcessing = false
-        } catch let pdfError as PDFService.PDFError {
-            self.error = pdfError.localizedDescription
-            isProcessing = false
         } catch {
+            handlePDFError(error, context: "Download")
+        }
+
+        isProcessing = false
+    }
+
+    private func handlePDFError(_ error: Error, context: String) {
+        if let apiError = error as? HarvestAPIService.APIError {
+            self.error = apiError.localizedDescription
+        } else if let pdfError = error as? PDFService.PDFError {
+            self.error = pdfError.localizedDescription
+        } else {
             #if DEBUG
-            logger.error("Download failed: \(error.localizedDescription)")
+            logger.error("\(context) failed: \(error.localizedDescription)")
             #endif
-            self.error = "Failed to download invoice. Please try again."
-            isProcessing = false
+            self.error = error.localizedDescription
         }
     }
 
@@ -709,255 +641,15 @@ struct InvoiceDetailView: View {
             dueDate: invoice.dueDate,
             paidDate: invoice.paidAt ?? invoice.paidDate
         )
-
-        return sanitizeFilename(rawFilename)
+        return InvoiceFileSaver.sanitizeFilename(rawFilename)
     }
 
-    /// Removes path traversal components and invalid characters from a filename
-    private func sanitizeFilename(_ filename: String) -> String {
-        var sanitized = filename
-            .replacingOccurrences(of: "..", with: "")
-            .replacingOccurrences(of: "/", with: "-")
-            .replacingOccurrences(of: "\\", with: "-")
-            .replacingOccurrences(of: ":", with: "-")
+    private enum GenerationError: LocalizedError {
+        case invalidCreditor
 
-        // Remove leading dots and dashes
-        while sanitized.hasPrefix(".") || sanitized.hasPrefix("-") {
-            sanitized = String(sanitized.dropFirst())
+        var errorDescription: String? {
+            "Please configure your creditor information in Settings."
         }
-
-        // Ensure it ends with .pdf
-        if !sanitized.lowercased().hasSuffix(".pdf") {
-            sanitized += ".pdf"
-        }
-
-        return sanitized.isEmpty ? "invoice.pdf" : sanitized
-    }
-
-    /// Validates that the final file path is within the intended folder
-    private func isValidPath(_ fileURL: URL, within folderURL: URL) -> Bool {
-        let resolvedFile = fileURL.standardizedFileURL.path
-        let resolvedFolder = folderURL.standardizedFileURL.path
-
-        return resolvedFile.hasPrefix(resolvedFolder + "/") || resolvedFile.hasPrefix(resolvedFolder)
-    }
-
-    private func savePDF(_ document: PDFDocument, settings: AppSettings) {
-        let fileName = invoiceFileName
-
-        if settings.downloadBehavior == .useDefaultFolder,
-           let folderURL = settings.downloadURL {
-            // Start accessing security-scoped resource (for user-selected folders)
-            let hasAccess = folderURL.startAccessingSecurityScopedResource()
-
-            let fileURL = folderURL.appendingPathComponent(fileName)
-
-            // Validate path traversal - ensure file stays within the intended folder
-            guard isValidPath(fileURL, within: folderURL) else {
-                if hasAccess {
-                    folderURL.stopAccessingSecurityScopedResource()
-                }
-                showSavePanel(for: document, suggestedName: "invoice.pdf")
-                return
-            }
-
-            // If file exists, add a number
-            var finalURL = fileURL
-            var counter = 1
-            let baseName = fileName.replacingOccurrences(of: ".pdf", with: "")
-            while FileManager.default.fileExists(atPath: finalURL.path) {
-                let numberedName = "\(baseName)_\(counter).pdf"
-                finalURL = folderURL.appendingPathComponent(numberedName)
-                // Re-validate to ensure numbered filename also stays within folder
-                guard isValidPath(finalURL, within: folderURL) else {
-                    if hasAccess {
-                        folderURL.stopAccessingSecurityScopedResource()
-                    }
-                    showSavePanel(for: document, suggestedName: "invoice.pdf")
-                    return
-                }
-                counter += 1
-            }
-
-            // Try to save
-            let success = document.write(to: finalURL)
-
-            if hasAccess {
-                folderURL.stopAccessingSecurityScopedResource()
-            }
-
-            if success {
-                savedFilePath = finalURL.path
-                showingSuccess = true
-                isProcessing = false
-                Analytics.pdfExported(method: "direct")
-            } else {
-                // Fall back to save panel if direct save fails
-                showSavePanel(for: document, suggestedName: fileName)
-            }
-        } else {
-            showSavePanel(for: document, suggestedName: fileName)
-        }
-    }
-
-    private func showSavePanel(for document: PDFDocument, suggestedName: String) {
-        let savePanel = NSSavePanel()
-        savePanel.allowedContentTypes = [.pdf]
-        savePanel.nameFieldStringValue = suggestedName
-        savePanel.title = "Save Invoice with QR Bill"
-
-        savePanel.begin { response in
-            if response == .OK, let url = savePanel.url {
-                Task {
-                    do {
-                        try await pdfService.savePDF(document, to: url)
-                        await MainActor.run {
-                            savedFilePath = url.path
-                            showingSuccess = true
-                            isProcessing = false
-                            Analytics.pdfExported(method: "save_panel")
-                        }
-                    } catch let pdfError as PDFService.PDFError {
-                        await MainActor.run {
-                            self.error = pdfError.localizedDescription
-                            isProcessing = false
-                        }
-                    } catch {
-                        #if DEBUG
-                        logger.error("Save failed: \(error.localizedDescription)")
-                        #endif
-                        await MainActor.run {
-                            self.error = "Failed to save file. Please try again."
-                            isProcessing = false
-                        }
-                    }
-                }
-            } else {
-                isProcessing = false
-            }
-        }
-    }
-
-}
-
-private struct ChangeDateSheet: View {
-    @Binding var date: Date
-    let isSaving: Bool
-    let onSave: () -> Void
-    let onCancel: () -> Void
-
-    private var isToday: Bool {
-        Calendar.current.isDateInToday(date)
-    }
-
-    var body: some View {
-        VStack(spacing: 20) {
-            HStack {
-                Text("Change Issue Date")
-                    .font(.headline)
-
-                Spacer()
-
-                Button("Today") {
-                    date = Date()
-                }
-                .buttonStyle(.bordered)
-                .controlSize(.small)
-                .disabled(isToday)
-            }
-
-            DatePicker(
-                "Issue Date",
-                selection: $date,
-                displayedComponents: .date
-            )
-            .datePickerStyle(.graphical)
-            .labelsHidden()
-
-            HStack {
-                Button("Cancel", role: .cancel) {
-                    onCancel()
-                }
-                .keyboardShortcut(.escape)
-
-                Button("Save") {
-                    onSave()
-                }
-                .keyboardShortcut(.return)
-                .buttonStyle(.borderedProminent)
-                .disabled(isSaving)
-            }
-        }
-        .padding()
-        .frame(width: 300)
-    }
-}
-
-private struct MarkAsSentSheet: View {
-    let invoiceNumber: String
-    let isMarking: Bool
-    let onConfirm: () -> Void
-    let onCancel: () -> Void
-
-    var body: some View {
-        VStack(spacing: 20) {
-            Text("Mark as Sent")
-                .font(.headline)
-
-            Text("Mark invoice \(invoiceNumber) as sent?")
-
-            Text("The sent date will be set to now.")
-                .font(.caption)
-                .foregroundStyle(.secondary)
-
-            HStack {
-                Button("Cancel", role: .cancel) {
-                    onCancel()
-                }
-                .keyboardShortcut(.escape)
-
-                Button("Mark as Sent") {
-                    onConfirm()
-                }
-                .keyboardShortcut(.return)
-                .buttonStyle(.borderedProminent)
-                .disabled(isMarking)
-            }
-        }
-        .padding()
-        .frame(width: 280)
-    }
-}
-
-private struct MarkAsDraftSheet: View {
-    let invoiceNumber: String
-    let isMarking: Bool
-    let onConfirm: () -> Void
-    let onCancel: () -> Void
-
-    var body: some View {
-        VStack(spacing: 20) {
-            Text("Mark as Draft")
-                .font(.headline)
-
-            Text("Revert invoice \(invoiceNumber) to draft?")
-
-            HStack {
-                Button("Cancel", role: .cancel) {
-                    onCancel()
-                }
-                .keyboardShortcut(.escape)
-
-                Button("Mark as Draft") {
-                    onConfirm()
-                }
-                .keyboardShortcut(.return)
-                .buttonStyle(.borderedProminent)
-                .disabled(isMarking)
-            }
-        }
-        .padding()
-        .frame(width: 280)
     }
 }
 

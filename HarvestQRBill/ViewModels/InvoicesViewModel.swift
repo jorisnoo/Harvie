@@ -32,6 +32,91 @@ enum DateFilterPeriod: String, CaseIterable {
     case quarter = "Quarter"
     case halfYear = "Half Year"
     case year = "Year"
+
+    var defaultPeriodCount: Int {
+        switch self {
+        case .month: 12
+        case .quarter: 8
+        case .halfYear: 4
+        case .year: 5
+        }
+    }
+
+    func periods(count: Int? = nil) -> [Date] {
+        let n = count ?? defaultPeriodCount
+        let calendar = Calendar.current
+        let now = Date()
+
+        switch self {
+        case .month:
+            return (0..<n).compactMap { monthsAgo in
+                calendar.date(byAdding: .month, value: -monthsAgo, to: now)
+                    .flatMap { calendar.date(from: calendar.dateComponents([.year, .month], from: $0)) }
+            }
+        case .quarter:
+            return (0..<n).compactMap { quartersAgo in
+                calendar.date(byAdding: .month, value: -quartersAgo * 3, to: now)
+                    .flatMap { date in
+                        let month = calendar.component(.month, from: date)
+                        let year = calendar.component(.year, from: date)
+                        let quarterStartMonth = ((month - 1) / 3) * 3 + 1
+                        return calendar.date(from: DateComponents(year: year, month: quarterStartMonth, day: 1))
+                    }
+            }
+        case .halfYear:
+            return (0..<n).compactMap { halvesAgo in
+                calendar.date(byAdding: .month, value: -halvesAgo * 6, to: now)
+                    .flatMap { date in
+                        let month = calendar.component(.month, from: date)
+                        let year = calendar.component(.year, from: date)
+                        let halfStartMonth = month <= 6 ? 1 : 7
+                        return calendar.date(from: DateComponents(year: year, month: halfStartMonth, day: 1))
+                    }
+            }
+        case .year:
+            return (0..<n).compactMap { yearsAgo in
+                calendar.date(byAdding: .year, value: -yearsAgo, to: now)
+                    .flatMap { calendar.date(from: calendar.dateComponents([.year], from: $0)) }
+            }
+        }
+    }
+
+    func contains(_ date: Date, in period: Date, calendar: Calendar = .current) -> Bool {
+        switch self {
+        case .month:
+            return calendar.isDate(date, equalTo: period, toGranularity: .month)
+        case .quarter:
+            let dateQuarter = (calendar.component(.month, from: date) - 1) / 3
+            let periodQuarter = (calendar.component(.month, from: period) - 1) / 3
+            return dateQuarter == periodQuarter &&
+                calendar.component(.year, from: date) == calendar.component(.year, from: period)
+        case .halfYear:
+            let dateHalf = calendar.component(.month, from: date) <= 6 ? 1 : 2
+            let periodHalf = calendar.component(.month, from: period) <= 6 ? 1 : 2
+            return dateHalf == periodHalf &&
+                calendar.component(.year, from: date) == calendar.component(.year, from: period)
+        case .year:
+            return calendar.isDate(date, equalTo: period, toGranularity: .year)
+        }
+    }
+
+    func format(_ date: Date) -> String {
+        let calendar = Calendar.current
+        let year = calendar.component(.year, from: date)
+
+        switch self {
+        case .month:
+            return date.formatted(.dateTime.month(.wide).year())
+        case .quarter:
+            let quarter = (calendar.component(.month, from: date) - 1) / 3 + 1
+            return "Q\(quarter) \(year)"
+        case .halfYear:
+            let half = calendar.component(.month, from: date) <= 6 ? 1 : 2
+            return "H\(half) \(year)"
+        case .year:
+            return "\(year)"
+        }
+    }
 }
 
 @Observable
@@ -54,41 +139,7 @@ final class InvoicesViewModel {
     private var loadInvoicesTask: Task<Void, Never>?
 
     var availablePeriods: [Date] {
-        let calendar = Calendar.current
-        let now = Date()
-
-        switch filterPeriod {
-        case .month:
-            return (0..<12).compactMap { monthsAgo in
-                calendar.date(byAdding: .month, value: -monthsAgo, to: now)
-                    .flatMap { calendar.date(from: calendar.dateComponents([.year, .month], from: $0)) }
-            }
-        case .quarter:
-            return (0..<8).compactMap { quartersAgo in
-                calendar.date(byAdding: .month, value: -quartersAgo * 3, to: now)
-                    .flatMap { date in
-                        let month = calendar.component(.month, from: date)
-                        let year = calendar.component(.year, from: date)
-                        let quarterStartMonth = ((month - 1) / 3) * 3 + 1
-                        return calendar.date(from: DateComponents(year: year, month: quarterStartMonth, day: 1))
-                    }
-            }
-        case .halfYear:
-            return (0..<4).compactMap { halvesAgo in
-                calendar.date(byAdding: .month, value: -halvesAgo * 6, to: now)
-                    .flatMap { date in
-                        let month = calendar.component(.month, from: date)
-                        let year = calendar.component(.year, from: date)
-                        let halfStartMonth = month <= 6 ? 1 : 7
-                        return calendar.date(from: DateComponents(year: year, month: halfStartMonth, day: 1))
-                    }
-            }
-        case .year:
-            return (0..<5).compactMap { yearsAgo in
-                calendar.date(byAdding: .year, value: -yearsAgo, to: now)
-                    .flatMap { calendar.date(from: calendar.dateComponents([.year], from: $0)) }
-            }
-        }
+        filterPeriod.periods()
     }
 
     var validSortOptions: [InvoiceSortOption] {
@@ -210,7 +261,7 @@ final class InvoicesViewModel {
                 case .paidDate:
                     dateToCheck = invoice.paidAt ?? invoice.paidDate ?? invoice.issueDate
                 }
-                return isDate(dateToCheck, inSamePeriodAs: period, calendar: calendar)
+                return filterPeriod.contains(dateToCheck, in: period, calendar: calendar)
             }
         }
 
@@ -232,6 +283,10 @@ final class InvoicesViewModel {
 
             return sortDirection == .ascending ? lhsDate < rhsDate : lhsDate > rhsDate
         }
+    }
+
+    func formatPeriod(_ date: Date) -> String {
+        filterPeriod.format(date)
     }
 
     func loadInvoices() {
@@ -470,9 +525,13 @@ final class InvoicesViewModel {
         )
     }
 
-    func updateIssueDateForSelected(to date: Date) async {
-        let invoicesToUpdate = selectedInvoices.filter { $0.state == .draft }
-        guard !invoicesToUpdate.isEmpty else { return }
+    // MARK: - Batch Operations
+
+    private func performBatchOperation(
+        on invoices: [Invoice],
+        operation: (Int, HarvestCredentials) async throws -> Void
+    ) async {
+        guard !invoices.isEmpty else { return }
 
         isUpdating = true
         updateError = nil
@@ -481,23 +540,24 @@ final class InvoicesViewModel {
         do {
             let credentials = try await keychainService.loadHarvestCredentials()
 
-            for invoice in invoicesToUpdate {
-                try await apiService.updateInvoiceIssueDate(
-                    invoiceId: invoice.id,
-                    issueDate: date,
-                    credentials: credentials
-                )
+            for invoice in invoices {
+                try await operation(invoice.id, credentials)
                 updatedCount += 1
             }
 
             showUpdateSuccess = true
-
-            await performRefreshInvoices(ids: Set(invoicesToUpdate.map(\.id)))
+            await performRefreshInvoices(ids: Set(invoices.map(\.id)))
         } catch {
             updateError = error.localizedDescription
         }
 
         isUpdating = false
+    }
+
+    func updateIssueDateForSelected(to date: Date) async {
+        await performBatchOperation(on: selectedInvoices.filter { $0.state == .draft }) { id, credentials in
+            try await self.apiService.updateInvoiceIssueDate(invoiceId: id, issueDate: date, credentials: credentials)
+        }
     }
 
     func markAsSent(invoiceId: Int) async throws {
@@ -509,32 +569,9 @@ final class InvoicesViewModel {
     }
 
     func markSelectedAsSent() async {
-        let invoicesToUpdate = selectedInvoices.filter { $0.state == .draft }
-        guard !invoicesToUpdate.isEmpty else { return }
-
-        isUpdating = true
-        updateError = nil
-        updatedCount = 0
-
-        do {
-            let credentials = try await keychainService.loadHarvestCredentials()
-
-            for invoice in invoicesToUpdate {
-                try await apiService.markInvoiceAsSent(
-                    invoiceId: invoice.id,
-                    credentials: credentials
-                )
-                updatedCount += 1
-            }
-
-            showUpdateSuccess = true
-
-            await performRefreshInvoices(ids: Set(invoicesToUpdate.map(\.id)))
-        } catch {
-            updateError = error.localizedDescription
+        await performBatchOperation(on: selectedInvoices.filter { $0.state == .draft }) { id, credentials in
+            try await self.apiService.markInvoiceAsSent(invoiceId: id, credentials: credentials)
         }
-
-        isUpdating = false
     }
 
     func markAsDraft(invoiceId: Int) async throws {
@@ -546,32 +583,9 @@ final class InvoicesViewModel {
     }
 
     func markSelectedAsDraft() async {
-        let invoicesToUpdate = selectedInvoices.filter { $0.state == .open }
-        guard !invoicesToUpdate.isEmpty else { return }
-
-        isUpdating = true
-        updateError = nil
-        updatedCount = 0
-
-        do {
-            let credentials = try await keychainService.loadHarvestCredentials()
-
-            for invoice in invoicesToUpdate {
-                try await apiService.markInvoiceAsDraft(
-                    invoiceId: invoice.id,
-                    credentials: credentials
-                )
-                updatedCount += 1
-            }
-
-            showUpdateSuccess = true
-
-            await performRefreshInvoices(ids: Set(invoicesToUpdate.map(\.id)))
-        } catch {
-            updateError = error.localizedDescription
+        await performBatchOperation(on: selectedInvoices.filter { $0.state == .open }) { id, credentials in
+            try await self.apiService.markInvoiceAsDraft(invoiceId: id, credentials: credentials)
         }
-
-        isUpdating = false
     }
 
     func exportSelectedInvoices(withQRBill: Bool) async {
@@ -693,44 +707,5 @@ final class InvoicesViewModel {
 
     func loadAppSettings() async -> AppSettings {
         (try? await keychainService.loadAppSettings()) ?? .default
-    }
-
-    private func isDate(_ date: Date, inSamePeriodAs period: Date, calendar: Calendar) -> Bool {
-        switch filterPeriod {
-        case .month:
-            return calendar.isDate(date, equalTo: period, toGranularity: .month)
-        case .quarter:
-            let dateQuarter = (calendar.component(.month, from: date) - 1) / 3
-            let periodQuarter = (calendar.component(.month, from: period) - 1) / 3
-            let dateYear = calendar.component(.year, from: date)
-            let periodYear = calendar.component(.year, from: period)
-            return dateQuarter == periodQuarter && dateYear == periodYear
-        case .halfYear:
-            let dateHalf = calendar.component(.month, from: date) <= 6 ? 1 : 2
-            let periodHalf = calendar.component(.month, from: period) <= 6 ? 1 : 2
-            let dateYear = calendar.component(.year, from: date)
-            let periodYear = calendar.component(.year, from: period)
-            return dateHalf == periodHalf && dateYear == periodYear
-        case .year:
-            return calendar.isDate(date, equalTo: period, toGranularity: .year)
-        }
-    }
-
-    func formatPeriod(_ date: Date) -> String {
-        let calendar = Calendar.current
-        let year = calendar.component(.year, from: date)
-
-        switch filterPeriod {
-        case .month:
-            return date.formatted(.dateTime.month(.wide).year())
-        case .quarter:
-            let quarter = (calendar.component(.month, from: date) - 1) / 3 + 1
-            return "Q\(quarter) \(year)"
-        case .halfYear:
-            let half = calendar.component(.month, from: date) <= 6 ? 1 : 2
-            return "H\(half) \(year)"
-        case .year:
-            return "\(year)"
-        }
     }
 }
