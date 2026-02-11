@@ -77,21 +77,30 @@ final class TemplatePDFService {
         ))
         webView.setValue(false, forKey: "drawsBackground")
 
-        return try await withCheckedThrowingContinuation { continuation in
-            let delegate = PDFNavigationDelegate { result in
-                switch result {
-                case .success(let document):
-                    continuation.resume(returning: document)
-                case .failure(let error):
-                    continuation.resume(throwing: error)
+        return try await withThrowingTaskGroup(of: PDFDocument.self) { group in
+            group.addTask { @MainActor in
+                try await withCheckedThrowingContinuation { continuation in
+                    let delegate = PDFNavigationDelegate(webView: webView) { result in
+                        switch result {
+                        case .success(let document):
+                            continuation.resume(returning: document)
+                        case .failure(let error):
+                            continuation.resume(throwing: error)
+                        }
+                    }
+
+                    webView.navigationDelegate = delegate
+                    webView.loadHTMLString(html, baseURL: nil)
                 }
             }
 
-            // Keep delegate alive
-            objc_setAssociatedObject(webView, "delegate", delegate, .OBJC_ASSOCIATION_RETAIN)
-            webView.navigationDelegate = delegate
+            group.addTask { @MainActor in
+                try await Task.sleep(for: .seconds(10))
+                throw PDFNavigationDelegate.PDFError.timeout
+            }
 
-            webView.loadHTMLString(html, baseURL: nil)
+            defer { group.cancelAll() }
+            return try await group.next()!
         }
     }
 }
@@ -99,22 +108,27 @@ final class TemplatePDFService {
 private final class PDFNavigationDelegate: NSObject, WKNavigationDelegate {
     enum PDFError: Error, LocalizedError {
         case renderingFailed
+        case processTerminated
         case timeout
 
         var errorDescription: String? {
             switch self {
             case .renderingFailed:
                 return "Failed to render the template to PDF."
+            case .processTerminated:
+                return "The web rendering process terminated unexpectedly."
             case .timeout:
                 return "PDF rendering timed out."
             }
         }
     }
 
+    private let webView: WKWebView
     private let completion: (Result<PDFDocument, Error>) -> Void
     private var hasCompleted = false
 
-    init(completion: @escaping (Result<PDFDocument, Error>) -> Void) {
+    init(webView: WKWebView, completion: @escaping (Result<PDFDocument, Error>) -> Void) {
+        self.webView = webView
         self.completion = completion
         super.init()
     }
@@ -132,6 +146,20 @@ private final class PDFNavigationDelegate: NSObject, WKNavigationDelegate {
         guard !hasCompleted else { return }
         hasCompleted = true
         completion(.failure(error))
+    }
+
+    func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
+        guard !hasCompleted else { return }
+        hasCompleted = true
+        logger.error("Provisional navigation failed: \(error.localizedDescription)")
+        completion(.failure(error))
+    }
+
+    func webViewWebContentProcessDidTerminate(_ webView: WKWebView) {
+        guard !hasCompleted else { return }
+        hasCompleted = true
+        logger.error("WebContent process terminated")
+        completion(.failure(PDFError.processTerminated))
     }
 
     private func createPDF(from webView: WKWebView) {
