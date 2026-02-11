@@ -106,6 +106,10 @@ actor PDFService {
         let pdfURL = try apiService.buildPDFURL(for: invoice, subdomain: credentials.subdomain)
         let invoicePDF = try await downloadPDF(from: pdfURL)
 
+        guard QRBillService.isCurrencySupported(invoice.currency) else {
+            return invoicePDF
+        }
+
         let debtorAddress = await fetchDebtorAddress(
             clientId: invoice.client.id,
             clientName: invoice.client.name,
@@ -149,6 +153,10 @@ actor PDFService {
             template: template,
             context: context.toDictionary()
         )
+
+        guard QRBillService.isCurrencySupported(invoice.currency) else {
+            return templatePDF
+        }
 
         // Fetch debtor address for QR bill
         let debtorAddress: StructuredAddress?
@@ -215,6 +223,14 @@ actor PDFService {
         invoice: Invoice,
         creditorInfo: CreditorInfo
     ) async throws -> PDFDocument {
+        let demoPDF = await MainActor.run {
+            createDemoInvoicePDF(invoice: invoice, creditorInfo: creditorInfo)
+        }
+
+        guard QRBillService.isCurrencySupported(invoice.currency) else {
+            return demoPDF
+        }
+
         let debtorAddress = StructuredAddress(
             name: invoice.client.name,
             streetName: "Musterstrasse",
@@ -224,14 +240,12 @@ actor PDFService {
             country: "CH"
         )
 
-        let (demoPDF, qrBillPage) = try await MainActor.run {
-            let pdf = createDemoInvoicePDF(invoice: invoice, creditorInfo: creditorInfo)
-            let page = try generateQRBillPage(
+        let qrBillPage = try await MainActor.run {
+            try generateQRBillPage(
                 invoice: invoice,
                 creditorInfo: creditorInfo,
                 debtorAddress: debtorAddress
             )
-            return (pdf, page)
         }
 
         return appendQRBill(to: demoPDF, qrBillPage: qrBillPage)
