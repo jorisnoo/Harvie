@@ -20,8 +20,10 @@ struct SettingsView: View {
             DownloadsSettings(viewModel: viewModel)
                 .tabItem { Label("Downloads", systemImage: "folder") }
 
-            TemplatesSettings(viewModel: viewModel)
-                .tabItem { Label("Templates", systemImage: "doc.richtext") }
+            if FeatureFlags.customPDFTemplates {
+                TemplatesSettings(viewModel: viewModel)
+                    .tabItem { Label("Templates", systemImage: "doc.richtext") }
+            }
         }
         .frame(minWidth: 500, minHeight: 450)
         .task {

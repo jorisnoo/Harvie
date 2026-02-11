@@ -32,8 +32,10 @@ struct HarvestQRBillApp: App {
                     Analytics.appLaunched()
                 }
                 .task {
-                    await MainActor.run {
-                        TemplateSeeder.seedIfNeeded(context: modelContainer.mainContext)
+                    if FeatureFlags.customPDFTemplates {
+                        await MainActor.run {
+                            TemplateSeeder.seedIfNeeded(context: modelContainer.mainContext)
+                        }
                     }
                 }
         }

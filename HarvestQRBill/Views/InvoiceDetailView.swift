@@ -539,7 +539,7 @@ struct InvoiceDetailView: View {
 
         let settings = (try? await keychainService.loadAppSettings()) ?? .default
 
-        if settings.pdfSource == .template,
+        if settings.effectivePDFSource == .template,
            let templateId = settings.selectedTemplateId,
            let template = loadTemplate(id: templateId) {
             let credentials = try? await keychainService.loadHarvestCredentials()

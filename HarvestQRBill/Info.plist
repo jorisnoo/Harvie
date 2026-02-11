@@ -8,5 +8,10 @@
 	<string>jorisnoo</string>
 	<key>GHRepositoryName</key>
 	<string>HarvestQRBill</string>
+	<key>FeatureFlags</key>
+	<dict>
+		<key>customPDFTemplates</key>
+		<true/>
+	</dict>
 </dict>
 </plist>

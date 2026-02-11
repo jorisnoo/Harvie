@@ -626,7 +626,7 @@ final class InvoicesViewModel {
 
             // Load template if using template mode
             var template: InvoiceTemplate?
-            if withQRBill && appSettings.pdfSource == .template, let templateId = appSettings.selectedTemplateId {
+            if withQRBill && appSettings.effectivePDFSource == .template, let templateId = appSettings.selectedTemplateId {
                 template = await loadTemplate(id: templateId)
             }
 

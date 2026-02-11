@@ -147,6 +147,10 @@ struct AppSettings: Codable, Sendable, Equatable {
         lastStateFilter = try container.decodeIfPresent(String.self, forKey: .lastStateFilter)
     }
 
+    var effectivePDFSource: InvoicePDFSource {
+        FeatureFlags.customPDFTemplates ? pdfSource : .harvestPDF
+    }
+
     var downloadURL: URL? {
         // Try to resolve from bookmark first (for sandboxed access)
         if let bookmarkData = downloadBookmarkData {
