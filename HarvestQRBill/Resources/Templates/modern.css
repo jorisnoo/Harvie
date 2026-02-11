@@ -178,7 +178,6 @@
 .notes {
     font-size: var(--font-size-sm);
     color: var(--color-muted);
-    white-space: pre-line;
     line-height: 1.5;
 }
 

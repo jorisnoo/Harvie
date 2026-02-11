@@ -140,6 +140,38 @@ struct TemplateEngineTests {
         #expect(result == "")
     }
 
+    // MARK: - Markdown Filter
+
+    @Test func markdownLineBreaks() {
+        let context: [String: Any] = ["text": "Line one\nLine two"]
+        let result = TemplateEngine.render("{{text | markdown}}", with: context)
+        #expect(result == "Line one<br>Line two")
+    }
+
+    @Test func markdownBold() {
+        let context: [String: Any] = ["text": "This is **bold** text"]
+        let result = TemplateEngine.render("{{text | markdown}}", with: context)
+        #expect(result == "This is <strong>bold</strong> text")
+    }
+
+    @Test func markdownSingleAsteriskBold() {
+        let context: [String: Any] = ["text": "This is *bold* text"]
+        let result = TemplateEngine.render("{{text | markdown}}", with: context)
+        #expect(result == "This is <strong>bold</strong> text")
+    }
+
+    @Test func markdownHTMLEscaping() {
+        let context: [String: Any] = ["text": "<script>alert('xss')</script>"]
+        let result = TemplateEngine.render("{{text | markdown}}", with: context)
+        #expect(result == "&lt;script&gt;alert('xss')&lt;/script&gt;")
+    }
+
+    @Test func markdownCombined() {
+        let context: [String: Any] = ["text": "**Bold** and *also bold*\nNew line"]
+        let result = TemplateEngine.render("{{text | markdown}}", with: context)
+        #expect(result == "<strong>Bold</strong> and <strong>also bold</strong><br>New line")
+    }
+
     // MARK: - Edge Cases
 
     @Test func malformedTag() {

@@ -29,7 +29,7 @@
         <tbody>
             {{#lineItems}}
             <tr>
-                <td class="desc">{{description}}</td>
+                <td class="desc">{{description | markdown}}</td>
                 <td class="qty">{{quantity | number:1}}</td>
                 <td class="price">{{unitPrice | currency}}</td>
                 <td class="total">{{amount | currency}}</td>
@@ -68,7 +68,7 @@
     <div class="footer">
         <div>IBAN {{creditor.iban}}</div>
         {{#if invoice.hasNotes}}
-        <div class="notes">{{invoice.notes}}</div>
+        <div class="notes">{{invoice.notes | markdown}}</div>
         {{/if}}
     </div>
 </div>

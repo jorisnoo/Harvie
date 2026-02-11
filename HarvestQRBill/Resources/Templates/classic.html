@@ -49,7 +49,7 @@
         <tbody>
             {{#lineItems}}
             <tr>
-                <td class="desc-col">{{description}}</td>
+                <td class="desc-col">{{description | markdown}}</td>
                 <td class="qty-col">{{quantity | number:1}}</td>
                 <td class="rate-col">{{unitPrice | currency}}</td>
                 <td class="amt-col">{{amount | currency}}</td>
@@ -97,7 +97,7 @@
         {{#if invoice.hasNotes}}
         <div class="notes">
             <strong>Notes</strong><br>
-            {{invoice.notes}}
+            {{invoice.notes | markdown}}
         </div>
         {{/if}}
     </div>

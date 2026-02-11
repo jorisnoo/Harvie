@@ -153,7 +153,6 @@
 .notes {
     margin-top: 8px;
     font-family: var(--font-family);
-    white-space: pre-line;
     color: var(--color-secondary);
 }
 

@@ -20,6 +20,7 @@ struct TemplateEngine {
         case date(String)
         case currency
         case number(Int)
+        case markdown
     }
 
     // MARK: - Public
@@ -114,6 +115,10 @@ struct TemplateEngine {
             if let n = Int(digits) {
                 return .number(n)
             }
+        }
+
+        if string == "markdown" {
+            return .markdown
         }
 
         return nil
@@ -270,6 +275,9 @@ struct TemplateEngine {
             formatter.minimumFractionDigits = digits
             formatter.maximumFractionDigits = digits
             return formatter.string(from: decimal as NSDecimalNumber) ?? stringify(value)
+
+        case .markdown:
+            return convertMarkdown(stringify(value))
         }
     }
 
@@ -301,5 +309,34 @@ struct TemplateEngine {
         default:
             return String(describing: value)
         }
+    }
+
+    private static func convertMarkdown(_ text: String) -> String {
+        var result = text
+
+        // HTML-escape to prevent injection
+        result = result
+            .replacingOccurrences(of: "&", with: "&amp;")
+            .replacingOccurrences(of: "<", with: "&lt;")
+            .replacingOccurrences(of: ">", with: "&gt;")
+
+        // Bold: **text**
+        result = result.replacingOccurrences(
+            of: "\\*\\*(.+?)\\*\\*",
+            with: "<strong>$1</strong>",
+            options: .regularExpression
+        )
+
+        // Bold: *text*
+        result = result.replacingOccurrences(
+            of: "(?<!\\\\)\\*(.+?)(?<!\\\\)\\*",
+            with: "<strong>$1</strong>",
+            options: .regularExpression
+        )
+
+        // Line breaks
+        result = result.replacingOccurrences(of: "\n", with: "<br>")
+
+        return result
     }
 }
