@@ -5,6 +5,7 @@
 
 import AppKit
 import Foundation
+import ObjectiveC
 import PDFKit
 import WebKit
 import os.log
@@ -19,7 +20,8 @@ final class TemplatePDFService {
     static let a4Width: CGFloat = 595.28
     static let a4Height: CGFloat = 841.89
 
-    /// Hidden window that provides the GPU/rendering context WKWebView needs.
+    /// Hidden window that provides the window-server context WKWebView needs.
+    /// Positioned on-screen with near-zero alpha so the window server allocates GPU resources.
     private lazy var renderWindow: NSWindow = {
         let window = NSWindow(
             contentRect: CGRect(x: 0, y: 0, width: Self.a4Width, height: Self.a4Height),
@@ -27,7 +29,8 @@ final class TemplatePDFService {
             backing: .buffered,
             defer: false
         )
-        window.alphaValue = 0
+        window.isReleasedWhenClosed = false
+        window.alphaValue = 0.01
         window.collectionBehavior = [.ignoresCycle, .stationary]
         window.orderBack(nil)
         return window
@@ -65,14 +68,14 @@ final class TemplatePDFService {
             box-sizing: border-box;
         }
         html, body {
-            width: 210mm;
-            min-height: 297mm;
+            width: 100%;
+            min-height: 100%;
             font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif;
         }
         @media print {
             html, body {
-                width: 210mm;
-                min-height: 297mm;
+                width: 100%;
+                min-height: 100%;
             }
         }
         \(css)
@@ -86,12 +89,28 @@ final class TemplatePDFService {
     }
 
     private func renderHTMLToPDF(_ html: String) async throws -> PDFDocument {
-        let webView = WKWebView(frame: CGRect(
-            x: 0, y: 0,
-            width: Self.a4Width,
-            height: Self.a4Height
-        ))
+        let config = WKWebViewConfiguration()
+        config.websiteDataStore = .nonPersistent()
+        config.suppressesIncrementalRendering = true
+
+        // Templates are pure HTML/CSS (Mustache processed server-side) — disable
+        // features we don't need to reduce WebContent sandbox probe warnings.
+        let webpagePrefs = WKWebpagePreferences()
+        webpagePrefs.allowsContentJavaScript = false
+        config.defaultWebpagePreferences = webpagePrefs
+
+        config.preferences.isElementFullscreenEnabled = false
+        config.preferences.javaScriptCanOpenWindowsAutomatically = false
+
+        config.allowsAirPlayForMediaPlayback = false
+        config.mediaTypesRequiringUserActionForPlayback = .all
+
+        let webView = WKWebView(
+            frame: CGRect(x: 0, y: 0, width: Self.a4Width, height: Self.a4Height),
+            configuration: config
+        )
         webView.setValue(false, forKey: "drawsBackground")
+        webView.wantsLayer = true
         renderWindow.contentView = webView
 
         defer { renderWindow.contentView = nil }
@@ -108,6 +127,8 @@ final class TemplatePDFService {
                         }
                     }
 
+                    // Retain delegate via associated object — WKWebView.navigationDelegate is weak
+                    objc_setAssociatedObject(webView, "navDelegate", delegate, .OBJC_ASSOCIATION_RETAIN)
                     webView.navigationDelegate = delegate
                     webView.loadHTMLString(html, baseURL: nil)
                 }
