@@ -5,6 +5,9 @@
 
 import SwiftUI
 import SwiftData
+#if !APP_STORE
+import AppUpdater
+#endif
 
 @main
 struct HarvestQRBillApp: App {
@@ -43,12 +46,31 @@ struct HarvestQRBillApp: App {
 
             #if !APP_STORE
             CommandGroup(after: .appInfo) {
-                Button("Check for Updates...") {
-                    appDelegate.checkForUpdates()
-                }
+                UpdateMenuCommands(updater: appDelegate.updater, checkForUpdates: appDelegate.checkForUpdates)
             }
             #endif
         }
         .modelContainer(for: CachedInvoice.self)
     }
 }
+
+#if !APP_STORE
+struct UpdateMenuCommands: View {
+    @ObservedObject var updater: AppUpdater
+    var checkForUpdates: () -> Void
+
+    var body: some View {
+        Button("Check for Updates...") {
+            checkForUpdates()
+        }
+
+        if case .downloaded(_, _, let bundle) = updater.state {
+            Button("Restart and Update") {
+                Task {
+                    try await updater.installThrowing(bundle)
+                }
+            }
+        }
+    }
+}
+#endif

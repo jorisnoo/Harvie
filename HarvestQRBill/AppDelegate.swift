@@ -17,8 +17,30 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     func checkForUpdates() {
         updater.check(
-            success: {
-                // Update found and downloaded - AppUpdater handles the flow
+            success: { [updater] in
+                Task { @MainActor in
+                    guard case .downloaded(let release, _, let bundle) = updater.state else { return }
+
+                    let alert = NSAlert()
+                    alert.messageText = "Update Available"
+                    alert.informativeText = "Version \(release.tagName) is ready to install."
+                    alert.alertStyle = .informational
+                    alert.addButton(withTitle: "Restart Now")
+                    alert.addButton(withTitle: "Later")
+
+                    if alert.runModal() == .alertFirstButtonReturn {
+                        do {
+                            try await updater.installThrowing(bundle)
+                        } catch {
+                            let errorAlert = NSAlert()
+                            errorAlert.messageText = "Update Failed"
+                            errorAlert.informativeText = error.localizedDescription
+                            errorAlert.alertStyle = .warning
+                            errorAlert.addButton(withTitle: "OK")
+                            errorAlert.runModal()
+                        }
+                    }
+                }
             },
             fail: { error in
                 Task { @MainActor in
