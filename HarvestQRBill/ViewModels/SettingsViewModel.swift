@@ -41,6 +41,8 @@ final class SettingsViewModel {
         appSettings = (try? await keychainService.loadAppSettings()) ?? .default
     }
 
+    static let settingsSavedNotification = Notification.Name("SettingsViewModelDidSaveSettings")
+
     func saveSettings() async {
         isSaving = true
         saveError = nil
@@ -50,6 +52,7 @@ final class SettingsViewModel {
             try await keychainService.saveCreditorInfo(creditorInfo)
             try await keychainService.saveAppSettings(appSettings)
             Analytics.settingsSaved()
+            NotificationCenter.default.post(name: Self.settingsSavedNotification, object: nil)
         } catch {
             #if DEBUG
             logger.error("Failed to save settings: \(error.localizedDescription)")

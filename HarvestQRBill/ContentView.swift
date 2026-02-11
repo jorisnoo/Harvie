@@ -45,6 +45,12 @@ struct ContentView: View {
                 await viewModel.reloadCreditorInfo()
             }
         }
+        .onReceive(NotificationCenter.default.publisher(for: SettingsViewModel.settingsSavedNotification)) { _ in
+            Task {
+                await viewModel.reloadCreditorInfo()
+            }
+            viewModel.loadInvoices()
+        }
         .overlay {
             if viewModel.isExporting {
                 ExportProgressOverlay(

@@ -87,6 +87,10 @@ struct InvoicesListView: View {
                             openSettings()
                         }
                         .buttonStyle(.borderedProminent)
+
+                        Button("Retry") {
+                            viewModel.loadInvoices()
+                        }
                     }
                 } else {
                     ContentUnavailableView {
