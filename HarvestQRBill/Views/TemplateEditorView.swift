@@ -35,6 +35,8 @@ struct TemplateEditorView: View {
 
             Spacer()
 
+            columnsSection
+
             if viewModel.isBuiltIn {
                 Label("Read Only", systemImage: "lock")
                     .font(.caption)
@@ -62,6 +64,31 @@ struct TemplateEditorView: View {
         .background(.bar)
     }
 
+    private var columnsSection: some View {
+        HStack(spacing: 8) {
+            Text("Columns:")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+
+            Toggle("Qty", isOn: $viewModel.columnVisibility.showQuantity)
+                .onChange(of: viewModel.columnVisibility.showQuantity) {
+                    viewModel.columnVisibilityChanged()
+                }
+
+            Toggle("Price", isOn: $viewModel.columnVisibility.showUnitPrice)
+                .onChange(of: viewModel.columnVisibility.showUnitPrice) {
+                    viewModel.columnVisibilityChanged()
+                }
+
+            Toggle("Hours", isOn: $viewModel.columnVisibility.showTotalHours)
+                .onChange(of: viewModel.columnVisibility.showTotalHours) {
+                    viewModel.columnVisibilityChanged()
+                }
+        }
+        .toggleStyle(.checkbox)
+        .controlSize(.small)
+    }
+
     private var editorPanel: some View {
         VStack(spacing: 0) {
             Picker("", selection: $viewModel.selectedTab) {
@@ -78,16 +105,15 @@ struct TemplateEditorView: View {
                 Group {
                     switch viewModel.selectedTab {
                     case .html:
-                        HTMLEditorView(text: $viewModel.htmlContent) {
+                        HTMLEditorView(text: $viewModel.htmlContent, isEditable: !viewModel.isBuiltIn) {
                             viewModel.contentChanged()
                         }
                     case .css:
-                        HTMLEditorView(text: $viewModel.cssContent) {
+                        HTMLEditorView(text: $viewModel.cssContent, isEditable: !viewModel.isBuiltIn) {
                             viewModel.contentChanged()
                         }
                     }
                 }
-                .disabled(viewModel.isBuiltIn)
 
                 if showVariablesPanel {
                     Divider()

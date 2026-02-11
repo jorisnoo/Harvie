@@ -16,6 +16,7 @@ final class TemplateEditorViewModel {
     var htmlContent: String
     var cssContent: String
     var name: String
+    var columnVisibility: ColumnVisibility
     var isDirty = false
     var isRendering = false
     var previewHTML: String = ""
@@ -35,6 +36,7 @@ final class TemplateEditorViewModel {
         self.htmlContent = template.htmlContent
         self.cssContent = template.cssContent
         self.name = template.name
+        self.columnVisibility = template.columnVisibility
         self.modelContext = modelContext
         updatePreview()
     }
@@ -52,9 +54,16 @@ final class TemplateEditorViewModel {
         template.name = name
         template.htmlContent = htmlContent
         template.cssContent = cssContent
+        template.columnVisibility = columnVisibility
         template.updatedAt = Date()
         try? modelContext.save()
         isDirty = false
+    }
+
+    func columnVisibilityChanged() {
+        template.columnVisibility = columnVisibility
+        try? modelContext.save()
+        updatePreview()
     }
 
     func insertVariable(_ variable: String) {
@@ -84,7 +93,8 @@ final class TemplateEditorViewModel {
     func updatePreview() {
         let context = TemplateContext.sampleDictionary()
         let processedHTML = TemplateEngine.render(htmlContent, with: context)
-        previewHTML = buildPreviewDocument(html: processedHTML, css: cssContent)
+        let css = columnVisibility.cssVariables() + "\n" + cssContent
+        previewHTML = buildPreviewDocument(html: processedHTML, css: css)
     }
 
     private func buildPreviewDocument(html: String, css: String) -> String {

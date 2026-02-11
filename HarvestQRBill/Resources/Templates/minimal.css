@@ -88,8 +88,8 @@
 }
 
 .desc { width: auto; }
-.qty { width: 50px; }
-.price { width: 80px; }
+.qty { width: 50px; display: var(--col-qty-display, table-cell); }
+.price { width: 80px; display: var(--col-price-display, table-cell); }
 .total { width: 80px; }
 
 .totals {
@@ -107,6 +107,10 @@
 
 .totals .row span:last-child {
     font-family: 'SF Mono', 'Menlo', monospace;
+}
+
+.totals .total-hours-row {
+    display: var(--total-hours-display, none);
 }
 
 .totals .grand-total {

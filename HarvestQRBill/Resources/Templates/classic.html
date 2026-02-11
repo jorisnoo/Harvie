@@ -61,6 +61,10 @@
     <hr class="divider">
 
     <div class="summary">
+        <div class="summary-line total-hours-row">
+            <span>Total Hours</span>
+            <span>{{invoice.totalHours | number:1}}</span>
+        </div>
         <div class="summary-line">
             <span>Subtotal</span>
             <span>{{invoice.subtotal | currency}}</span>

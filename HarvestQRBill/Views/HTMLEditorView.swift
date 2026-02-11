@@ -8,6 +8,7 @@ import SwiftUI
 
 struct HTMLEditorView: NSViewRepresentable {
     @Binding var text: String
+    var isEditable: Bool = true
     var onChange: () -> Void
 
     func makeNSView(context: Context) -> NSScrollView {
@@ -18,7 +19,7 @@ struct HTMLEditorView: NSViewRepresentable {
         scrollView.borderType = .noBorder
 
         let textView = NSTextView()
-        textView.isEditable = true
+        textView.isEditable = isEditable
         textView.isSelectable = true
         textView.allowsUndo = true
         textView.isRichText = false
@@ -49,6 +50,8 @@ struct HTMLEditorView: NSViewRepresentable {
 
     func updateNSView(_ scrollView: NSScrollView, context: Context) {
         guard let textView = scrollView.documentView as? NSTextView else { return }
+
+        textView.isEditable = isEditable
 
         if textView.string != text {
             let selectedRanges = textView.selectedRanges

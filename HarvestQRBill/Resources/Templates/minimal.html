@@ -39,6 +39,10 @@
     </table>
 
     <div class="totals">
+        <div class="row total-hours-row">
+            <span>Total Hours</span>
+            <span>{{invoice.totalHours | number:1}}</span>
+        </div>
         <div class="row">
             <span>Subtotal</span>
             <span>{{invoice.subtotal | currency}}</span>

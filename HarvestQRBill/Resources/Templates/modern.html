@@ -44,6 +44,10 @@
     </table>
 
     <div class="totals">
+        <div class="totals-row total-hours-row">
+            <span class="totals-label">Total Hours</span>
+            <span class="totals-value">{{invoice.totalHours | number:1}}</span>
+        </div>
         <div class="totals-row subtotal">
             <span class="totals-label">Subtotal</span>
             <span class="totals-value">{{invoice.subtotal | currency}}</span>

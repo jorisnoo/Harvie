@@ -21,7 +21,8 @@ struct TemplateVariablesPanel: View {
             TemplateVariable(token: "invoice.tax", label: "Tax %"),
             TemplateVariable(token: "invoice.taxAmount", label: "Tax Amount"),
             TemplateVariable(token: "invoice.discount", label: "Discount %"),
-            TemplateVariable(token: "invoice.discountAmount", label: "Discount Amount")
+            TemplateVariable(token: "invoice.discountAmount", label: "Discount Amount"),
+            TemplateVariable(token: "invoice.totalHours", label: "Total Hours")
         ]),
         ("Client", [
             TemplateVariable(token: "client.name", label: "Name"),

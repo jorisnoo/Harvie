@@ -150,6 +150,12 @@ struct TemplateContext {
         invoiceDict["hasTax"] = invoice.tax != nil && invoice.taxAmount != nil
         invoiceDict["hasTax2"] = invoice.tax2 != nil && invoice.tax2Amount != nil
         invoiceDict["hasDiscount"] = invoice.discount != nil && invoice.discountAmount != nil
+
+        let totalHours = lineItems.reduce(Decimal.zero) { sum, item in
+            sum + ((item["quantity"] as? Decimal) ?? 0)
+        }
+        invoiceDict["totalHours"] = totalHours
+
         dict["invoice"] = invoiceDict
 
         return dict
@@ -203,7 +209,8 @@ struct TemplateContext {
                 "hasSubject": true,
                 "hasTax": true,
                 "hasTax2": false,
-                "hasDiscount": false
+                "hasDiscount": false,
+                "totalHours": Decimal(64)
             ],
             "client": [
                 "name": "Acme Corp AG",

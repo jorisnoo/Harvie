@@ -11,7 +11,7 @@ private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "HarvestQ
 
 struct TemplateSeeder {
     private static let seedVersionKey = "TemplateSeeder.version"
-    private static let currentVersion = 1
+    private static let currentVersion = 2
 
     struct BuiltInTemplate {
         let name: String
@@ -36,31 +36,52 @@ struct TemplateSeeder {
         let descriptor = FetchDescriptor<InvoiceTemplate>(
             predicate: #Predicate { $0.isBuiltIn == true }
         )
-        let existingCount = (try? context.fetchCount(descriptor)) ?? 0
+        let existingTemplates = (try? context.fetch(descriptor)) ?? []
 
-        if existingCount >= builtInTemplates.count {
-            UserDefaults.standard.set(currentVersion, forKey: seedVersionKey)
-            return
-        }
+        if existingTemplates.isEmpty {
+            for builtIn in builtInTemplates {
+                let html = loadResource(named: builtIn.htmlFile, extension: "html") ?? ""
+                let css = loadResource(named: builtIn.cssFile, extension: "css") ?? ""
 
-        for builtIn in builtInTemplates {
-            let html = loadResource(named: builtIn.htmlFile, extension: "html") ?? ""
-            let css = loadResource(named: builtIn.cssFile, extension: "css") ?? ""
+                let template = InvoiceTemplate(
+                    name: builtIn.name,
+                    htmlContent: html,
+                    cssContent: css,
+                    isBuiltIn: true
+                )
+                context.insert(template)
+            }
 
-            let template = InvoiceTemplate(
-                name: builtIn.name,
-                htmlContent: html,
-                cssContent: css,
-                isBuiltIn: true
-            )
-            context.insert(template)
+            #if DEBUG
+            logger.debug("Seeded \(builtInTemplates.count) built-in templates")
+            #endif
+        } else if savedVersion < 2 {
+            upgradeBuiltInTemplates(existingTemplates)
         }
 
         try? context.save()
         UserDefaults.standard.set(currentVersion, forKey: seedVersionKey)
+    }
+
+    private static func upgradeBuiltInTemplates(_ templates: [InvoiceTemplate]) {
+        for template in templates {
+            guard let builtIn = builtInTemplates.first(where: { $0.name == template.name }) else {
+                continue
+            }
+
+            if let html = loadResource(named: builtIn.htmlFile, extension: "html") {
+                template.htmlContent = html
+            }
+
+            if let css = loadResource(named: builtIn.cssFile, extension: "css") {
+                template.cssContent = css
+            }
+
+            template.updatedAt = Date()
+        }
 
         #if DEBUG
-        logger.debug("Seeded \(builtInTemplates.count) built-in templates")
+        logger.debug("Upgraded \(templates.count) built-in templates to v2")
         #endif
     }
 

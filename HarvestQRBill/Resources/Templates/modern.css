@@ -100,8 +100,8 @@
     white-space: nowrap;
 }
 
-.qty-col { width: 60px; }
-.price-col { width: 90px; }
+.qty-col { width: 60px; display: var(--col-qty-display, table-cell); }
+.price-col { width: 90px; display: var(--col-price-display, table-cell); }
 .amount-col { width: 90px; }
 
 .totals {
@@ -123,6 +123,10 @@
     padding-top: 8px;
     font-weight: 700;
     font-size: 11pt;
+}
+
+.totals-row.total-hours-row {
+    display: var(--total-hours-display, none);
 }
 
 .totals-row.discount .totals-value {

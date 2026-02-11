@@ -119,8 +119,8 @@
 }
 
 .desc-col { width: auto; }
-.qty-col { width: 70px; }
-.rate-col { width: 90px; }
+.qty-col { width: 70px; display: var(--col-qty-display, table-cell); }
+.rate-col { width: 90px; display: var(--col-price-display, table-cell); }
 .amt-col { width: 90px; }
 
 .summary {
@@ -140,6 +140,10 @@
     font-weight: bold;
     font-size: 11pt;
     padding-top: 6px;
+}
+
+.summary-line.total-hours-row {
+    display: var(--total-hours-display, none);
 }
 
 .summary-line.discount span:last-child {

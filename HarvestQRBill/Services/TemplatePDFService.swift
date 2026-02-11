@@ -28,7 +28,8 @@ final class TemplatePDFService {
         context: [String: Any]
     ) async throws -> PDFDocument {
         let processedHTML = TemplateEngine.render(template.htmlContent, with: context)
-        return try await renderPDF(html: processedHTML, css: template.cssContent)
+        let css = template.columnVisibility.cssVariables() + "\n" + template.cssContent
+        return try await renderPDF(html: processedHTML, css: css)
     }
 
     private func buildHTMLDocument(html: String, css: String) -> String {
