@@ -15,9 +15,7 @@ changelog:
   includeAuthor: false
 
 version:
-  files:
-    - path: version.yml
-      key: version
+  files: []
   tagPrefix: ""
   tagMessage: "Release {version}"
   commitMessage: "release: {version}"

@@ -1,6 +1,6 @@
 # Building HarvestQRBill
 
-This document explains how to build, sign, and notarize HarvestQRBill for distribution.
+This document explains how to build, sign, and notarise HarvestQRBill for distribution.
 
 ## Prerequisites
 
@@ -22,7 +22,7 @@ security find-identity -v -p codesigning | grep "Developer ID Application"
 
 ## One-Time Setup: Keychain Profile
 
-For local builds, store your notarization credentials in your Keychain:
+For local builds, store your notarisation credentials in your Keychain:
 
 ```bash
 xcrun notarytool store-credentials "HarvestQRBill" \
@@ -39,12 +39,12 @@ The profile name "HarvestQRBill" is the default used by the build scripts.
 
 ## Local Builds
 
-### Build Only (No Notarization)
+### Build Only (Default)
 
-For quick testing without notarization:
+For quick testing without notarisation:
 
 ```bash
-./scripts/build-release.sh --build-only
+./scripts/build-release.sh
 ```
 
 This will:
@@ -52,20 +52,20 @@ This will:
 2. Export the signed .app
 3. Create ZIP and DMG packages
 
-The artifacts won't be notarized, so macOS Gatekeeper will block them on other machines.
+The artifacts won't be notarised, so macOS Gatekeeper will block them on other machines.
 
-### Full Build with Notarization
+### Full Build with Notarisation
 
 For a complete release build:
 
 ```bash
-./scripts/build-release.sh
+./scripts/build-release.sh --notarise
 ```
 
 This uses the default keychain profile "HarvestQRBill". To use a different profile:
 
 ```bash
-NOTARY_PROFILE="MyProfile" ./scripts/build-release.sh
+NOTARY_PROFILE="MyProfile" ./scripts/build-release.sh --notarise
 ```
 
 ### Clean Build
@@ -78,10 +78,24 @@ Remove previous build artifacts before building:
 
 ### Version Override
 
-Override the version from version.yml:
+Override the version from git tags:
 
 ```bash
 ./scripts/build-release.sh --version 1.2.3
+```
+
+### Configuration
+
+Specify a build configuration (default: `Release`):
+
+```bash
+./scripts/build-release.sh --configuration "Release-AppStore"
+```
+
+Or use the App Store wrapper script:
+
+```bash
+./scripts/build-appstore.sh
 ```
 
 ## GitHub Actions (CI)
@@ -90,13 +104,24 @@ The GitHub Actions workflow (`.github/workflows/release.yml`) automatically buil
 
 ### Triggering a Release
 
-1. Update version in `version.yml`
-2. Commit the change
-3. Tag and push:
+1. Make changes with conventional commits
+2. Run Shipmark to bump version and create tag:
 
 ```bash
-git tag v1.2.3
-git push origin v1.2.3
+shipmark release
+```
+
+3. Push to trigger the release workflow:
+
+```bash
+git push --follow-tags
+```
+
+You can also tag manually:
+
+```bash
+git tag 1.2.3
+git push origin 1.2.3
 ```
 
 ### CI Environment Variables
@@ -120,21 +145,21 @@ After a successful build, you'll find these in `build/`:
 | File | Description |
 |------|-------------|
 | `HarvestQRBill.xcarchive/` | Xcode archive (for debugging) |
-| `export/HarvestQRBill.app` | Signed (and stapled if notarized) app bundle |
+| `export/HarvestQRBill.app` | Signed (and stapled if notarised) app bundle |
 | `HarvestQRBill-X.Y.Z.zip` | ZIP archive for distribution |
-| `HarvestQRBill-X.Y.Z.dmg` | DMG installer for distribution |
+| `HarvestQRBill-X.Y.Z.dmg` | Signed DMG installer for distribution |
 
 ## Troubleshooting
 
-### Retry Notarization
+### Retry Notarisation
 
-If the build succeeded but notarization failed, use the standalone notarization script:
+If the build succeeded but notarisation failed, use the standalone notarisation script:
 
 ```bash
-./scripts/notarize.sh build/HarvestQRBill-*.dmg
+./scripts/notarise.sh build/HarvestQRBill-*.dmg
 ```
 
-This will notarize, staple, and verify the file.
+This will notarise, staple, and verify the file.
 
 ### Verify Code Signing
 
@@ -144,9 +169,9 @@ Check if an app is properly signed:
 codesign -dv --verbose=4 build/export/HarvestQRBill.app
 ```
 
-### Verify Notarization
+### Verify Notarisation
 
-Check if a DMG is properly notarized:
+Check if a DMG is properly notarised:
 
 ```bash
 spctl -a -vvv -t install build/HarvestQRBill-*.dmg
@@ -158,9 +183,9 @@ For an app bundle:
 spctl -a -vvv -t execute build/export/HarvestQRBill.app
 ```
 
-### Check Notarization Status
+### Check Notarisation Status
 
-If notarization is taking too long, check the status:
+If notarisation is taking too long, check the status:
 
 ```bash
 xcrun notarytool history --keychain-profile "HarvestQRBill"
@@ -178,11 +203,11 @@ xcrun notarytool log <submission-id> --keychain-profile "HarvestQRBill"
 - Ensure your Developer ID certificate is installed in the Keychain
 - Check that it hasn't expired
 
-**"Notarization credentials not configured"**
+**"Notarisation credentials not configured"**
 - Set up the keychain profile (see One-Time Setup above)
 - Or provide explicit environment variables
 
-**"Unable to upload" during notarization**
+**"Unable to upload" during notarisation**
 - Check your internet connection
 - Verify your App-Specific Password is valid
 - Ensure your Apple Developer account is in good standing

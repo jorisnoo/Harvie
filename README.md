@@ -10,6 +10,10 @@
 </p>
 
 <p align="center">
+  ✨<a href="https://github.com/jorisnoo/HarvestQRBill/releases/latest">Download</a>✨
+</p>
+
+<p align="center">
   <a href="https://github.com/jorisnoo/HarvestQRBill/releases/latest">
     <img src="https://img.shields.io/github/v/release/jorisnoo/HarvestQRBill" alt="Latest Release">
   </a>
@@ -19,7 +23,6 @@
 
 ---
 
-<!-- TODO: Add screenshot -->
 <p align="center">
   <img src="assets/screenshot.jpg" alt="Screenshot" width="800">
 </p>
@@ -97,18 +100,17 @@ git push --follow-tags
 ```
 
 GitHub Actions will automatically:
-- Sync version to Xcode project
 - Build and code sign the app
-- Create a notarized DMG
+- Create a notarised DMG
 - Publish a GitHub Release with changelog
 
 ## License
 
-MIT License - see [LICENSE](LICENSE) for details.
+MIT – see [LICENSE](LICENSE) for details.
 
 ## Acknowledgments
 
-- [Harvest](https://www.getharvest.com/) for their excellent API
+- [Harvest](https://www.getharvest.com/) for their API
 - Swiss Payment Standards for QR Bill specifications
 
 ## Disclaimer

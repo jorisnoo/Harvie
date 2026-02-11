@@ -1,7 +1,5 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
-
 ## Project Overview
 
 HarvestQRBill is a native macOS app that generates Swiss QR Bills for Harvest invoices. Built with SwiftUI and SwiftData, targeting macOS 14+.

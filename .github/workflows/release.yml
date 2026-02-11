@@ -1,4 +1,4 @@
-name: Build, Sign, Notarize and Release
+name: Build, Sign, Notarise and Release
 
 on:
   push:
@@ -10,37 +10,31 @@ permissions:
 
 jobs:
   build:
-    runs-on: macos-latest
+    runs-on: macos-26
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-        with:
-          ref: main
-          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Extract version from tag
         id: version
         run: echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
 
-      - name: Sync version to project files
+      - name: Extract app name from Xcode project
         run: |
-          VERSION="${{ steps.version.outputs.VERSION }}"
-          echo "Syncing version $VERSION..."
+          XCODE_PROJECT=$(ls -d *.xcodeproj | head -1)
+          XCODE_SCHEME="${XCODE_PROJECT%.xcodeproj}"
 
-          # Update Xcode project
-          sed -i '' "s/MARKETING_VERSION = [^;]*;/MARKETING_VERSION = $VERSION;/g" \
-            HarvestQRBill.xcodeproj/project.pbxproj
+          # Get the actual PRODUCT_NAME from Xcode build settings
+          APP_NAME=$(xcodebuild -project "$XCODE_PROJECT" -scheme "$XCODE_SCHEME" -showBuildSettings 2>/dev/null | grep "^ *PRODUCT_NAME = " | head -1 | sed 's/.*= //' | xargs)
 
-          # Update version.yml
-          echo "version: $VERSION" > version.yml
+          # Fallback to scheme name if PRODUCT_NAME not found
+          if [[ -z "$APP_NAME" ]]; then
+            echo "Warning: Could not determine PRODUCT_NAME, falling back to scheme name"
+            APP_NAME="$XCODE_SCHEME"
+          fi
 
-      - name: Commit version sync
-        uses: stefanzweifel/git-auto-commit-action@v7
-        with:
-          commit_message: "chore: sync version ${{ steps.version.outputs.VERSION }} to Xcode"
-          file_pattern: "HarvestQRBill.xcodeproj/project.pbxproj version.yml"
-          branch: main
+          echo "APP_NAME=$APP_NAME" >> $GITHUB_ENV
 
       - name: Import code signing certificate
         env:
@@ -64,31 +58,46 @@ jobs:
       - name: Install create-dmg
         run: brew install create-dmg
 
-      - name: Build, sign, and notarize
+      - name: Build, sign, and notarise
         env:
           APPLE_ID: ${{ secrets.APPLE_ID }}
           APPLE_APP_PASSWORD: ${{ secrets.APPLE_APP_PASSWORD }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
           MACOS_CERTIFICATE_NAME: ${{ secrets.MACOS_CERTIFICATE_NAME }}
         run: |
-          ./scripts/build-release.sh --clean --version "${{ steps.version.outputs.VERSION }}"
+          ./scripts/build-release.sh --clean --notarise --version "${{ steps.version.outputs.VERSION }}"
 
-      - name: Extract release notes from CHANGELOG
+      - name: Extract release notes
         id: changelog
         run: |
-          VERSION="${{ steps.version.outputs.VERSION }}"
-          awk "/^## .*${VERSION}/,/^## .*[0-9]+\.[0-9]+\.[0-9]+/{if(/^## .*[0-9]+\.[0-9]+\.[0-9]+/ && !/^## .*${VERSION}/)exit; print}" CHANGELOG.md > $RUNNER_TEMP/release_notes.md
+          VERSION="${{ github.ref_name }}"
+          REPO="${{ github.repository }}"
+          APP_NAME="${{ env.APP_NAME }}"
+
+          # Create download section
+          cat > release_notes.md << EOF
+          ## Download
+
+          **[⬇️ ${APP_NAME}-${VERSION}.dmg](https://github.com/${REPO}/releases/download/${VERSION}/${APP_NAME}-${VERSION}.dmg)** – Double-click and drag to Applications
+
+          ---
+
+          ## What's Changed
+
+          EOF
+
+          # Append changelog
+          awk "/^## \[${VERSION}\]/{flag=1; next} /^## \[/{flag=0} flag" CHANGELOG.md >> release_notes.md
           echo "" >> release_notes.md
-          echo "**Full Changelog:** https://github.com/${{ github.repository }}/blob/main/CHANGELOG.md" >> release_notes.md
-          cat $RUNNER_TEMP/release_notes.md
+          echo "**Full Changelog:** https://github.com/${REPO}/blob/main/CHANGELOG.md" >> release_notes.md
 
       - name: Create GitHub Release
         run: |
-          gh release create "${{ steps.version.outputs.VERSION }}" \
-            "build/HarvestQRBill-${{ steps.version.outputs.VERSION }}.dmg" \
-            "build/HarvestQRBill-${{ steps.version.outputs.VERSION }}.zip" \
-            --title "Release ${{ steps.version.outputs.VERSION }}" \
-            --notes-file "$RUNNER_TEMP/release_notes.md"
+          gh release create "${{ github.ref_name }}" \
+            "build/${{ env.APP_NAME }}-${{ github.ref_name }}.dmg" \
+            "build/${{ env.APP_NAME }}-${{ github.ref_name }}.zip" \
+            --title "Release ${{ github.ref_name }}" \
+            --notes-file release_notes.md
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 

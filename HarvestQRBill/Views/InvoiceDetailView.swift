@@ -474,6 +474,9 @@ struct InvoiceDetailView: View {
 
     private var notesSection: some View {
         VStack(alignment: .leading, spacing: 8) {
+            Text("Notes")
+                .font(.headline)
+
             TextEditor(text: $editedNotes)
                 .font(.body)
                 .foregroundStyle(.secondary)
