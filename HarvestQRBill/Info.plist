@@ -11,7 +11,7 @@
 	<key>FeatureFlags</key>
 	<dict>
 		<key>customPDFTemplates</key>
-		<true/>
+		<false/>
 	</dict>
 </dict>
 </plist>

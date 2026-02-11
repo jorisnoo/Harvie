@@ -22,7 +22,7 @@ struct SettingsView: View {
 
             if FeatureFlags.customPDFTemplates {
                 TemplatesSettings(viewModel: viewModel)
-                    .tabItem { Label("Templates", systemImage: "doc.richtext") }
+                    .tabItem { Label("Templates (Beta)", systemImage: "doc.richtext") }
             }
 
             FeedbackSettings()
