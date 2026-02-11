@@ -77,13 +77,26 @@ struct InvoicesListView: View {
             if viewModel.isLoading && viewModel.invoices.isEmpty {
                 ProgressView("Loading invoices...")
             } else if let error = viewModel.error {
-                ContentUnavailableView {
-                    Label("Error", systemImage: "exclamationmark.triangle")
-                } description: {
-                    Text(error)
-                } actions: {
-                    Button("Retry") {
-                        viewModel.loadInvoices()
+                if !viewModel.hasValidCredentials {
+                    ContentUnavailableView {
+                        Label("Setup Required", systemImage: "gear")
+                    } description: {
+                        Text(error)
+                    } actions: {
+                        Button("Open Settings") {
+                            openSettings()
+                        }
+                        .buttonStyle(.borderedProminent)
+                    }
+                } else {
+                    ContentUnavailableView {
+                        Label("Error", systemImage: "exclamationmark.triangle")
+                    } description: {
+                        Text(error)
+                    } actions: {
+                        Button("Retry") {
+                            viewModel.loadInvoices()
+                        }
                     }
                 }
             } else if viewModel.invoices.isEmpty {
