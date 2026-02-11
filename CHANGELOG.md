@@ -2,6 +2,37 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.2.5](https://github.com/jorisnoo/HarvestQRBill/releases/tag/v0.2.5) (2026-02-11)
+
+### Features
+
+- add feedback tab to settings with contact and issue reporting links ([bb368ce](https://github.com/jorisnoo/HarvestQRBill/commit/bb368cec86498b3cf94debe135aec330473e9a0a))
+- add markdown filter to template engine for rich text in descriptions and notes ([f121b73](https://github.com/jorisnoo/HarvestQRBill/commit/f121b73f0947587264131bb527f9543cc957f1a2))
+- add feature flags ([4044a32](https://github.com/jorisnoo/HarvestQRBill/commit/4044a327fc99619535b7e3c9fe406b53a3d7a3ca))
+- add column visibility toggles and total hours to invoice templates ([2fcf4df](https://github.com/jorisnoo/HarvestQRBill/commit/2fcf4df40c7e331be14bbe06a3c989ef6c5e487d))
+- add custom templates ([fc4841c](https://github.com/jorisnoo/HarvestQRBill/commit/fc4841c8d9baf2b331aa0e09ae0524a68cde38fb))
+
+### Bug Fixes
+
+- skip QR bill generation for unsupported currencies ([28fb2e3](https://github.com/jorisnoo/HarvestQRBill/commit/28fb2e3e56dcbaf10fafd0efdebbc5afeffe52d1))
+- set A4 dimensions and 75% zoom for template PDF rendering ([dfd0288](https://github.com/jorisnoo/HarvestQRBill/commit/dfd02886a6e6b7a5438eccc93559c3681f4b4855))
+- harden WKWebView configuration for template PDF rendering with non-persistent data store, disabled JS, and proper window-server GPU context ([0e2c61e](https://github.com/jorisnoo/HarvestQRBill/commit/0e2c61e4f144f1224108b379ab6dcf837f6d561f))
+- add hidden render window for WKWebView GPU context and terminate app on last window close ([cf18273](https://github.com/jorisnoo/HarvestQRBill/commit/cf182733127316265c00163aba844e7366f11da9))
+- add column toggle CSS defaults to templates and ensure visibility overrides cascade correctly ([1b214e7](https://github.com/jorisnoo/HarvestQRBill/commit/1b214e7c52d6f06d7408bfda8b64907f0aa7e7ca))
+- set description column width to 100% in all invoice templates for proper table layout ([91dadd2](https://github.com/jorisnoo/HarvestQRBill/commit/91dadd2b2818c02f5a92f40582eefe57406e5998))
+- improve TemplatePreviewView stability with navigation delegate, crash recovery, and launch services entitlement ([0578c6e](https://github.com/jorisnoo/HarvestQRBill/commit/0578c6e4cce1b891ac4618dd1d390590d8178369))
+- use single Window for main scene and scope classic template column alignment to items table ([394fa44](https://github.com/jorisnoo/HarvestQRBill/commit/394fa44be3d55f035292c4c510afcd18ddd5ec2b))
+- add timeout and robust error handling to template PDF rendering ([99c49cb](https://github.com/jorisnoo/HarvestQRBill/commit/99c49cb747ff26e5ed284692694d7736fd0fb84f))
+
+### Code Refactoring
+
+- replace manual save button with debounced auto-save for settings ([14817b4](https://github.com/jorisnoo/HarvestQRBill/commit/14817b41d999436550eb9be258dfc18ee3e3c4c7))
+- extract CSS custom properties and fix editor window lifecycle management ([7b0f3c7](https://github.com/jorisnoo/HarvestQRBill/commit/7b0f3c73b6de2311f9e2174f037c3a01acea99a1))
+- extract shared utilities, deduplicate API/PDF logic, and add reusable ConfirmationSheet ([d8486f8](https://github.com/jorisnoo/HarvestQRBill/commit/d8486f8a4f492888542f3c0b5afb6c29f8f91571))
+
+### Chores
+
+- disable customPDFTemplates feature flag and mark templates tab as beta ([208d2e1](https://github.com/jorisnoo/HarvestQRBill/commit/208d2e1bb5eb6cb89cf4facd11ac2cb650c49461))
 ## [0.2.4](https://github.com/jorisnoo/HarvestQRBill/releases/tag/v0.2.4) (2026-02-11)
 
 ### Features
