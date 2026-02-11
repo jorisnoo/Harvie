@@ -29,6 +29,11 @@ struct TemplatePreviewView: NSViewRepresentable {
         return webView
     }
 
+    static func dismantleNSView(_ webView: WKWebView, coordinator: Coordinator) {
+        webView.navigationDelegate = nil
+        webView.stopLoading()
+    }
+
     func updateNSView(_ webView: WKWebView, context: Context) {
         guard html != context.coordinator.lastLoadedHTML else { return }
         context.coordinator.lastLoadedHTML = html

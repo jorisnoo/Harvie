@@ -12,6 +12,7 @@ struct TemplateListView: View {
     @State private var selectedTemplate: InvoiceTemplate?
     @State private var showDeleteConfirmation = false
     @State private var templateToDelete: InvoiceTemplate?
+    @State private var editorControllers: [NSWindowController] = []
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -128,6 +129,8 @@ struct TemplateListView: View {
     }
 
     private func openEditor(for template: InvoiceTemplate) {
+        editorControllers.removeAll { $0.window == nil || !$0.window!.isVisible }
+
         let viewModel = TemplateEditorViewModel(template: template, modelContext: modelContext)
         let editorView = TemplateEditorView(viewModel: viewModel)
 
@@ -139,8 +142,11 @@ struct TemplateListView: View {
         )
         window.title = template.isBuiltIn ? "\(template.name) (Built-in — Read Only)" : template.name
         window.contentView = NSHostingView(rootView: editorView)
+
+        let controller = NSWindowController(window: window)
+        editorControllers.append(controller)
+        controller.showWindow(nil)
         window.center()
-        window.makeKeyAndOrderFront(nil)
     }
 }
 

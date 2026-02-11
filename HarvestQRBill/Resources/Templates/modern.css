@@ -1,8 +1,30 @@
+:root {
+    /* Colors */
+    --color-primary: #2563eb;
+    --color-text: #1a1a1a;
+    --color-muted: #666;
+    --color-table-header-bg: #f8fafc;
+    --color-table-header-text: #64748b;
+    --color-table-header-border: #e2e8f0;
+    --color-table-row-border: #f1f5f9;
+    --color-discount: #16a34a;
+
+    /* Fonts */
+    --font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif;
+    --font-size-base: 10pt;
+    --font-size-xs: 8pt;
+    --font-size-sm: 9pt;
+    --font-size-md: 11pt;
+    --font-size-lg: 12pt;
+    --font-size-xl: 14pt;
+    --font-size-2xl: 18pt;
+}
+
 .invoice {
     padding: 40px 50px;
-    font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif;
-    color: #1a1a1a;
-    font-size: 10pt;
+    font-family: var(--font-family);
+    color: var(--color-text);
+    font-size: var(--font-size-base);
     line-height: 1.5;
     max-height: 192mm; /* Leave 105mm for QR bill */
 }
@@ -13,19 +35,19 @@
     align-items: flex-start;
     margin-bottom: 40px;
     padding-bottom: 20px;
-    border-bottom: 2px solid #2563eb;
+    border-bottom: 2px solid var(--color-primary);
 }
 
 .company-name {
-    font-size: 18pt;
+    font-size: var(--font-size-2xl);
     font-weight: 700;
-    color: #2563eb;
+    color: var(--color-primary);
     margin: 0 0 6px 0;
 }
 
 .company-address {
-    font-size: 9pt;
-    color: #666;
+    font-size: var(--font-size-sm);
+    color: var(--color-muted);
     line-height: 1.6;
 }
 
@@ -34,14 +56,14 @@
 }
 
 .invoice-number {
-    font-size: 14pt;
+    font-size: var(--font-size-xl);
     font-weight: 600;
-    color: #1a1a1a;
+    color: var(--color-text);
 }
 
 .invoice-date {
-    font-size: 9pt;
-    color: #666;
+    font-size: var(--font-size-sm);
+    color: var(--color-muted);
     margin-top: 4px;
 }
 
@@ -50,22 +72,22 @@
 }
 
 .client-name {
-    font-size: 11pt;
+    font-size: var(--font-size-md);
     font-weight: 600;
 }
 
 .client-address {
-    font-size: 9pt;
-    color: #666;
+    font-size: var(--font-size-sm);
+    color: var(--color-muted);
     white-space: pre-line;
     margin-top: 4px;
 }
 
 .invoice-subject {
-    font-size: 12pt;
+    font-size: var(--font-size-lg);
     font-weight: 600;
     margin: 0 0 20px 0;
-    color: #1a1a1a;
+    color: var(--color-text);
 }
 
 .line-items {
@@ -75,23 +97,23 @@
 }
 
 .line-items thead {
-    background-color: #f8fafc;
+    background-color: var(--color-table-header-bg);
 }
 
 .line-items th {
     padding: 8px 12px;
     text-align: left;
     font-weight: 600;
-    font-size: 8pt;
+    font-size: var(--font-size-xs);
     text-transform: uppercase;
     letter-spacing: 0.5px;
-    color: #64748b;
-    border-bottom: 1px solid #e2e8f0;
+    color: var(--color-table-header-text);
+    border-bottom: 1px solid var(--color-table-header-border);
 }
 
 .line-items td {
     padding: 10px 12px;
-    border-bottom: 1px solid #f1f5f9;
+    border-bottom: 1px solid var(--color-table-row-border);
     vertical-align: top;
 }
 
@@ -115,15 +137,15 @@
     display: flex;
     justify-content: space-between;
     padding: 4px 12px;
-    font-size: 9pt;
+    font-size: var(--font-size-sm);
 }
 
 .totals-row.total {
-    border-top: 2px solid #2563eb;
+    border-top: 2px solid var(--color-primary);
     margin-top: 4px;
     padding-top: 8px;
     font-weight: 700;
-    font-size: 11pt;
+    font-size: var(--font-size-md);
 }
 
 .totals-row.total-hours-row {
@@ -131,26 +153,26 @@
 }
 
 .totals-row.discount .totals-value {
-    color: #16a34a;
+    color: var(--color-discount);
 }
 
 .footer-section {
     margin-top: 20px;
     padding-top: 16px;
-    border-top: 1px solid #e2e8f0;
+    border-top: 1px solid var(--color-table-header-border);
 }
 
 .payment-info {
     display: flex;
     gap: 30px;
-    font-size: 9pt;
-    color: #666;
+    font-size: var(--font-size-sm);
+    color: var(--color-muted);
     margin-bottom: 12px;
 }
 
 .notes {
-    font-size: 9pt;
-    color: #666;
+    font-size: var(--font-size-sm);
+    color: var(--color-muted);
     white-space: pre-line;
     line-height: 1.5;
 }

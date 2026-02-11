@@ -28,8 +28,12 @@ final class TemplateEditorViewModel {
         case css = "CSS"
     }
 
-    private var renderTask: Task<Void, Never>?
+    @ObservationIgnored nonisolated(unsafe) private var renderTask: Task<Void, Never>?
     private let modelContext: ModelContext
+
+    deinit {
+        renderTask?.cancel()
+    }
 
     init(template: InvoiceTemplate, modelContext: ModelContext) {
         self.template = template

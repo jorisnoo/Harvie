@@ -1,8 +1,25 @@
+:root {
+    /* Colors */
+    --color-text: #000;
+    --color-muted: #999;
+    --color-secondary: #666;
+    --color-table-row-border: #eee;
+
+    /* Fonts */
+    --font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif;
+    --font-family-mono: 'SF Mono', 'Menlo', monospace;
+    --font-size-base: 9pt;
+    --font-size-sm: 8pt;
+    --font-size-md: 10pt;
+    --font-size-lg: 11pt;
+    --font-size-xl: 14pt;
+}
+
 .invoice {
     padding: 50px;
-    font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif;
-    color: #000;
-    font-size: 9pt;
+    font-family: var(--font-family);
+    color: var(--color-text);
+    font-size: var(--font-size-base);
     line-height: 1.6;
     max-height: 192mm;
 }
@@ -15,20 +32,20 @@
 }
 
 .company-name {
-    font-size: 14pt;
+    font-size: var(--font-size-xl);
     font-weight: 600;
     letter-spacing: -0.3px;
 }
 
 .meta {
     text-align: right;
-    font-size: 9pt;
+    font-size: var(--font-size-base);
     line-height: 1.8;
-    font-family: 'SF Mono', 'Menlo', monospace;
+    font-family: var(--font-family-mono);
 }
 
 .label {
-    color: #999;
+    color: var(--color-muted);
     display: inline-block;
     width: 50px;
     text-align: right;
@@ -37,19 +54,19 @@
 
 .client {
     margin-bottom: 30px;
-    font-size: 10pt;
+    font-size: var(--font-size-md);
 }
 
 .address {
-    color: #666;
-    font-size: 9pt;
+    color: var(--color-secondary);
+    font-size: var(--font-size-base);
     white-space: pre-line;
 }
 
 .subject {
     margin-bottom: 20px;
     font-weight: 500;
-    font-size: 10pt;
+    font-size: var(--font-size-md);
 }
 
 .items {
@@ -62,14 +79,14 @@
     text-align: left;
     padding: 6px 0;
     font-weight: 400;
-    font-size: 8pt;
-    color: #999;
-    border-bottom: 1px solid #000;
+    font-size: var(--font-size-sm);
+    color: var(--color-muted);
+    border-bottom: 1px solid var(--color-text);
 }
 
 .items td {
     padding: 6px 0;
-    border-bottom: 1px solid #eee;
+    border-bottom: 1px solid var(--color-table-row-border);
     vertical-align: top;
 }
 
@@ -77,8 +94,8 @@
 .items .price,
 .items .total {
     text-align: right;
-    font-family: 'SF Mono', 'Menlo', monospace;
-    font-size: 9pt;
+    font-family: var(--font-family-mono);
+    font-size: var(--font-size-base);
 }
 
 .items th.qty,
@@ -102,11 +119,11 @@
     display: flex;
     justify-content: space-between;
     padding: 3px 0;
-    font-size: 9pt;
+    font-size: var(--font-size-base);
 }
 
 .totals .row span:last-child {
-    font-family: 'SF Mono', 'Menlo', monospace;
+    font-family: var(--font-family-mono);
 }
 
 .totals .total-hours-row {
@@ -114,25 +131,25 @@
 }
 
 .totals .grand-total {
-    border-top: 1px solid #000;
+    border-top: 1px solid var(--color-text);
     margin-top: 4px;
     padding-top: 6px;
     font-weight: 600;
-    font-size: 11pt;
+    font-size: var(--font-size-lg);
 }
 
 .footer {
     margin-top: 30px;
-    font-size: 8pt;
-    color: #999;
-    font-family: 'SF Mono', 'Menlo', monospace;
+    font-size: var(--font-size-sm);
+    color: var(--color-muted);
+    font-family: var(--font-family-mono);
 }
 
 .notes {
     margin-top: 8px;
-    font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+    font-family: var(--font-family);
     white-space: pre-line;
-    color: #666;
+    color: var(--color-secondary);
 }
 
 @media print {
