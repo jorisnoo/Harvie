@@ -8,7 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		CF02441E2F1F7D2A004AD884 /* AppUpdater in Frameworks */ = {isa = PBXBuildFile; productRef = CF02441D2F1F7D2A004AD884 /* AppUpdater */; };
-		CFA0B0032F42A000004AD884 /* AviaryInsights in Frameworks */ = {isa = PBXBuildFile; productRef = CFA0B0022F42A000004AD884 /* AviaryInsights */; };
+		CF05BE012F3C4061008D50C5 /* Aptabase in Frameworks */ = {isa = PBXBuildFile; productRef = CF05BE002F3C4061008D50C5 /* Aptabase */; };
 		CFC0713A2F130E6000DBAFCB /* AppIcon.icon in Resources */ = {isa = PBXBuildFile; fileRef = CFC071392F130E6000DBAFCB /* AppIcon.icon */; };
 /* End PBXBuildFile section */
 
@@ -67,19 +67,27 @@
 			buildActionMask = 2147483647;
 			files = (
 				CF02441E2F1F7D2A004AD884 /* AppUpdater in Frameworks */,
-				CFA0B0032F42A000004AD884 /* AviaryInsights in Frameworks */,
+				CF05BE012F3C4061008D50C5 /* Aptabase in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		CF05BDFF2F3C4061008D50C5 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
 		CFC06FA52F12C02400DBAFCB = {
 			isa = PBXGroup;
 			children = (
 				CFC071392F130E6000DBAFCB /* AppIcon.icon */,
 				CFC06FB02F12C02400DBAFCB /* HarvestQRBill */,
 				CF076F062F23AAB000DCF8D8 /* HarvestQRBillTests */,
+				CF05BDFF2F3C4061008D50C5 /* Frameworks */,
 				CFC06FAF2F12C02400DBAFCB /* Products */,
 			);
 			sourceTree = "<group>";
@@ -137,7 +145,7 @@
 			name = HarvestQRBill;
 			packageProductDependencies = (
 				CF02441D2F1F7D2A004AD884 /* AppUpdater */,
-				CFA0B0022F42A000004AD884 /* AviaryInsights */,
+				CF05BE002F3C4061008D50C5 /* Aptabase */,
 			);
 			productName = Harvester;
 			productReference = CFC06FAE2F12C02400DBAFCB /* HarvestQRBill.app */;
@@ -173,7 +181,7 @@
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
 				CF02441C2F1F7D2A004AD884 /* XCRemoteSwiftPackageReference "AppUpdater" */,
-				CFA0B0012F42A000004AD884 /* XCRemoteSwiftPackageReference "AviaryInsights" */,
+				CF05BDFE2F3C3FEA008D50C5 /* XCRemoteSwiftPackageReference "aptabase-swift" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = CFC06FAF2F12C02400DBAFCB /* Products */;
@@ -622,12 +630,12 @@
 				minimumVersion = 3.0.0;
 			};
 		};
-		CFA0B0012F42A000004AD884 /* XCRemoteSwiftPackageReference "AviaryInsights" */ = {
+		CF05BDFE2F3C3FEA008D50C5 /* XCRemoteSwiftPackageReference "aptabase-swift" */ = {
 			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/brightdigit/AviaryInsights";
+			repositoryURL = "https://github.com/aptabase/aptabase-swift";
 			requirement = {
 				kind = upToNextMajorVersion;
-				minimumVersion = 1.0.0;
+				minimumVersion = 0.3.11;
 			};
 		};
 /* End XCRemoteSwiftPackageReference section */
@@ -638,10 +646,10 @@
 			package = CF02441C2F1F7D2A004AD884 /* XCRemoteSwiftPackageReference "AppUpdater" */;
 			productName = AppUpdater;
 		};
-		CFA0B0022F42A000004AD884 /* AviaryInsights */ = {
+		CF05BE002F3C4061008D50C5 /* Aptabase */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = CFA0B0012F42A000004AD884 /* XCRemoteSwiftPackageReference "AviaryInsights" */;
-			productName = AviaryInsights;
+			package = CF05BDFE2F3C3FEA008D50C5 /* XCRemoteSwiftPackageReference "aptabase-swift" */;
+			productName = Aptabase;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
