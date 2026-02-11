@@ -311,9 +311,11 @@ struct DownloadsSettings: View {
                 .foregroundStyle(.secondary)
             }
 
+            #if DEBUG
             Section("Demo") {
                 Toggle("Demo Mode", isOn: $viewModel.appSettings.isDemoMode)
             }
+            #endif
 
             Color.clear
                 .frame(height: 60)

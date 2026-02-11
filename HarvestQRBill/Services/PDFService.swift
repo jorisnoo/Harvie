@@ -175,6 +175,7 @@ actor PDFService {
         )
     }
 
+    #if DEBUG
     func createDemoInvoiceWithQRBill(
         invoice: Invoice,
         creditorInfo: CreditorInfo
@@ -308,6 +309,7 @@ actor PDFService {
 
         return PDFDocument(data: pdfData as Data) ?? PDFDocument()
     }
+    #endif
 
     private func parseAddress(_ address: String, name: String) -> StructuredAddress {
         // Harvest address is typically multi-line:

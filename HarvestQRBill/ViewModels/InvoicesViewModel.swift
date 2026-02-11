@@ -244,12 +244,14 @@ final class InvoicesViewModel {
         // Capture current state filter before any async work
         let currentStateFilter = stateFilter
 
+        #if DEBUG
         // Check for demo mode first
         let appSettings = (try? await keychainService.loadAppSettings()) ?? .default
         if appSettings.isDemoMode {
             loadDemoInvoices()
             return
         }
+        #endif
 
         // First, load from cache for instant display
         if let context = modelContext {
@@ -315,6 +317,7 @@ final class InvoicesViewModel {
         isRefreshing = false
     }
 
+    #if DEBUG
     private func loadDemoInvoices() {
         hasValidCredentials = true
         var demoInvoices = DemoDataProvider.invoices
@@ -328,6 +331,7 @@ final class InvoicesViewModel {
         isLoading = false
         isRefreshing = false
     }
+    #endif
 
     private func loadFromCache(context: ModelContext) {
         let descriptor = FetchDescriptor<CachedInvoice>(

@@ -5,6 +5,7 @@
 
 import Foundation
 
+#if DEBUG
 enum DemoDataProvider {
     static var invoices: [Invoice] {
         let now = Date()
@@ -702,3 +703,4 @@ enum DemoDataProvider {
         )
     }
 }
+#endif
