@@ -56,6 +56,20 @@ struct CreditorInfo: Codable, Sendable {
     }
 }
 
+enum InvoicePDFSource: String, Codable, CaseIterable, Sendable {
+    case harvestPDF = "harvest"
+    case template = "template"
+
+    var displayName: String {
+        switch self {
+        case .harvestPDF:
+            return "Harvest PDF"
+        case .template:
+            return "Custom Template"
+        }
+    }
+}
+
 enum DownloadBehavior: String, Codable, CaseIterable, Sendable {
     case askEachTime = "ask"
     case useDefaultFolder = "default"
@@ -78,6 +92,10 @@ struct AppSettings: Codable, Sendable {
     var dateFormat: String
     var isDemoMode: Bool
 
+    // PDF source settings
+    var pdfSource: InvoicePDFSource
+    var selectedTemplateId: UUID?
+
     // Persisted filter/sort state
     var lastSortOption: String?
     var lastSortAscending: Bool?
@@ -95,17 +113,21 @@ struct AppSettings: Codable, Sendable {
             downloadBookmarkData: nil,
             filenamePattern: defaultFilenamePattern,
             dateFormat: defaultDateFormat,
-            isDemoMode: false
+            isDemoMode: false,
+            pdfSource: .harvestPDF,
+            selectedTemplateId: nil
         )
     }
 
-    init(downloadBehavior: DownloadBehavior, defaultDownloadPath: String?, downloadBookmarkData: Data?, filenamePattern: String = defaultFilenamePattern, dateFormat: String = defaultDateFormat, isDemoMode: Bool = false) {
+    init(downloadBehavior: DownloadBehavior, defaultDownloadPath: String?, downloadBookmarkData: Data?, filenamePattern: String = defaultFilenamePattern, dateFormat: String = defaultDateFormat, isDemoMode: Bool = false, pdfSource: InvoicePDFSource = .harvestPDF, selectedTemplateId: UUID? = nil) {
         self.downloadBehavior = downloadBehavior
         self.defaultDownloadPath = defaultDownloadPath
         self.downloadBookmarkData = downloadBookmarkData
         self.filenamePattern = filenamePattern
         self.dateFormat = dateFormat
         self.isDemoMode = isDemoMode
+        self.pdfSource = pdfSource
+        self.selectedTemplateId = selectedTemplateId
     }
 
     init(from decoder: Decoder) throws {
@@ -116,6 +138,8 @@ struct AppSettings: Codable, Sendable {
         filenamePattern = try container.decodeIfPresent(String.self, forKey: .filenamePattern) ?? Self.defaultFilenamePattern
         dateFormat = try container.decodeIfPresent(String.self, forKey: .dateFormat) ?? Self.defaultDateFormat
         isDemoMode = try container.decodeIfPresent(Bool.self, forKey: .isDemoMode) ?? false
+        pdfSource = try container.decodeIfPresent(InvoicePDFSource.self, forKey: .pdfSource) ?? .harvestPDF
+        selectedTemplateId = try container.decodeIfPresent(UUID.self, forKey: .selectedTemplateId)
         lastSortOption = try container.decodeIfPresent(String.self, forKey: .lastSortOption)
         lastSortAscending = try container.decodeIfPresent(Bool.self, forKey: .lastSortAscending)
         lastFilterPeriod = try container.decodeIfPresent(String.self, forKey: .lastFilterPeriod)

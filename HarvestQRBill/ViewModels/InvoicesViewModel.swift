@@ -4,10 +4,13 @@
 //
 
 import Foundation
+import os.log
 import SwiftUI
 import SwiftData
 import PDFKit
 import AppKit
+
+private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "HarvestQRBill", category: "InvoicesVM")
 
 enum InvoiceSortOption: String, CaseIterable {
     case issueDate = "Issue Date"
@@ -607,17 +610,32 @@ final class InvoicesViewModel {
             let total = invoicesToExport.count
             let appSettings = (try? await keychainService.loadAppSettings()) ?? .default
 
+            // Load template if using template mode
+            var template: InvoiceTemplate?
+            if withQRBill && appSettings.pdfSource == .template, let templateId = appSettings.selectedTemplateId {
+                template = await loadTemplate(id: templateId)
+            }
+
             for (index, invoice) in invoicesToExport.enumerated() {
                 exportProgressMessage = "Exporting \(index + 1) of \(total): \(invoice.number)"
                 exportProgress = Double(index) / Double(total)
 
                 let document: PDFDocument
                 if withQRBill {
-                    document = try await pdfService.createInvoiceWithQRBill(
-                        invoice: invoice,
-                        credentials: credentials,
-                        creditorInfo: creditorInfo
-                    )
+                    if let template {
+                        document = try await pdfService.createInvoiceFromTemplate(
+                            invoice: invoice,
+                            template: template,
+                            creditorInfo: creditorInfo,
+                            credentials: credentials
+                        )
+                    } else {
+                        document = try await pdfService.createInvoiceWithQRBill(
+                            invoice: invoice,
+                            credentials: credentials,
+                            creditorInfo: creditorInfo
+                        )
+                    }
                 } else {
                     let pdfURL = try apiService.buildPDFURL(for: invoice, subdomain: credentials.subdomain)
                     document = try await pdfService.downloadPDF(from: pdfURL)
@@ -654,6 +672,27 @@ final class InvoicesViewModel {
         }
 
         isExporting = false
+    }
+
+    func loadTemplate(id: UUID) async -> InvoiceTemplate? {
+        guard let context = modelContext else { return nil }
+
+        let descriptor = FetchDescriptor<InvoiceTemplate>(
+            predicate: #Predicate { $0.id == id }
+        )
+
+        do {
+            return try context.fetch(descriptor).first
+        } catch {
+            #if DEBUG
+            logger.error("Failed to load template: \(error.localizedDescription)")
+            #endif
+            return nil
+        }
+    }
+
+    func loadAppSettings() async -> AppSettings {
+        (try? await keychainService.loadAppSettings()) ?? .default
     }
 
     private func isDate(_ date: Date, inSamePeriodAs period: Date, calendar: Calendar) -> Bool {

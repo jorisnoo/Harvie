@@ -104,6 +104,32 @@ actor PDFService {
         }
     }
 
+    @MainActor
+    func generateQRBillPage(
+        invoice: Invoice,
+        creditorInfo: CreditorInfo,
+        debtorAddress: StructuredAddress?
+    ) throws -> PDFPage {
+        let qrBillService = QRBillService()
+        let qrBillRenderer = QRBillRenderer()
+
+        let qrBillData = try qrBillService.createQRBillData(
+            invoice: invoice,
+            creditorInfo: creditorInfo,
+            debtorAddress: debtorAddress
+        )
+
+        guard let qrImage = qrBillService.generateQRCodeImage(from: qrBillData) else {
+            throw PDFError.qrBillGenerationFailed
+        }
+
+        guard let page = qrBillRenderer.renderQRBillPage(data: qrBillData, qrImage: qrImage) else {
+            throw PDFError.qrBillGenerationFailed
+        }
+
+        return page
+    }
+
     func createInvoiceWithQRBill(
         invoice: Invoice,
         credentials: HarvestCredentials,
@@ -114,7 +140,6 @@ actor PDFService {
         let pdfURL = try apiService.buildPDFURL(for: invoice, subdomain: credentials.subdomain)
         let invoicePDF = try await downloadPDF(from: pdfURL)
 
-        // Fetch client details to get address for debtor info
         let debtorAddress = await fetchDebtorAddress(
             clientId: invoice.client.id,
             clientName: invoice.client.name,
@@ -122,27 +147,71 @@ actor PDFService {
         )
 
         let qrBillPage = try await MainActor.run {
-            let qrBillService = QRBillService()
-            let qrBillRenderer = QRBillRenderer()
-
-            let qrBillData = try qrBillService.createQRBillData(
+            try generateQRBillPage(
                 invoice: invoice,
                 creditorInfo: creditorInfo,
                 debtorAddress: debtorAddress
             )
-
-            guard let qrImage = qrBillService.generateQRCodeImage(from: qrBillData) else {
-                throw PDFError.qrBillGenerationFailed
-            }
-
-            guard let page = qrBillRenderer.renderQRBillPage(data: qrBillData, qrImage: qrImage) else {
-                throw PDFError.qrBillGenerationFailed
-            }
-
-            return page
         }
 
         return appendQRBill(to: invoicePDF, qrBillPage: qrBillPage)
+    }
+
+    func createInvoiceFromTemplate(
+        invoice: Invoice,
+        template: InvoiceTemplate,
+        creditorInfo: CreditorInfo,
+        clientAddress: String? = nil,
+        credentials: HarvestCredentials? = nil
+    ) async throws -> PDFDocument {
+        // Fetch client address if we have credentials and no address provided
+        var resolvedClientAddress = clientAddress
+        if resolvedClientAddress == nil, let credentials {
+            let apiService = HarvestAPIService.shared
+            if let client = try? await apiService.fetchClient(id: invoice.client.id, credentials: credentials) {
+                resolvedClientAddress = client.address
+            }
+        }
+
+        let context = TemplateContext.from(
+            invoice: invoice,
+            creditorInfo: creditorInfo,
+            clientAddress: resolvedClientAddress
+        )
+
+        let templatePDF = try await TemplatePDFService.shared.renderTemplate(
+            template: template,
+            context: context.toDictionary()
+        )
+
+        // Fetch debtor address for QR bill
+        let debtorAddress: StructuredAddress?
+        if let credentials {
+            debtorAddress = await fetchDebtorAddress(
+                clientId: invoice.client.id,
+                clientName: invoice.client.name,
+                credentials: credentials
+            )
+        } else {
+            debtorAddress = StructuredAddress(
+                name: invoice.client.name,
+                streetName: nil,
+                buildingNumber: nil,
+                postalCode: "",
+                town: "",
+                country: "CH"
+            )
+        }
+
+        let qrBillPage = try await MainActor.run {
+            try generateQRBillPage(
+                invoice: invoice,
+                creditorInfo: creditorInfo,
+                debtorAddress: debtorAddress
+            )
+        }
+
+        return appendQRBill(to: templatePDF, qrBillPage: qrBillPage)
     }
 
     private func fetchDebtorAddress(
@@ -190,26 +259,12 @@ actor PDFService {
         )
 
         let (demoPDF, qrBillPage) = try await MainActor.run {
-            // Create a simple placeholder PDF for demo mode
             let pdf = createDemoInvoicePDF(invoice: invoice, creditorInfo: creditorInfo)
-
-            let qrBillService = QRBillService()
-            let qrBillRenderer = QRBillRenderer()
-
-            let qrBillData = try qrBillService.createQRBillData(
+            let page = try generateQRBillPage(
                 invoice: invoice,
                 creditorInfo: creditorInfo,
                 debtorAddress: debtorAddress
             )
-
-            guard let qrImage = qrBillService.generateQRCodeImage(from: qrBillData) else {
-                throw PDFError.qrBillGenerationFailed
-            }
-
-            guard let page = qrBillRenderer.renderQRBillPage(data: qrBillData, qrImage: qrImage) else {
-                throw PDFError.qrBillGenerationFailed
-            }
-
             return (pdf, page)
         }
 

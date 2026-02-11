@@ -3,6 +3,7 @@
 //  HarvestQRBill
 //
 
+import SwiftData
 import SwiftUI
 
 struct SettingsView: View {
@@ -18,8 +19,11 @@ struct SettingsView: View {
 
             DownloadsSettings(viewModel: viewModel)
                 .tabItem { Label("Downloads", systemImage: "folder") }
+
+            TemplatesSettings(viewModel: viewModel)
+                .tabItem { Label("Templates", systemImage: "doc.richtext") }
         }
-        .frame(minWidth: 450, minHeight: 400)
+        .frame(minWidth: 500, minHeight: 450)
         .safeAreaInset(edge: .bottom) {
             HStack {
                 Spacer()
@@ -268,6 +272,50 @@ struct DownloadsSettings: View {
             #endif
         }
         .formStyle(.grouped)
+    }
+}
+
+// MARK: - Templates Settings
+
+struct TemplatesSettings: View {
+    @Bindable var viewModel: SettingsViewModel
+    @Query(sort: \InvoiceTemplate.name) private var templates: [InvoiceTemplate]
+
+    var body: some View {
+        VStack(spacing: 0) {
+            Form {
+                Section("Invoice PDF Source") {
+                    Picker("PDF source", selection: $viewModel.appSettings.pdfSource) {
+                        ForEach(InvoicePDFSource.allCases, id: \.self) { source in
+                            Text(source.displayName).tag(source)
+                        }
+                    }
+                    .pickerStyle(.radioGroup)
+
+                    if viewModel.appSettings.pdfSource == .template {
+                        Picker("Template", selection: $viewModel.appSettings.selectedTemplateId) {
+                            Text("None").tag(nil as UUID?)
+                            ForEach(templates) { template in
+                                Text(template.name).tag(template.id as UUID?)
+                            }
+                        }
+
+                        if viewModel.appSettings.selectedTemplateId == nil {
+                            Text("Select a template to use for invoice generation.")
+                                .font(.caption)
+                                .foregroundStyle(.orange)
+                        }
+                    }
+                }
+            }
+            .formStyle(.grouped)
+            .frame(maxHeight: .infinity, alignment: .top)
+            .fixedSize(horizontal: false, vertical: true)
+
+            TemplateListView()
+                .padding(.horizontal)
+                .padding(.bottom, 12)
+        }
     }
 }
 

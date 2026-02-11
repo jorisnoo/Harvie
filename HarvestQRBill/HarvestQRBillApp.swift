@@ -14,12 +14,27 @@ struct HarvestQRBillApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
     @FocusedValue(\.refresh) private var refresh
 
+    let modelContainer: ModelContainer
+
+    init() {
+        do {
+            modelContainer = try ModelContainer(for: CachedInvoice.self, InvoiceTemplate.self)
+        } catch {
+            fatalError("Failed to create ModelContainer: \(error)")
+        }
+    }
+
     var body: some Scene {
         WindowGroup {
             ContentView()
                 .onAppear {
                     Analytics.initialize()
                     Analytics.appLaunched()
+                }
+                .task {
+                    await MainActor.run {
+                        TemplateSeeder.seedIfNeeded(context: modelContainer.mainContext)
+                    }
                 }
         }
         .windowStyle(.automatic)
@@ -40,10 +55,11 @@ struct HarvestQRBillApp: App {
             }
             #endif
         }
-        .modelContainer(for: CachedInvoice.self)
+        .modelContainer(modelContainer)
 
         Settings {
             SettingsView()
+                .modelContainer(modelContainer)
         }
     }
 }

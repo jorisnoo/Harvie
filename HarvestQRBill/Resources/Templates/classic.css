@@ -1,0 +1,172 @@
+.invoice {
+    padding: 50px 55px;
+    font-family: 'Georgia', 'Times New Roman', serif;
+    color: #222;
+    font-size: 10pt;
+    line-height: 1.6;
+    max-height: 192mm;
+}
+
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    margin-bottom: 20px;
+}
+
+.company-name {
+    font-size: 16pt;
+    font-weight: bold;
+}
+
+.company-detail {
+    font-size: 9pt;
+    color: #555;
+    margin-top: 2px;
+}
+
+.title-block {
+    text-align: right;
+}
+
+.title {
+    font-size: 22pt;
+    font-weight: bold;
+    letter-spacing: 3px;
+    color: #333;
+}
+
+.number {
+    font-size: 10pt;
+    color: #555;
+    margin-top: 2px;
+}
+
+.divider {
+    border: none;
+    border-top: 1px solid #999;
+    margin: 16px 0;
+}
+
+.divider-thin {
+    border: none;
+    border-top: 1px solid #ccc;
+    margin: 6px 0;
+}
+
+.addresses {
+    display: flex;
+    gap: 40px;
+    margin-bottom: 24px;
+    font-size: 9pt;
+    line-height: 1.7;
+}
+
+.addresses > div {
+    flex: 1;
+}
+
+.address-label {
+    font-size: 7pt;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: #888;
+    margin-bottom: 4px;
+    font-family: -apple-system, sans-serif;
+}
+
+.client-name {
+    font-weight: bold;
+}
+
+.client-address {
+    white-space: pre-line;
+}
+
+.subject {
+    font-style: italic;
+    margin-bottom: 20px;
+    font-size: 10pt;
+}
+
+.items {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 20px;
+}
+
+.items th {
+    text-align: left;
+    padding: 8px 10px;
+    border-top: 1px solid #999;
+    border-bottom: 1px solid #999;
+    font-size: 8pt;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-family: -apple-system, sans-serif;
+    font-weight: 600;
+}
+
+.items td {
+    padding: 8px 10px;
+    border-bottom: 1px solid #e5e5e5;
+    vertical-align: top;
+}
+
+.qty-col, .rate-col, .amt-col {
+    text-align: right;
+    white-space: nowrap;
+}
+
+.desc-col { width: auto; }
+.qty-col { width: 70px; }
+.rate-col { width: 90px; }
+.amt-col { width: 90px; }
+
+.summary {
+    margin-left: auto;
+    width: 250px;
+    margin-bottom: 30px;
+    font-size: 9pt;
+}
+
+.summary-line {
+    display: flex;
+    justify-content: space-between;
+    padding: 3px 0;
+}
+
+.summary-line.total {
+    font-weight: bold;
+    font-size: 11pt;
+    padding-top: 6px;
+}
+
+.summary-line.discount span:last-child {
+    color: #2a7d2a;
+}
+
+.footer {
+    margin-top: 20px;
+    padding-top: 16px;
+    border-top: 1px solid #999;
+    display: flex;
+    gap: 40px;
+    font-size: 8pt;
+    color: #555;
+    line-height: 1.7;
+}
+
+.footer > div {
+    flex: 1;
+}
+
+.notes {
+    white-space: pre-line;
+}
+
+@media print {
+    .invoice {
+        padding: 50px 55px;
+    }
+}

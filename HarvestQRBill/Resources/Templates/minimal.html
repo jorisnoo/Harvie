@@ -1,0 +1,70 @@
+<div class="invoice">
+    <div class="header">
+        <div class="company-name">{{creditor.name}}</div>
+        <div class="meta">
+            <span class="label">Invoice</span> {{invoice.number}}<br>
+            <span class="label">Date</span> {{invoice.issueDate | date:"dd.MM.yyyy"}}<br>
+            <span class="label">Due</span> {{invoice.dueDate | date:"dd.MM.yyyy"}}
+        </div>
+    </div>
+
+    <div class="client">
+        {{client.name}}<br>
+        <span class="address">{{client.address}}</span>
+    </div>
+
+    {{#if invoice.hasSubject}}
+    <div class="subject">{{invoice.subject}}</div>
+    {{/if}}
+
+    <table class="items">
+        <thead>
+            <tr>
+                <th class="desc">Description</th>
+                <th class="qty">Qty</th>
+                <th class="price">Price</th>
+                <th class="total">Total</th>
+            </tr>
+        </thead>
+        <tbody>
+            {{#lineItems}}
+            <tr>
+                <td class="desc">{{description}}</td>
+                <td class="qty">{{quantity | number:1}}</td>
+                <td class="price">{{unitPrice | currency}}</td>
+                <td class="total">{{amount | currency}}</td>
+            </tr>
+            {{/lineItems}}
+        </tbody>
+    </table>
+
+    <div class="totals">
+        <div class="row">
+            <span>Subtotal</span>
+            <span>{{invoice.subtotal | currency}}</span>
+        </div>
+        {{#if invoice.hasTax}}
+        <div class="row">
+            <span>VAT {{invoice.tax}}%</span>
+            <span>{{invoice.taxAmount | currency}}</span>
+        </div>
+        {{/if}}
+        {{#if invoice.hasDiscount}}
+        <div class="row">
+            <span>Discount {{invoice.discount}}%</span>
+            <span>-{{invoice.discountAmount | currency}}</span>
+        </div>
+        {{/if}}
+        <div class="row grand-total">
+            <span>Total {{invoice.currency}}</span>
+            <span>{{invoice.amount | currency}}</span>
+        </div>
+    </div>
+
+    <div class="footer">
+        <div>IBAN {{creditor.iban}}</div>
+        {{#if invoice.hasNotes}}
+        <div class="notes">{{invoice.notes}}</div>
+        {{/if}}
+    </div>
+</div>

@@ -6,6 +6,7 @@
 import AppKit
 import os.log
 import PDFKit
+import SwiftData
 import SwiftUI
 import UniformTypeIdentifiers
 
@@ -15,6 +16,7 @@ struct InvoiceDetailView: View {
     let invoice: Invoice
     var onRefresh: (() -> Void)?
 
+    @Environment(\.modelContext) private var modelContext
     @State private var isProcessing = false
     @State private var isPreviewing = false
     @State private var error: String?
@@ -556,30 +558,43 @@ struct InvoiceDetailView: View {
                 return
             }
 
-            let pdf: PDFDocument
-            #if DEBUG
             let settings = (try? await keychainService.loadAppSettings()) ?? .default
-            if settings.isDemoMode {
-                pdf = try await pdfService.createDemoInvoiceWithQRBill(
+            let pdf: PDFDocument
+
+            if settings.pdfSource == .template,
+               let templateId = settings.selectedTemplateId,
+               let template = loadTemplate(id: templateId) {
+                let credentials = try? await keychainService.loadHarvestCredentials()
+                pdf = try await pdfService.createInvoiceFromTemplate(
                     invoice: invoice,
-                    creditorInfo: creditorInfo
+                    template: template,
+                    creditorInfo: creditorInfo,
+                    credentials: credentials
                 )
             } else {
+                #if DEBUG
+                if settings.isDemoMode {
+                    pdf = try await pdfService.createDemoInvoiceWithQRBill(
+                        invoice: invoice,
+                        creditorInfo: creditorInfo
+                    )
+                } else {
+                    let credentials = try await keychainService.loadHarvestCredentials()
+                    pdf = try await pdfService.createInvoiceWithQRBill(
+                        invoice: invoice,
+                        credentials: credentials,
+                        creditorInfo: creditorInfo
+                    )
+                }
+                #else
                 let credentials = try await keychainService.loadHarvestCredentials()
                 pdf = try await pdfService.createInvoiceWithQRBill(
                     invoice: invoice,
                     credentials: credentials,
                     creditorInfo: creditorInfo
                 )
+                #endif
             }
-            #else
-            let credentials = try await keychainService.loadHarvestCredentials()
-            pdf = try await pdfService.createInvoiceWithQRBill(
-                invoice: invoice,
-                credentials: credentials,
-                creditorInfo: creditorInfo
-            )
-            #endif
 
             let tempURL = FileManager.default.temporaryDirectory
                 .appendingPathComponent("\(invoiceFileName).pdf")
@@ -623,28 +638,41 @@ struct InvoiceDetailView: View {
             let settings = (try? await keychainService.loadAppSettings()) ?? .default
 
             let pdf: PDFDocument
-            #if DEBUG
-            if settings.isDemoMode {
-                pdf = try await pdfService.createDemoInvoiceWithQRBill(
+
+            if settings.pdfSource == .template,
+               let templateId = settings.selectedTemplateId,
+               let template = loadTemplate(id: templateId) {
+                let credentials = try? await keychainService.loadHarvestCredentials()
+                pdf = try await pdfService.createInvoiceFromTemplate(
                     invoice: invoice,
-                    creditorInfo: creditorInfo
+                    template: template,
+                    creditorInfo: creditorInfo,
+                    credentials: credentials
                 )
             } else {
+                #if DEBUG
+                if settings.isDemoMode {
+                    pdf = try await pdfService.createDemoInvoiceWithQRBill(
+                        invoice: invoice,
+                        creditorInfo: creditorInfo
+                    )
+                } else {
+                    let credentials = try await keychainService.loadHarvestCredentials()
+                    pdf = try await pdfService.createInvoiceWithQRBill(
+                        invoice: invoice,
+                        credentials: credentials,
+                        creditorInfo: creditorInfo
+                    )
+                }
+                #else
                 let credentials = try await keychainService.loadHarvestCredentials()
                 pdf = try await pdfService.createInvoiceWithQRBill(
                     invoice: invoice,
                     credentials: credentials,
                     creditorInfo: creditorInfo
                 )
+                #endif
             }
-            #else
-            let credentials = try await keychainService.loadHarvestCredentials()
-            pdf = try await pdfService.createInvoiceWithQRBill(
-                invoice: invoice,
-                credentials: credentials,
-                creditorInfo: creditorInfo
-            )
-            #endif
 
             await MainActor.run {
                 savePDF(pdf, settings: settings)
@@ -662,6 +690,13 @@ struct InvoiceDetailView: View {
             self.error = "Failed to download invoice. Please try again."
             isProcessing = false
         }
+    }
+
+    private func loadTemplate(id: UUID) -> InvoiceTemplate? {
+        let descriptor = FetchDescriptor<InvoiceTemplate>(
+            predicate: #Predicate { $0.id == id }
+        )
+        return try? modelContext.fetch(descriptor).first
     }
 
     private var invoiceFileName: String {

@@ -1,0 +1,80 @@
+<div class="invoice">
+    <header class="invoice-header">
+        <div class="company-info">
+            <h1 class="company-name">{{creditor.name}}</h1>
+            <div class="company-address">
+                {{creditor.street}} {{creditor.buildingNumber}}<br>
+                {{creditor.postalCode}} {{creditor.town}}
+            </div>
+        </div>
+        <div class="invoice-meta">
+            <div class="invoice-number">{{invoice.number}}</div>
+            <div class="invoice-date">{{invoice.issueDate | date:"dd.MM.yyyy"}}</div>
+        </div>
+    </header>
+
+    <div class="client-section">
+        <div class="client-name">{{client.name}}</div>
+        <div class="client-address">{{client.address}}</div>
+    </div>
+
+    {{#if invoice.hasSubject}}
+    <h2 class="invoice-subject">{{invoice.subject}}</h2>
+    {{/if}}
+
+    <table class="line-items">
+        <thead>
+            <tr>
+                <th class="description-col">Description</th>
+                <th class="qty-col">Qty</th>
+                <th class="price-col">Unit Price</th>
+                <th class="amount-col">Amount</th>
+            </tr>
+        </thead>
+        <tbody>
+            {{#lineItems}}
+            <tr>
+                <td class="description-col">{{description}}</td>
+                <td class="qty-col">{{quantity | number:1}}</td>
+                <td class="price-col">{{unitPrice | currency}}</td>
+                <td class="amount-col">{{amount | currency}}</td>
+            </tr>
+            {{/lineItems}}
+        </tbody>
+    </table>
+
+    <div class="totals">
+        <div class="totals-row subtotal">
+            <span class="totals-label">Subtotal</span>
+            <span class="totals-value">{{invoice.subtotal | currency}}</span>
+        </div>
+        {{#if invoice.hasTax}}
+        <div class="totals-row tax">
+            <span class="totals-label">VAT {{invoice.tax}}%</span>
+            <span class="totals-value">{{invoice.taxAmount | currency}}</span>
+        </div>
+        {{/if}}
+        {{#if invoice.hasDiscount}}
+        <div class="totals-row discount">
+            <span class="totals-label">Discount {{invoice.discount}}%</span>
+            <span class="totals-value">-{{invoice.discountAmount | currency}}</span>
+        </div>
+        {{/if}}
+        <div class="totals-row total">
+            <span class="totals-label">Total ({{invoice.currency}})</span>
+            <span class="totals-value">{{invoice.amount | currency}}</span>
+        </div>
+    </div>
+
+    <div class="footer-section">
+        <div class="payment-info">
+            <div class="due-date">Due: {{invoice.dueDate | date:"dd.MM.yyyy"}}</div>
+            <div class="iban">IBAN: {{creditor.iban}}</div>
+        </div>
+        {{#if invoice.hasNotes}}
+        <div class="notes">
+            {{invoice.notes}}
+        </div>
+        {{/if}}
+    </div>
+</div>

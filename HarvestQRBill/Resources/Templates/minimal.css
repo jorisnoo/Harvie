@@ -1,0 +1,138 @@
+.invoice {
+    padding: 50px;
+    font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif;
+    color: #000;
+    font-size: 9pt;
+    line-height: 1.6;
+    max-height: 192mm;
+}
+
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 40px;
+}
+
+.company-name {
+    font-size: 14pt;
+    font-weight: 600;
+    letter-spacing: -0.3px;
+}
+
+.meta {
+    text-align: right;
+    font-size: 9pt;
+    line-height: 1.8;
+    font-family: 'SF Mono', 'Menlo', monospace;
+}
+
+.label {
+    color: #999;
+    display: inline-block;
+    width: 50px;
+    text-align: right;
+    margin-right: 8px;
+}
+
+.client {
+    margin-bottom: 30px;
+    font-size: 10pt;
+}
+
+.address {
+    color: #666;
+    font-size: 9pt;
+    white-space: pre-line;
+}
+
+.subject {
+    margin-bottom: 20px;
+    font-weight: 500;
+    font-size: 10pt;
+}
+
+.items {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 20px;
+}
+
+.items th {
+    text-align: left;
+    padding: 6px 0;
+    font-weight: 400;
+    font-size: 8pt;
+    color: #999;
+    border-bottom: 1px solid #000;
+}
+
+.items td {
+    padding: 6px 0;
+    border-bottom: 1px solid #eee;
+    vertical-align: top;
+}
+
+.items .qty,
+.items .price,
+.items .total {
+    text-align: right;
+    font-family: 'SF Mono', 'Menlo', monospace;
+    font-size: 9pt;
+}
+
+.items th.qty,
+.items th.price,
+.items th.total {
+    text-align: right;
+}
+
+.desc { width: auto; }
+.qty { width: 50px; }
+.price { width: 80px; }
+.total { width: 80px; }
+
+.totals {
+    margin-left: auto;
+    width: 200px;
+    margin-bottom: 30px;
+}
+
+.totals .row {
+    display: flex;
+    justify-content: space-between;
+    padding: 3px 0;
+    font-size: 9pt;
+}
+
+.totals .row span:last-child {
+    font-family: 'SF Mono', 'Menlo', monospace;
+}
+
+.totals .grand-total {
+    border-top: 1px solid #000;
+    margin-top: 4px;
+    padding-top: 6px;
+    font-weight: 600;
+    font-size: 11pt;
+}
+
+.footer {
+    margin-top: 30px;
+    font-size: 8pt;
+    color: #999;
+    font-family: 'SF Mono', 'Menlo', monospace;
+}
+
+.notes {
+    margin-top: 8px;
+    font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+    white-space: pre-line;
+    color: #666;
+}
+
+@media print {
+    .invoice {
+        padding: 50px;
+    }
+}

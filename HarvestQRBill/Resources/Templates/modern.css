@@ -1,0 +1,157 @@
+.invoice {
+    padding: 40px 50px;
+    font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif;
+    color: #1a1a1a;
+    font-size: 10pt;
+    line-height: 1.5;
+    max-height: 192mm; /* Leave 105mm for QR bill */
+}
+
+.invoice-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 40px;
+    padding-bottom: 20px;
+    border-bottom: 2px solid #2563eb;
+}
+
+.company-name {
+    font-size: 18pt;
+    font-weight: 700;
+    color: #2563eb;
+    margin: 0 0 6px 0;
+}
+
+.company-address {
+    font-size: 9pt;
+    color: #666;
+    line-height: 1.6;
+}
+
+.invoice-meta {
+    text-align: right;
+}
+
+.invoice-number {
+    font-size: 14pt;
+    font-weight: 600;
+    color: #1a1a1a;
+}
+
+.invoice-date {
+    font-size: 9pt;
+    color: #666;
+    margin-top: 4px;
+}
+
+.client-section {
+    margin-bottom: 30px;
+}
+
+.client-name {
+    font-size: 11pt;
+    font-weight: 600;
+}
+
+.client-address {
+    font-size: 9pt;
+    color: #666;
+    white-space: pre-line;
+    margin-top: 4px;
+}
+
+.invoice-subject {
+    font-size: 12pt;
+    font-weight: 600;
+    margin: 0 0 20px 0;
+    color: #1a1a1a;
+}
+
+.line-items {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 20px;
+}
+
+.line-items thead {
+    background-color: #f8fafc;
+}
+
+.line-items th {
+    padding: 8px 12px;
+    text-align: left;
+    font-weight: 600;
+    font-size: 8pt;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #64748b;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.line-items td {
+    padding: 10px 12px;
+    border-bottom: 1px solid #f1f5f9;
+    vertical-align: top;
+}
+
+.qty-col, .price-col, .amount-col {
+    text-align: right;
+    white-space: nowrap;
+}
+
+.qty-col { width: 60px; }
+.price-col { width: 90px; }
+.amount-col { width: 90px; }
+
+.totals {
+    margin-left: auto;
+    width: 240px;
+    margin-bottom: 30px;
+}
+
+.totals-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 4px 12px;
+    font-size: 9pt;
+}
+
+.totals-row.total {
+    border-top: 2px solid #2563eb;
+    margin-top: 4px;
+    padding-top: 8px;
+    font-weight: 700;
+    font-size: 11pt;
+}
+
+.totals-row.discount .totals-value {
+    color: #16a34a;
+}
+
+.footer-section {
+    margin-top: 20px;
+    padding-top: 16px;
+    border-top: 1px solid #e2e8f0;
+}
+
+.payment-info {
+    display: flex;
+    gap: 30px;
+    font-size: 9pt;
+    color: #666;
+    margin-bottom: 12px;
+}
+
+.notes {
+    font-size: 9pt;
+    color: #666;
+    white-space: pre-line;
+    line-height: 1.5;
+}
+
+@media print {
+    .invoice {
+        padding: 40px 50px;
+    }
+}
