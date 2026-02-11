@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.2.2](https://github.com/jorisnoo/HarvestQRBill/releases/tag/v0.2.2) (2026-02-11)
+
+### Features
+
+- wrap demo mode code in #if DEBUG to exclude it from release builds ([ea6d2e6](https://github.com/jorisnoo/HarvestQRBill/commit/ea6d2e649fdc1edc63fbc95a556ac1206a74d73a))
+- add auto-update install flow with restart prompt and disable app sandbox for direct distribution ([b8df5b7](https://github.com/jorisnoo/HarvestQRBill/commit/b8df5b7e6ab3ebf2693ecf26fa9692e1f58cffae))
 ## [0.2.1](https://github.com/jorisnoo/HarvestQRBill/releases/tag/v0.2.1) (2026-02-11)
 
 ### Features
