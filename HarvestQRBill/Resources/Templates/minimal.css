@@ -87,7 +87,7 @@
     text-align: right;
 }
 
-.desc { width: auto; }
+.desc { width: 100%; }
 .qty { width: 50px; display: var(--col-qty-display, table-cell); }
 .price { width: 80px; display: var(--col-price-display, table-cell); }
 .total { width: 80px; }

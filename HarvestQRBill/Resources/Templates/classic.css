@@ -118,7 +118,7 @@
     white-space: nowrap;
 }
 
-.desc-col { width: auto; }
+.desc-col { width: 100%; }
 .qty-col { width: 70px; display: var(--col-qty-display, table-cell); }
 .rate-col { width: 90px; display: var(--col-price-display, table-cell); }
 .amt-col { width: 90px; }

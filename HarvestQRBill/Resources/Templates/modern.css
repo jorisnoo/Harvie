@@ -100,6 +100,7 @@
     white-space: nowrap;
 }
 
+.description-col { width: 100%; }
 .qty-col { width: 60px; display: var(--col-qty-display, table-cell); }
 .price-col { width: 90px; display: var(--col-price-display, table-cell); }
 .amount-col { width: 90px; }
