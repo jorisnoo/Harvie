@@ -41,7 +41,7 @@ struct ContentView: View {
             if viewModel.selectedInvoiceIDs.count > 1 {
                 MultiSelectionView(viewModel: viewModel)
             } else if let invoice = viewModel.selectedInvoice {
-                InvoiceDetailView(invoice: invoice, onRefresh: { viewModel.refresh() })
+                InvoiceDetailView(invoice: invoice, onRefresh: { viewModel.refreshInvoices(ids: [invoice.id]) })
             } else {
                 ContentUnavailableView(
                     "Select an Invoice",

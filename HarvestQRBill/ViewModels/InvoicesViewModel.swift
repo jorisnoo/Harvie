@@ -373,6 +373,55 @@ final class InvoicesViewModel {
         loadInvoices()
     }
 
+    func refreshInvoices(ids: Set<Int>) {
+        Task {
+            await performRefreshInvoices(ids: ids)
+        }
+    }
+
+    private func performRefreshInvoices(ids: Set<Int>) async {
+        guard let credentials = try? await keychainService.loadHarvestCredentials() else { return }
+
+        var fetched: [Invoice] = []
+
+        await withTaskGroup(of: Invoice?.self) { group in
+            for id in ids {
+                group.addTask {
+                    try? await self.apiService.fetchInvoice(id: id, credentials: credentials)
+                }
+            }
+
+            for await invoice in group {
+                if let invoice {
+                    fetched.append(invoice)
+                }
+            }
+        }
+
+        for invoice in fetched {
+            if let index = invoices.firstIndex(where: { $0.id == invoice.id }) {
+                if let stateFilter, invoice.state != stateFilter {
+                    invoices.remove(at: index)
+                } else {
+                    invoices[index] = invoice
+                }
+            }
+        }
+
+        if let selectedInvoice,
+           let updated = fetched.first(where: { $0.id == selectedInvoice.id }) {
+            if let stateFilter, updated.state != stateFilter {
+                self.selectedInvoice = nil
+            } else {
+                self.selectedInvoice = updated
+            }
+        }
+
+        if let context = modelContext {
+            updateCache(with: fetched, context: context)
+        }
+    }
+
     func getCredentials() async throws -> HarvestCredentials {
         try await keychainService.loadHarvestCredentials()
     }
@@ -436,7 +485,7 @@ final class InvoicesViewModel {
 
             showUpdateSuccess = true
 
-            loadInvoices()
+            await performRefreshInvoices(ids: Set(invoicesToUpdate.map(\.id)))
         } catch {
             updateError = error.localizedDescription
         }
@@ -473,7 +522,7 @@ final class InvoicesViewModel {
 
             showUpdateSuccess = true
 
-            loadInvoices()
+            await performRefreshInvoices(ids: Set(invoicesToUpdate.map(\.id)))
         } catch {
             updateError = error.localizedDescription
         }
@@ -510,7 +559,7 @@ final class InvoicesViewModel {
 
             showUpdateSuccess = true
 
-            loadInvoices()
+            await performRefreshInvoices(ids: Set(invoicesToUpdate.map(\.id)))
         } catch {
             updateError = error.localizedDescription
         }

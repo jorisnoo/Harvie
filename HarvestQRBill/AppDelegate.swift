@@ -10,7 +10,10 @@ import AppUpdater
 
 class AppDelegate: NSObject, NSApplicationDelegate {
     #if !APP_STORE
-    let updater = AppUpdater(owner: "jorisnoo", repo: "HarvestQRBill")
+    let updater = AppUpdater(
+        owner: Bundle.main.infoDictionary?["GHRepositoryOwner"] as! String,
+        repo: Bundle.main.infoDictionary?["GHRepositoryName"] as! String
+    )
 
     func checkForUpdates() {
         updater.check(
