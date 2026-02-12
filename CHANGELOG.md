@@ -2,6 +2,29 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.2.6](https://github.com/jorisnoo/HarvestQRBill/releases/tag/v0.2.6) (2026-02-12)
+
+### Features
+
+- render line item descriptions as inline markdown with bold and italic support ([3e154c1](https://github.com/jorisnoo/HarvestQRBill/commit/3e154c109a88c7a1a1a32fbab653ee306856f70d))
+
+### Bug Fixes
+
+- remove fixed height constraint and enable multi-page PDF pagination with proper page-break rules ([ecfbaf3](https://github.com/jorisnoo/HarvestQRBill/commit/ecfbaf303f8e2b410f330032a622891bb5078569))
+
+### Performance Improvements
+
+- cache formatters, regex, and encoders to avoid repeated allocations ([74efdfb](https://github.com/jorisnoo/HarvestQRBill/commit/74efdfb062fdee1ddb8134ec11545bb34440c1cd))
+
+### Code Refactoring
+
+- derive selectedInvoice from selectedInvoiceIDs, cache number formatters, and batch sort updates during settings restore ([d1ae9ba](https://github.com/jorisnoo/HarvestQRBill/commit/d1ae9ba8b366f4756c8bbf32f3b4840f2a5dd70e))
+- cache sorted invoices and settings in view model, pass creditor info and app settings to detail view as props ([2ef24d8](https://github.com/jorisnoo/HarvestQRBill/commit/2ef24d8e963eb2a7dde972299e85a6c3d911fa3d))
+
+### Chores
+
+- switch to forked aptabase-swift with custom host support and remove debug-only analytics guard ([059c02b](https://github.com/jorisnoo/HarvestQRBill/commit/059c02b47cdc40b62a8e3da2467f57c73d200ae8))
+- remove badge section from README ([055380c](https://github.com/jorisnoo/HarvestQRBill/commit/055380c07db746f6f8f573dc666f81bf3e58f73a))
 ## [0.2.5](https://github.com/jorisnoo/HarvestQRBill/releases/tag/v0.2.5) (2026-02-11)
 
 ### Features
