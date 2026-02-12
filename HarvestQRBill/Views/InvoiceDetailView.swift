@@ -14,6 +14,8 @@ private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "HarvestQ
 
 struct InvoiceDetailView: View {
     let invoice: Invoice
+    let creditorInfo: CreditorInfo
+    let appSettings: AppSettings
     var onRefresh: (() -> Void)?
 
     @Environment(\.modelContext) private var modelContext
@@ -22,9 +24,9 @@ struct InvoiceDetailView: View {
     @State private var error: String?
     @State private var showingSuccess = false
     @State private var savedFilePath: String?
-    @State private var creditorName: String = ""
-    @State private var canExportWithQRBill = false
-    @State private var appSettings: AppSettings = .default
+
+    private var creditorName: String { creditorInfo.name }
+    private var canExportWithQRBill: Bool { creditorInfo.isValid }
 
     // Subject editing
     @State private var editedSubject: String = ""
@@ -83,7 +85,7 @@ struct InvoiceDetailView: View {
             .padding()
         }
         .navigationTitle("Invoice \(invoice.number)")
-        .task(id: invoice.id) {
+        .onChange(of: invoice.id, initial: true) {
             editedSubject = invoice.subject ?? ""
             lastSavedSubject = invoice.subject ?? ""
             editedNotes = invoice.notes ?? ""
@@ -91,13 +93,6 @@ struct InvoiceDetailView: View {
             editedIssueDate = invoice.issueDate
             lastSavedIssueDate = invoice.issueDate
             issueDateSaved = false
-            if let creditorInfo = try? await keychainService.loadCreditorInfo() {
-                creditorName = creditorInfo.name
-                canExportWithQRBill = creditorInfo.isValid
-            }
-            if let settings = try? await keychainService.loadAppSettings() {
-                appSettings = settings
-            }
         }
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
@@ -528,44 +523,42 @@ struct InvoiceDetailView: View {
 
     private func generatePDF() async throws -> (pdf: PDFDocument, settings: AppSettings) {
         #if DEBUG
-        let creditorInfo = (try? await keychainService.loadCreditorInfo()) ?? DemoDataProvider.defaultCreditorInfo
+        let effectiveCreditorInfo = creditorInfo.isValid ? creditorInfo : DemoDataProvider.defaultCreditorInfo
         #else
-        let creditorInfo = (try? await keychainService.loadCreditorInfo()) ?? .empty
+        let effectiveCreditorInfo = creditorInfo
         #endif
 
-        guard creditorInfo.isValid else {
+        guard effectiveCreditorInfo.isValid else {
             throw GenerationError.invalidCreditor
         }
 
-        let settings = (try? await keychainService.loadAppSettings()) ?? .default
-
-        if settings.effectivePDFSource == .template,
-           let templateId = settings.selectedTemplateId,
+        if appSettings.effectivePDFSource == .template,
+           let templateId = appSettings.selectedTemplateId,
            let template = loadTemplate(id: templateId) {
             let credentials = try? await keychainService.loadHarvestCredentials()
             let pdf = try await pdfService.createInvoiceFromTemplate(
                 invoice: invoice,
                 template: template,
-                creditorInfo: creditorInfo,
+                creditorInfo: effectiveCreditorInfo,
                 credentials: credentials
             )
-            return (pdf, settings)
+            return (pdf, appSettings)
         }
 
         #if DEBUG
-        if settings.isDemoMode {
+        if appSettings.isDemoMode {
             let pdf = try await pdfService.createDemoInvoiceWithQRBill(
-                invoice: invoice, creditorInfo: creditorInfo
+                invoice: invoice, creditorInfo: effectiveCreditorInfo
             )
-            return (pdf, settings)
+            return (pdf, appSettings)
         }
         #endif
 
         let credentials = try await keychainService.loadHarvestCredentials()
         let pdf = try await pdfService.createInvoiceWithQRBill(
-            invoice: invoice, credentials: credentials, creditorInfo: creditorInfo
+            invoice: invoice, credentials: credentials, creditorInfo: effectiveCreditorInfo
         )
-        return (pdf, settings)
+        return (pdf, appSettings)
     }
 
     private func previewWithQRBill() async {
@@ -695,5 +688,5 @@ struct InvoiceDetailView: View {
                 project: nil
             )
         ]
-    ))
+    ), creditorInfo: .empty, appSettings: .default)
 }

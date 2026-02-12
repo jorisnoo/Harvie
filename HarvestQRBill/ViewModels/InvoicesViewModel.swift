@@ -122,18 +122,33 @@ enum DateFilterPeriod: String, CaseIterable {
 @Observable
 @MainActor
 final class InvoicesViewModel {
-    var invoices: [Invoice] = []
+    var invoices: [Invoice] = [] {
+        didSet {
+            invoicesById = Dictionary(uniqueKeysWithValues: invoices.map { ($0.id, $0) })
+            updateSortedInvoices()
+        }
+    }
     var selectedInvoice: Invoice?
     var selectedInvoiceIDs: Set<Int> = []
     var isLoading = false
     var isRefreshing = false
     var error: String?
     var stateFilter: InvoiceState? = .open
-    var sortOption: InvoiceSortOption = .issueDate
-    var sortDirection: SortDirection = .descending
-    var searchText = ""
-    var filterPeriod: DateFilterPeriod = .month
-    var selectedPeriod: Date?
+    var sortOption: InvoiceSortOption = .issueDate {
+        didSet { updateSortedInvoices() }
+    }
+    var sortDirection: SortDirection = .descending {
+        didSet { updateSortedInvoices() }
+    }
+    var searchText = "" {
+        didSet { updateSortedInvoices() }
+    }
+    var filterPeriod: DateFilterPeriod = .month {
+        didSet { updateSortedInvoices() }
+    }
+    var selectedPeriod: Date? {
+        didSet { updateSortedInvoices() }
+    }
     var hasValidCredentials = false
 
     private var loadInvoicesTask: Task<Void, Never>?
@@ -153,8 +168,10 @@ final class InvoicesViewModel {
         }
     }
 
-    // Creditor info for export validation
+    // Creditor info and settings for export validation
     var creditorInfo: CreditorInfo = .empty
+    var appSettings: AppSettings = .default
+    private(set) var invoicesById: [Int: Invoice] = [:]
 
     var canExportWithQRBill: Bool {
         creditorInfo.isValid
@@ -198,7 +215,8 @@ final class InvoicesViewModel {
             creditorInfo = loadedCreditorInfo
         }
 
-        guard let settings = try? await keychainService.loadAppSettings() else { return }
+        let settings = (try? await keychainService.loadAppSettings()) ?? .default
+        appSettings = settings
 
         if let sortOptionRaw = settings.lastSortOption,
            let savedSortOption = InvoiceSortOption(rawValue: sortOptionRaw) {
@@ -221,10 +239,11 @@ final class InvoicesViewModel {
         }
     }
 
-    func reloadCreditorInfo() async {
+    func reloadSettings() async {
         if let loadedCreditorInfo = try? await keychainService.loadCreditorInfo() {
             creditorInfo = loadedCreditorInfo
         }
+        appSettings = (try? await keychainService.loadAppSettings()) ?? .default
     }
 
     func saveState() async {
@@ -237,9 +256,12 @@ final class InvoicesViewModel {
         settings.lastStateFilter = stateFilter?.rawValue
 
         try? await keychainService.saveAppSettings(settings)
+        appSettings = settings
     }
 
-    var sortedInvoices: [Invoice] {
+    private(set) var sortedInvoices: [Invoice] = []
+
+    private func updateSortedInvoices() {
         var filtered = invoices
 
         if !searchText.isEmpty {
@@ -265,7 +287,7 @@ final class InvoicesViewModel {
             }
         }
 
-        return filtered.sorted { lhs, rhs in
+        sortedInvoices = filtered.sorted { lhs, rhs in
             let lhsDate: Date
             let rhsDate: Date
 
@@ -304,7 +326,6 @@ final class InvoicesViewModel {
 
         #if DEBUG
         // Check for demo mode first
-        let appSettings = (try? await keychainService.loadAppSettings()) ?? .default
         if appSettings.isDemoMode {
             loadDemoInvoices()
             return
@@ -460,15 +481,17 @@ final class InvoicesViewModel {
             }
         }
 
+        var updatedInvoices = invoices
         for invoice in fetched {
-            if let index = invoices.firstIndex(where: { $0.id == invoice.id }) {
+            if let index = updatedInvoices.firstIndex(where: { $0.id == invoice.id }) {
                 if let stateFilter, invoice.state != stateFilter {
-                    invoices.remove(at: index)
+                    updatedInvoices.remove(at: index)
                 } else {
-                    invoices[index] = invoice
+                    updatedInvoices[index] = invoice
                 }
             }
         }
+        invoices = updatedInvoices
 
         if let selectedInvoice,
            let updated = fetched.first(where: { $0.id == selectedInvoice.id }) {
@@ -493,7 +516,7 @@ final class InvoicesViewModel {
     }
 
     var selectedInvoices: [Invoice] {
-        invoices.filter { selectedInvoiceIDs.contains($0.id) }
+        selectedInvoiceIDs.compactMap { invoicesById[$0] }
     }
 
     func selectAll() {
@@ -622,7 +645,6 @@ final class InvoicesViewModel {
             }
 
             let total = invoicesToExport.count
-            let appSettings = (try? await keychainService.loadAppSettings()) ?? .default
 
             // Load template if using template mode
             var template: InvoiceTemplate?
@@ -705,7 +727,4 @@ final class InvoicesViewModel {
         }
     }
 
-    func loadAppSettings() async -> AppSettings {
-        (try? await keychainService.loadAppSettings()) ?? .default
-    }
 }

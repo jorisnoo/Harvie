@@ -67,7 +67,7 @@ struct InvoicesListView: View {
             }
         } primaryAction: { selectedIDs in
             if let firstID = selectedIDs.first {
-                viewModel.selectedInvoice = viewModel.invoices.first { $0.id == firstID }
+                viewModel.selectedInvoice = viewModel.invoicesById[firstID]
             }
         }
     }
@@ -284,7 +284,7 @@ struct InvoicesListView: View {
             // Update single selection for detail view when selection changes
             if viewModel.selectedInvoiceIDs.count == 1,
                let id = viewModel.selectedInvoiceIDs.first {
-                viewModel.selectedInvoice = viewModel.invoices.first { $0.id == id }
+                viewModel.selectedInvoice = viewModel.invoicesById[id]
             } else if viewModel.selectedInvoiceIDs.isEmpty {
                 viewModel.selectedInvoice = nil
             }
