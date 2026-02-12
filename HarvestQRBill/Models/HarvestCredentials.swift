@@ -169,15 +169,23 @@ struct AppSettings: Codable, Sendable, Equatable {
         return URL(fileURLWithPath: path)
     }
 
+    private static var dateFormatCache: [String: DateFormatter] = [:]
+
     private func formatDate(_ date: Date) -> String {
-        let dateFormatter = DateFormatter()
         // Convert user format (YYYY, YY, MM, DD) to DateFormatter format (yyyy, yy, MM, dd)
         let format = dateFormat
             .replacingOccurrences(of: "YYYY", with: "yyyy")
             .replacingOccurrences(of: "YY", with: "yy")
             .replacingOccurrences(of: "DD", with: "dd")
-        dateFormatter.dateFormat = format
-        return dateFormatter.string(from: date)
+
+        let formatter = Self.dateFormatCache[format] ?? {
+            let f = DateFormatter()
+            f.dateFormat = format
+            Self.dateFormatCache[format] = f
+            return f
+        }()
+
+        return formatter.string(from: date)
     }
 
     func generateFilename(

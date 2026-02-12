@@ -7,6 +7,44 @@ import Foundation
 
 struct TemplateEngine {
 
+    // MARK: - Cached Formatters & Regex
+
+    private static let dateFormatters = NSCache<NSString, DateFormatter>()
+    private static let numberFormatters = NSCache<NSString, NumberFormatter>()
+
+    private static let mediumDateFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.dateStyle = .medium
+        return f
+    }()
+
+    private static let boldRegex = try! NSRegularExpression(pattern: "\\*\\*(.+?)\\*\\*")
+    private static let italicRegex = try! NSRegularExpression(pattern: "(?<!\\\\)\\*(.+?)(?<!\\\\)\\*")
+
+    private static func cachedDateFormatter(format: String) -> DateFormatter {
+        let key = format as NSString
+        if let cached = dateFormatters.object(forKey: key) {
+            return cached
+        }
+        let formatter = DateFormatter()
+        formatter.dateFormat = format
+        dateFormatters.setObject(formatter, forKey: key)
+        return formatter
+    }
+
+    private static func cachedNumberFormatter(digits: Int) -> NumberFormatter {
+        let key = "\(digits)" as NSString
+        if let cached = numberFormatters.object(forKey: key) {
+            return cached
+        }
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .decimal
+        formatter.minimumFractionDigits = digits
+        formatter.maximumFractionDigits = digits
+        numberFormatters.setObject(formatter, forKey: key)
+        return formatter
+    }
+
     enum Token {
         case text(String)
         case variable(String, filter: Filter?)
@@ -260,9 +298,7 @@ struct TemplateEngine {
         switch filter {
         case .date(let format):
             guard let date = value as? Date else { return stringify(value) }
-            let formatter = DateFormatter()
-            formatter.dateFormat = format
-            return formatter.string(from: date)
+            return cachedDateFormatter(format: format).string(from: date)
 
         case .currency:
             guard let decimal = toDecimal(value) else { return stringify(value) }
@@ -270,11 +306,7 @@ struct TemplateEngine {
 
         case .number(let digits):
             guard let decimal = toDecimal(value) else { return stringify(value) }
-            let formatter = NumberFormatter()
-            formatter.numberStyle = .decimal
-            formatter.minimumFractionDigits = digits
-            formatter.maximumFractionDigits = digits
-            return formatter.string(from: decimal as NSDecimalNumber) ?? stringify(value)
+            return cachedNumberFormatter(digits: digits).string(from: decimal as NSDecimalNumber) ?? stringify(value)
 
         case .markdown:
             return convertMarkdown(stringify(value))
@@ -303,9 +335,7 @@ struct TemplateEngine {
         case let number as NSNumber:
             return number.stringValue
         case let date as Date:
-            let formatter = DateFormatter()
-            formatter.dateStyle = .medium
-            return formatter.string(from: date)
+            return mediumDateFormatter.string(from: date)
         default:
             return String(describing: value)
         }
@@ -321,18 +351,13 @@ struct TemplateEngine {
             .replacingOccurrences(of: ">", with: "&gt;")
 
         // Bold: **text**
-        result = result.replacingOccurrences(
-            of: "\\*\\*(.+?)\\*\\*",
-            with: "<strong>$1</strong>",
-            options: .regularExpression
-        )
+        let nsResult = NSMutableString(string: result)
+        boldRegex.replaceMatches(in: nsResult, range: NSRange(location: 0, length: nsResult.length), withTemplate: "<strong>$1</strong>")
 
         // Bold: *text*
-        result = result.replacingOccurrences(
-            of: "(?<!\\\\)\\*(.+?)(?<!\\\\)\\*",
-            with: "<strong>$1</strong>",
-            options: .regularExpression
-        )
+        italicRegex.replaceMatches(in: nsResult, range: NSRange(location: 0, length: nsResult.length), withTemplate: "<strong>$1</strong>")
+
+        result = nsResult as String
 
         // Line breaks
         result = result.replacingOccurrences(of: "\n", with: "<br>")

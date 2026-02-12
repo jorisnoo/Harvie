@@ -134,12 +134,14 @@ actor PDFService {
         clientAddress: String? = nil,
         credentials: HarvestCredentials? = nil
     ) async throws -> PDFDocument {
-        // Fetch client address if we have credentials and no address provided
+        // Fetch client once and reuse for both address and debtor
         var resolvedClientAddress = clientAddress
-        if resolvedClientAddress == nil, let credentials {
+        var fetchedClient: Client?
+        if let credentials {
             let apiService = HarvestAPIService.shared
-            if let client = try? await apiService.fetchClient(id: invoice.client.id, credentials: credentials) {
-                resolvedClientAddress = client.address
+            fetchedClient = try? await apiService.fetchClient(id: invoice.client.id, credentials: credentials)
+            if resolvedClientAddress == nil {
+                resolvedClientAddress = fetchedClient?.address
             }
         }
 
@@ -158,14 +160,10 @@ actor PDFService {
             return templatePDF
         }
 
-        // Fetch debtor address for QR bill
+        // Build debtor address from already-fetched client
         let debtorAddress: StructuredAddress?
-        if let credentials {
-            debtorAddress = await fetchDebtorAddress(
-                clientId: invoice.client.id,
-                clientName: invoice.client.name,
-                credentials: credentials
-            )
+        if credentials != nil {
+            debtorAddress = buildDebtorAddress(from: fetchedClient, clientName: invoice.client.name)
         } else {
             debtorAddress = StructuredAddress(
                 name: invoice.client.name,
@@ -197,10 +195,7 @@ actor PDFService {
 
         do {
             let client = try await apiService.fetchClient(id: clientId, credentials: credentials)
-
-            if let addressString = client.address, !addressString.isEmpty {
-                return parseAddress(addressString, name: clientName)
-            }
+            return buildDebtorAddress(from: client, clientName: clientName)
         } catch {
             #if DEBUG
             logger.debug("Failed to fetch client details: \(error.localizedDescription)")
@@ -208,6 +203,21 @@ actor PDFService {
         }
 
         // Fallback: just use the client name without address
+        return StructuredAddress(
+            name: clientName,
+            streetName: nil,
+            buildingNumber: nil,
+            postalCode: "",
+            town: "",
+            country: "CH"
+        )
+    }
+
+    private func buildDebtorAddress(from client: Client?, clientName: String) -> StructuredAddress {
+        if let addressString = client?.address, !addressString.isEmpty {
+            return parseAddress(addressString, name: clientName)
+        }
+
         return StructuredAddress(
             name: clientName,
             streetName: nil,

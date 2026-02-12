@@ -70,6 +70,15 @@ struct HTMLEditorView: NSViewRepresentable {
         var onChange: () -> Void
         private var isUpdating = false
 
+        private static let highlightRules: [(NSRegularExpression, NSColor)] = [
+            (try! NSRegularExpression(pattern: "<[^>]+>"), .systemBlue),
+            (try! NSRegularExpression(pattern: "\\{\\{[^}]+\\}\\}"), .systemOrange),
+            (try! NSRegularExpression(pattern: "[a-z-]+\\s*:"), .systemTeal),
+            (try! NSRegularExpression(pattern: "\"[^\"]*\""), .systemGreen),
+            (try! NSRegularExpression(pattern: "<!--[\\s\\S]*?-->"), .systemGray),
+            (try! NSRegularExpression(pattern: "/\\*[\\s\\S]*?\\*/"), .systemGray),
+        ]
+
         init(text: Binding<String>, onChange: @escaping () -> Void) {
             self._text = text
             self.onChange = onChange
@@ -94,36 +103,11 @@ struct HTMLEditorView: NSViewRepresentable {
             // Reset to default
             textStorage.addAttribute(.foregroundColor, value: NSColor.textColor, range: fullRange)
 
-            // Highlight HTML tags (blue)
-            highlightPattern("<[^>]+>", in: string, storage: textStorage, color: .systemBlue)
-
-            // Highlight Mustache tokens (orange)
-            highlightPattern("\\{\\{[^}]+\\}\\}", in: string, storage: textStorage, color: .systemOrange)
-
-            // Highlight CSS properties (teal) - word followed by colon
-            highlightPattern("[a-z-]+\\s*:", in: string, storage: textStorage, color: .systemTeal)
-
-            // Highlight strings (green)
-            highlightPattern("\"[^\"]*\"", in: string, storage: textStorage, color: .systemGreen)
-
-            // Highlight comments
-            highlightPattern("<!--[\\s\\S]*?-->", in: string, storage: textStorage, color: .systemGray)
-            highlightPattern("/\\*[\\s\\S]*?\\*/", in: string, storage: textStorage, color: .systemGray)
-        }
-
-        private func highlightPattern(
-            _ pattern: String,
-            in string: String,
-            storage: NSTextStorage,
-            color: NSColor
-        ) {
-            guard let regex = try? NSRegularExpression(pattern: pattern) else { return }
-
-            let fullRange = NSRange(location: 0, length: (string as NSString).length)
-            let matches = regex.matches(in: string, range: fullRange)
-
-            for match in matches {
-                storage.addAttribute(.foregroundColor, value: color, range: match.range)
+            let nsRange = NSRange(location: 0, length: (string as NSString).length)
+            for (regex, color) in Self.highlightRules {
+                for match in regex.matches(in: string, range: nsRange) {
+                    textStorage.addAttribute(.foregroundColor, value: color, range: match.range)
+                }
             }
         }
     }

@@ -32,6 +32,34 @@ struct QRBillRenderer {
     // Margins
     private let marginMM: CGFloat = 5
 
+    // Font cache
+    private struct FontKey: Hashable {
+        let bold: Bool
+        let fontSize: CGFloat
+    }
+
+    private static var fontCache: [FontKey: NSFont] = [:]
+    private static let truncatingStyle: NSMutableParagraphStyle = {
+        let s = NSMutableParagraphStyle()
+        s.lineBreakMode = .byTruncatingTail
+        return s
+    }()
+    private static let wrappingStyle: NSMutableParagraphStyle = {
+        let s = NSMutableParagraphStyle()
+        s.lineBreakMode = .byWordWrapping
+        return s
+    }()
+
+    private static func cachedFont(bold: Bool, size: CGFloat) -> NSFont {
+        let key = FontKey(bold: bold, fontSize: size)
+        if let cached = fontCache[key] {
+            return cached
+        }
+        let font = bold ? NSFont.boldSystemFont(ofSize: size) : NSFont.systemFont(ofSize: size)
+        fontCache[key] = font
+        return font
+    }
+
     // Bilingual labels (German / English)
     private enum Labels {
         static let receipt = "Empfangsschein"
@@ -344,12 +372,8 @@ struct QRBillRenderer {
         maxWidth: CGFloat,
         wrap: Bool = false
     ) -> CGFloat {
-        let font = bold ?
-            NSFont.boldSystemFont(ofSize: fontSize) :
-            NSFont.systemFont(ofSize: fontSize)
-
-        let paragraphStyle = NSMutableParagraphStyle()
-        paragraphStyle.lineBreakMode = wrap ? .byWordWrapping : .byTruncatingTail
+        let font = Self.cachedFont(bold: bold, size: fontSize)
+        let paragraphStyle = wrap ? Self.wrappingStyle : Self.truncatingStyle
 
         let attributes: [NSAttributedString.Key: Any] = [
             .font: font,

@@ -106,10 +106,13 @@ struct TemplateContext {
         )
     }
 
-    nonisolated func toDictionary() -> [String: Any] {
-        let dateFormatter = DateFormatter()
-        dateFormatter.dateFormat = "yyyy-MM-dd"
+    private static let isoDayFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.dateFormat = "yyyy-MM-dd"
+        return f
+    }()
 
+    nonisolated func toDictionary() -> [String: Any] {
         var dict: [String: Any] = [
             "invoice": [
                 "number": invoice.number,

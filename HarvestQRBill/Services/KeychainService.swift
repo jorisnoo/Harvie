@@ -11,6 +11,8 @@ actor KeychainService {
 
     private let service = "ch.noordermeer.HarvestQRBill"
     private var cache: [KeychainKey: Data] = [:]
+    private let encoder = JSONEncoder()
+    private let decoder = JSONDecoder()
 
     enum KeychainKey: String {
         case harvestCredentials = "harvest_credentials"
@@ -28,7 +30,7 @@ actor KeychainService {
     }
 
     func save<T: Encodable>(_ value: T, for key: KeychainKey) throws {
-        let data = try JSONEncoder().encode(value)
+        let data = try encoder.encode(value)
 
         let query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
@@ -64,7 +66,7 @@ actor KeychainService {
 
     func load<T: Decodable>(for key: KeychainKey) throws -> T {
         if let cached = cache[key] {
-            return try JSONDecoder().decode(T.self, from: cached)
+            return try decoder.decode(T.self, from: cached)
         }
 
         let query: [String: Any] = [
@@ -91,7 +93,7 @@ actor KeychainService {
 
         cache[key] = data
 
-        return try JSONDecoder().decode(T.self, from: data)
+        return try decoder.decode(T.self, from: data)
     }
 
     func delete(for key: KeychainKey) throws {

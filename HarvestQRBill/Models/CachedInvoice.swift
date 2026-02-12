@@ -8,6 +8,9 @@ import SwiftData
 
 @Model
 final class CachedInvoice {
+    private static let jsonEncoder = JSONEncoder()
+    private static let jsonDecoder = JSONDecoder()
+
     @Attribute(.unique) var id: Int
     var clientKey: String
     var number: String
@@ -81,7 +84,7 @@ final class CachedInvoice {
         self.lastFetched = Date()
 
         if let lineItems = invoice.lineItems {
-            self.lineItemsData = try? JSONEncoder().encode(lineItems)
+            self.lineItemsData = try? Self.jsonEncoder.encode(lineItems)
         }
     }
 
@@ -116,14 +119,14 @@ final class CachedInvoice {
         self.lastFetched = Date()
 
         if let lineItems = invoice.lineItems {
-            self.lineItemsData = try? JSONEncoder().encode(lineItems)
+            self.lineItemsData = try? Self.jsonEncoder.encode(lineItems)
         }
     }
 
     func toInvoice() -> Invoice {
         var lineItems: [LineItem]?
         if let data = lineItemsData {
-            lineItems = try? JSONDecoder().decode([LineItem].self, from: data)
+            lineItems = try? Self.jsonDecoder.decode([LineItem].self, from: data)
         }
 
         return Invoice(

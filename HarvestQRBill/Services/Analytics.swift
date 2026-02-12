@@ -24,11 +24,11 @@ enum Analytics {
 
         let host = Bundle.main.infoDictionary?["AptabaseHost"] as? String
         let options = InitOptions(host: host)
-        Aptabase.shared.initialize(appKey: appKey, with: options)
+        Aptabase.shared.initialize(appKey: appKey, options: options)
         isInitialized = true
     }
 
-    private static func track(_ event: String, props: [String: AnyCodableValue] = [:]) {
+    private static func track(_ event: String, props: [String: EventValue] = [:]) {
         guard isInitialized else { return }
 
         var allProps = props
