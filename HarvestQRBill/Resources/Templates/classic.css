@@ -32,7 +32,6 @@
     color: var(--color-text);
     font-size: var(--font-size-base);
     line-height: 1.6;
-    max-height: 192mm;
 }
 
 .header {
@@ -199,5 +198,14 @@
 @media print {
     .invoice {
         padding: 50px 55px;
+    }
+    .header, .addresses {
+        page-break-after: avoid;
+    }
+    .items tr {
+        page-break-inside: avoid;
+    }
+    .summary, .footer {
+        page-break-inside: avoid;
     }
 }

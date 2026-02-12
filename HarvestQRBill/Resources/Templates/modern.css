@@ -31,7 +31,6 @@
     color: var(--color-text);
     font-size: var(--font-size-base);
     line-height: 1.5;
-    max-height: 192mm; /* Leave 105mm for QR bill */
 }
 
 .invoice-header {
@@ -184,5 +183,14 @@
 @media print {
     .invoice {
         padding: 40px 50px;
+    }
+    .invoice-header, .client-section {
+        page-break-after: avoid;
+    }
+    .line-items tr {
+        page-break-inside: avoid;
+    }
+    .totals, .footer-section {
+        page-break-inside: avoid;
     }
 }

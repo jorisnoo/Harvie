@@ -82,6 +82,8 @@ final class TemplatePDFService {
             html, body {
                 width: 210mm;
                 min-height: 297mm;
+                orphans: 3;
+                widows: 3;
             }
         }
         \(css)
@@ -212,12 +214,8 @@ private final class PDFNavigationDelegate: NSObject, WKNavigationDelegate {
         guard !hasCompleted else { return }
 
         let config = WKPDFConfiguration()
-        // A4 in points
-        config.rect = CGRect(
-            x: 0, y: 0,
-            width: TemplatePDFService.a4Width,
-            height: TemplatePDFService.a4Height
-        )
+        // Leave config.rect at default (.null) so WKWebView paginates
+        // content across multiple A4 pages automatically via @page rules.
 
         webView.createPDF(configuration: config) { [weak self] result in
             guard let self, !self.hasCompleted else { return }
