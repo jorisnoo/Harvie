@@ -363,7 +363,7 @@ struct InvoiceDetailView: View {
                 HStack(alignment: .top) {
                     VStack(alignment: .leading, spacing: 2) {
                         if let description = item.description, !description.isEmpty {
-                            Text(description)
+                            Text(description.markdown)
                                 .font(.body)
                         }
 
@@ -643,6 +643,25 @@ struct InvoiceDetailView: View {
         var errorDescription: String? {
             "Please configure your creditor information in Settings."
         }
+    }
+}
+
+private extension String {
+    var markdown: AttributedString {
+        var result = (try? AttributedString(
+            markdown: self,
+            options: .init(interpretedSyntax: .inlineOnlyPreservingWhitespace)
+        )) ?? AttributedString(self)
+
+        for run in result.runs {
+            guard let intent = run.inlinePresentationIntent else { continue }
+            var font: Font = .body
+            if intent.contains(.stronglyEmphasized) { font = font.bold() }
+            if intent.contains(.emphasized) { font = font.italic() }
+            result[run.range].font = font
+        }
+
+        return result
     }
 }
 
