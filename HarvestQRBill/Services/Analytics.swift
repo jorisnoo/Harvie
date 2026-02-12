@@ -18,28 +18,22 @@ enum Analytics {
     }
 
     static func initialize() {
-        #if DEBUG
-        return
-        #else
         guard let appKey = Bundle.main.infoDictionary?["AptabaseAppKey"] as? String,
               !appKey.isEmpty
         else { return }
 
-        Aptabase.shared.initialize(appKey: appKey)
+        let host = Bundle.main.infoDictionary?["AptabaseHost"] as? String
+        let options = InitOptions(host: host)
+        Aptabase.shared.initialize(appKey: appKey, options: options)
         isInitialized = true
-        #endif
     }
 
     private static func track(_ event: String, props: [String: Any] = [:]) {
-        #if DEBUG
-        return
-        #else
         guard isInitialized else { return }
 
         var allProps = props
         allProps["distribution"] = distribution
         Aptabase.shared.trackEvent(event, with: allProps)
-        #endif
     }
 
     static func appLaunched() {
