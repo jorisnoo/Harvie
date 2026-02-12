@@ -25,15 +25,6 @@ struct InvoicesListView: View {
                 sortOption: viewModel.sortOption
             )
             .tag(invoice.id)
-            .simultaneousGesture(
-                TapGesture().onEnded {
-                    let modifiers = NSApp.currentEvent?.modifierFlags ?? []
-                    let hasModifiers = modifiers.contains(.command) || modifiers.contains(.shift)
-                    if !hasModifiers {
-                        viewModel.selectedInvoiceIDs = [invoice.id]
-                    }
-                }
-            )
         }
         .background {
             Color.clear
@@ -67,7 +58,7 @@ struct InvoicesListView: View {
             }
         } primaryAction: { selectedIDs in
             if let firstID = selectedIDs.first {
-                viewModel.selectedInvoice = viewModel.invoicesById[firstID]
+                viewModel.selectedInvoiceIDs = [firstID]
             }
         }
     }
@@ -279,15 +270,6 @@ struct InvoicesListView: View {
         .onChange(of: viewModel.selectedPeriod) {
             viewModel.clearInvalidSelections()
             Task { await viewModel.saveState() }
-        }
-        .onChange(of: viewModel.selectedInvoiceIDs) {
-            // Update single selection for detail view when selection changes
-            if viewModel.selectedInvoiceIDs.count == 1,
-               let id = viewModel.selectedInvoiceIDs.first {
-                viewModel.selectedInvoice = viewModel.invoicesById[id]
-            } else if viewModel.selectedInvoiceIDs.isEmpty {
-                viewModel.selectedInvoice = nil
-            }
         }
     }
 }

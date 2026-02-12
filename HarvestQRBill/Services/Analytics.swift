@@ -24,15 +24,15 @@ enum Analytics {
 
         let host = Bundle.main.infoDictionary?["AptabaseHost"] as? String
         let options = InitOptions(host: host)
-        Aptabase.shared.initialize(appKey: appKey, options: options)
+        Aptabase.shared.initialize(appKey: appKey, with: options)
         isInitialized = true
     }
 
-    private static func track(_ event: String, props: [String: Any] = [:]) {
+    private static func track(_ event: String, props: [String: AnyCodableValue] = [:]) {
         guard isInitialized else { return }
 
         var allProps = props
-        allProps["distribution"] = distribution
+        allProps["distribution"] = .string(distribution)
         Aptabase.shared.trackEvent(event, with: allProps)
     }
 
@@ -49,7 +49,7 @@ enum Analytics {
     }
 
     static func invoicesLoaded(count: Int) {
-        track("invoices_loaded", props: ["count": count])
+        track("invoices_loaded", props: ["count": .integer(count)])
     }
 
     static func pdfPreviewed() {
@@ -57,13 +57,13 @@ enum Analytics {
     }
 
     static func pdfExported(method: String) {
-        track("pdf_exported", props: ["method": method])
+        track("pdf_exported", props: ["method": .string(method)])
     }
 
     static func batchExportCompleted(count: Int, withQRBill: Bool) {
         track("batch_export_completed", props: [
-            "count": count,
-            "with_qr_bill": withQRBill,
+            "count": .integer(count),
+            "with_qr_bill": .boolean(withQRBill),
         ])
     }
 }

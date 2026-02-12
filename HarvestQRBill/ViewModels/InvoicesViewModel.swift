@@ -128,29 +128,35 @@ final class InvoicesViewModel {
             updateSortedInvoices()
         }
     }
-    var selectedInvoice: Invoice?
     var selectedInvoiceIDs: Set<Int> = []
+
+    var selectedInvoice: Invoice? {
+        guard selectedInvoiceIDs.count == 1,
+              let id = selectedInvoiceIDs.first else { return nil }
+        return invoicesById[id]
+    }
     var isLoading = false
     var isRefreshing = false
     var error: String?
     var stateFilter: InvoiceState? = .open
     var sortOption: InvoiceSortOption = .issueDate {
-        didSet { updateSortedInvoices() }
+        didSet { if !isBatchUpdating { updateSortedInvoices() } }
     }
     var sortDirection: SortDirection = .descending {
-        didSet { updateSortedInvoices() }
+        didSet { if !isBatchUpdating { updateSortedInvoices() } }
     }
     var searchText = "" {
-        didSet { updateSortedInvoices() }
+        didSet { if !isBatchUpdating { updateSortedInvoices() } }
     }
     var filterPeriod: DateFilterPeriod = .month {
-        didSet { updateSortedInvoices() }
+        didSet { if !isBatchUpdating { updateSortedInvoices() } }
     }
     var selectedPeriod: Date? {
-        didSet { updateSortedInvoices() }
+        didSet { if !isBatchUpdating { updateSortedInvoices() } }
     }
     var hasValidCredentials = false
 
+    private var isBatchUpdating = false
     private var loadInvoicesTask: Task<Void, Never>?
 
     var availablePeriods: [Date] {
@@ -218,6 +224,8 @@ final class InvoicesViewModel {
         let settings = (try? await keychainService.loadAppSettings()) ?? .default
         appSettings = settings
 
+        isBatchUpdating = true
+
         if let sortOptionRaw = settings.lastSortOption,
            let savedSortOption = InvoiceSortOption(rawValue: sortOptionRaw) {
             sortOption = savedSortOption
@@ -237,6 +245,9 @@ final class InvoicesViewModel {
         if let stateFilterRaw = settings.lastStateFilter {
             stateFilter = InvoiceState(rawValue: stateFilterRaw)
         }
+
+        isBatchUpdating = false
+        updateSortedInvoices()
     }
 
     func reloadSettings() async {
@@ -493,14 +504,9 @@ final class InvoicesViewModel {
         }
         invoices = updatedInvoices
 
-        if let selectedInvoice,
-           let updated = fetched.first(where: { $0.id == selectedInvoice.id }) {
-            if let stateFilter, updated.state != stateFilter {
-                self.selectedInvoice = nil
-            } else {
-                self.selectedInvoice = updated
-            }
-        }
+        // Clean up stale selection IDs (computed property handles the rest)
+        let currentIDs = Set(updatedInvoices.map(\.id))
+        selectedInvoiceIDs = selectedInvoiceIDs.intersection(currentIDs)
 
         if let context = modelContext {
             updateCache(with: fetched, context: context)
@@ -533,9 +539,6 @@ final class InvoicesViewModel {
 
         if !invalidIDs.isEmpty {
             selectedInvoiceIDs.subtract(invalidIDs)
-            if let selectedInvoice, !visibleIDs.contains(selectedInvoice.id) {
-                self.selectedInvoice = nil
-            }
         }
     }
 
