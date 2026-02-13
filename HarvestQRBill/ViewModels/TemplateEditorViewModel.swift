@@ -95,7 +95,13 @@ final class TemplateEditorViewModel {
     }
 
     func updatePreview() {
-        let context = TemplateContext.sampleDictionary()
+        var context = TemplateContext.sampleDictionary()
+        if let userLogo = LogoStorage.dataURI() {
+            var creditor = context["creditor"] as! [String: Any]
+            creditor["logo"] = userLogo
+            creditor["hasLogo"] = true
+            context["creditor"] = creditor
+        }
         let processedHTML = TemplateEngine.render(htmlContent, with: context)
         let css = cssContent + "\n" + columnVisibility.cssVariables()
         previewHTML = buildPreviewDocument(html: processedHTML, css: css)
