@@ -1,6 +1,11 @@
 <div class="invoice">
     <div class="header">
-        <div class="company-name">{{creditor.name}}</div>
+        <div class="company-block">
+            {{#if creditor.hasLogo}}
+            <img src="{{creditor.logo}}" class="company-logo" alt="">
+            {{/if}}
+            <div class="company-name">{{creditor.name}}</div>
+        </div>
         <div class="meta">
             <span class="label">Invoice</span> {{invoice.number}}<br>
             <span class="label">Date</span> {{invoice.issueDate | date:"dd.MM.yyyy"}}<br>

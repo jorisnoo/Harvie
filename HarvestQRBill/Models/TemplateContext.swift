@@ -41,12 +41,14 @@ struct TemplateContext {
         let postalCode: String
         let town: String
         let country: String
+        let logo: String?
     }
 
     nonisolated static func from(
         invoice: Invoice,
         creditorInfo: CreditorInfo,
-        clientAddress: String? = nil
+        clientAddress: String? = nil,
+        logoDataURI: String? = nil
     ) -> TemplateContext {
         let subtotal: Decimal = {
             if let items = invoice.lineItems {
@@ -84,7 +86,8 @@ struct TemplateContext {
             buildingNumber: creditorInfo.buildingNumber,
             postalCode: creditorInfo.postalCode,
             town: creditorInfo.town,
-            country: creditorInfo.country
+            country: creditorInfo.country,
+            logo: logoDataURI
         )
 
         let items: [[String: Any]] = (invoice.lineItems ?? []).map { item in
@@ -141,7 +144,9 @@ struct TemplateContext {
                 "buildingNumber": creditor.buildingNumber,
                 "postalCode": creditor.postalCode,
                 "town": creditor.town,
-                "country": creditor.country
+                "country": creditor.country,
+                "logo": creditor.logo as Any,
+                "hasLogo": creditor.logo != nil
             ],
             "lineItems": lineItems
         ]
@@ -162,6 +167,20 @@ struct TemplateContext {
         dict["invoice"] = invoiceDict
 
         return dict
+    }
+
+    // Minimal SVG logo for template editor preview (matches "Design Studio GmbH")
+    private static let sampleLogoSVG = """
+        <svg xmlns="http://www.w3.org/2000/svg" width="80" height="80" viewBox="0 0 80 80">\
+        <rect width="80" height="80" rx="12" fill="#2563eb"/>\
+        <text x="40" y="52" font-family="-apple-system,Helvetica,sans-serif" \
+        font-size="32" font-weight="700" fill="white" text-anchor="middle">DS</text>\
+        </svg>
+        """
+
+    nonisolated private static var sampleLogoDataURI: String {
+        let encoded = Data(sampleLogoSVG.utf8).base64EncodedString()
+        return "data:image/svg+xml;base64,\(encoded)"
     }
 
     nonisolated static func sampleDictionary() -> [String: Any] {
@@ -226,7 +245,9 @@ struct TemplateContext {
                 "buildingNumber": "1",
                 "postalCode": "8000",
                 "town": "Zurich",
-                "country": "CH"
+                "country": "CH",
+                "logo": sampleLogoDataURI,
+                "hasLogo": true
             ],
             "lineItems": sampleItems
         ]

@@ -1,6 +1,9 @@
 <div class="invoice">
     <div class="header">
         <div class="company">
+            {{#if creditor.hasLogo}}
+            <img src="{{creditor.logo}}" class="company-logo" alt="">
+            {{/if}}
             <div class="company-name">{{creditor.name}}</div>
             <div class="company-detail">{{creditor.street}} {{creditor.buildingNumber}}, {{creditor.postalCode}} {{creditor.town}}</div>
         </div>

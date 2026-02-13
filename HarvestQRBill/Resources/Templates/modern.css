@@ -42,6 +42,12 @@
     border-bottom: 2px solid var(--color-primary);
 }
 
+.company-logo {
+    max-height: 50px;
+    width: auto;
+    margin-bottom: 8px;
+}
+
 .company-name {
     font-size: var(--font-size-2xl);
     font-weight: 700;

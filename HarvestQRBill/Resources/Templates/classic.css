@@ -41,6 +41,12 @@
     margin-bottom: 20px;
 }
 
+.company-logo {
+    max-height: 44px;
+    width: auto;
+    margin-bottom: 6px;
+}
+
 .company-name {
     font-size: var(--font-size-xl);
     font-weight: bold;

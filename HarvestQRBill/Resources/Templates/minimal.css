@@ -35,6 +35,17 @@
     margin-bottom: 40px;
 }
 
+.company-block {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.company-logo {
+    max-height: 40px;
+    width: auto;
+}
+
 .company-name {
     font-size: var(--font-size-xl);
     font-weight: 600;

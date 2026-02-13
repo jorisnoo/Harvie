@@ -145,10 +145,13 @@ actor PDFService {
             }
         }
 
+        let logoDataURI = await LogoStorage.dataURI()
+
         let context = TemplateContext.from(
             invoice: invoice,
             creditorInfo: creditorInfo,
-            clientAddress: resolvedClientAddress
+            clientAddress: resolvedClientAddress,
+            logoDataURI: logoDataURI
         )
 
         let templatePDF = try await TemplatePDFService.shared.renderTemplate(

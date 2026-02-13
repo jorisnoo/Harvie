@@ -28,7 +28,7 @@ struct SettingsView: View {
             FeedbackSettings()
                 .tabItem { Label("Feedback", systemImage: "bubble.left.and.text.bubble.right") }
         }
-        .frame(minWidth: 500, minHeight: 450)
+        .frame(minWidth: 500, minHeight: 550)
         .task {
             await viewModel.loadSettings()
         }
@@ -267,6 +267,34 @@ struct TemplatesSettings: View {
     var body: some View {
         VStack(spacing: 0) {
             Form {
+                Section("Company Logo") {
+                    HStack {
+                        if let logo = viewModel.logoImage {
+                            Image(nsImage: logo)
+                                .resizable()
+                                .aspectRatio(contentMode: .fit)
+                                .frame(maxHeight: 48)
+                        } else {
+                            Text("No logo set")
+                                .foregroundStyle(.secondary)
+                        }
+
+                        Spacer()
+
+                        VStack(spacing: 6) {
+                            Button("Choose Image...") {
+                                viewModel.selectLogo()
+                            }
+
+                            if viewModel.logoImage != nil {
+                                Button("Remove", role: .destructive) {
+                                    viewModel.removeLogo()
+                                }
+                            }
+                        }
+                    }
+                }
+
                 Section("Invoice PDF Source") {
                     Picker("PDF source", selection: $viewModel.appSettings.pdfSource) {
                         ForEach(InvoicePDFSource.allCases, id: \.self) { source in

@@ -6,6 +6,7 @@
 import Foundation
 import os.log
 import SwiftUI
+import UniformTypeIdentifiers
 
 private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "HarvestQRBill", category: "Settings")
 
@@ -20,6 +21,8 @@ final class SettingsViewModel {
 
     var creditorInfo: CreditorInfo = .empty
     var appSettings: AppSettings = .default
+
+    var logoImage: NSImage?
 
     var isTestingConnection = false
     var connectionTestResult: ConnectionTestResult?
@@ -38,6 +41,7 @@ final class SettingsViewModel {
             ?? HarvestCredentials(accessToken: "", accountId: "", subdomain: "")
         creditorInfo = (try? await keychainService.loadCreditorInfo()) ?? .empty
         appSettings = (try? await keychainService.loadAppSettings()) ?? .default
+        logoImage = LogoStorage.loadImage()
     }
 
     static let settingsSavedNotification = Notification.Name("SettingsViewModelDidSaveSettings")
@@ -98,6 +102,31 @@ final class SettingsViewModel {
         }
 
         isTestingConnection = false
+    }
+
+    func selectLogo() {
+        let panel = NSOpenPanel()
+        panel.canChooseFiles = true
+        panel.canChooseDirectories = false
+        panel.allowsMultipleSelection = false
+        panel.allowedContentTypes = [.png, .jpeg, .gif, .tiff]
+        panel.message = "Select a company logo image"
+        panel.prompt = "Choose"
+
+        guard panel.runModal() == .OK, let url = panel.url,
+              let image = NSImage(contentsOf: url) else { return }
+
+        do {
+            try LogoStorage.save(image)
+            logoImage = LogoStorage.loadImage()
+        } catch {
+            logger.error("Failed to save logo: \(error.localizedDescription)")
+        }
+    }
+
+    func removeLogo() {
+        LogoStorage.delete()
+        logoImage = nil
     }
 
     func selectDownloadFolder() {
