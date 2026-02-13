@@ -61,12 +61,21 @@ final class SettingsViewModel {
     }
 
     private func saveSettings() async {
+        let previousCredentials = try? await keychainService.loadHarvestCredentials()
+        let previousDemoMode = (try? await keychainService.loadAppSettings())?.isDemoMode ?? false
+
         do {
             try await keychainService.saveHarvestCredentials(harvestCredentials)
             try await keychainService.saveCreditorInfo(creditorInfo)
             try await keychainService.saveAppSettings(appSettings)
             Analytics.settingsSaved()
-            NotificationCenter.default.post(name: Self.settingsSavedNotification, object: nil)
+
+            let needsAPIRefresh = harvestCredentials != previousCredentials || appSettings.isDemoMode != previousDemoMode
+            NotificationCenter.default.post(
+                name: Self.settingsSavedNotification,
+                object: nil,
+                userInfo: ["needsAPIRefresh": needsAPIRefresh]
+            )
         } catch {
             logger.error("Failed to save settings: \(error.localizedDescription)")
         }

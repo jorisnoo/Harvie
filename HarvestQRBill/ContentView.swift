@@ -50,11 +50,13 @@ struct ContentView: View {
                 await viewModel.reloadSettings()
             }
         }
-        .onReceive(NotificationCenter.default.publisher(for: SettingsViewModel.settingsSavedNotification)) { _ in
+        .onReceive(NotificationCenter.default.publisher(for: SettingsViewModel.settingsSavedNotification)) { notification in
             Task {
                 await viewModel.reloadSettings()
             }
-            viewModel.loadInvoices()
+            if notification.userInfo?["needsAPIRefresh"] as? Bool == true {
+                viewModel.loadInvoices()
+            }
         }
         .overlay {
             if viewModel.isExporting {
