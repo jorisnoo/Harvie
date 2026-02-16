@@ -9,13 +9,6 @@ struct InvoicesListView: View {
     @Bindable var viewModel: InvoicesViewModel
     @Environment(\.openSettings) private var openSettings
 
-    private var sortFilterMenuLabel: String {
-        if let period = viewModel.selectedPeriod {
-            return viewModel.formatPeriod(period)
-        }
-        return "Sort & Filter"
-    }
-
     @ViewBuilder
     private var invoicesList: some View {
         List(selection: $viewModel.selectedInvoiceIDs) {
@@ -29,14 +22,8 @@ struct InvoicesListView: View {
                 // .onDrag { viewModel.createDragProvider(for: invoice) }
             }
         }
-        .background {
-            Color.clear
-                .contentShape(Rectangle())
-                .onTapGesture {
-                    viewModel.selectedInvoiceIDs.removeAll()
-                }
-        }
         .onKeyPress(.escape) {
+            guard !viewModel.selectedInvoiceIDs.isEmpty else { return .ignored }
             viewModel.selectedInvoiceIDs.removeAll()
             return .handled
         }
@@ -132,149 +119,188 @@ struct InvoicesListView: View {
                 .background(.orange.opacity(0.1))
             }
         }
-        .alert("Export Error", isPresented: .init(
-            get: { viewModel.exportError != nil },
-            set: { if !$0 { viewModel.exportError = nil } }
-        )) {
-            Button("OK") { viewModel.exportError = nil }
-        } message: {
-            Text(viewModel.exportError ?? "")
-        }
-        .alert("Export Complete", isPresented: $viewModel.showExportSuccess) {
-            Button("OK") { }
-        } message: {
-            Text("Successfully exported \(viewModel.exportedCount) invoice(s).")
-        }
-        .alert("Update Error", isPresented: .init(
-            get: { viewModel.updateError != nil },
-            set: { if !$0 { viewModel.updateError = nil } }
-        )) {
-            Button("OK") { viewModel.updateError = nil }
-        } message: {
-            Text(viewModel.updateError ?? "")
-        }
-        .alert("Update Complete", isPresented: $viewModel.showUpdateSuccess) {
-            Button("OK") { }
-        } message: {
-            Text("Successfully updated \(viewModel.updatedCount) invoice(s).")
-        }
+        .modifier(InvoicesAlertsModifier(viewModel: viewModel))
         .toolbar {
-            ToolbarItemGroup(placement: .automatic) {
-                Menu {
-                    Section("Sort By") {
-                        ForEach(InvoiceSortOption.allCases, id: \.self) { option in
-                            Button {
-                                if viewModel.sortOption == option {
-                                    viewModel.sortDirection.toggle()
-                                } else {
-                                    viewModel.sortOption = option
-                                    viewModel.sortDirection = .descending
-                                }
-                            } label: {
-                                HStack {
-                                    Text(option.rawValue)
-                                    if viewModel.sortOption == option {
-                                        Image(systemName: viewModel.sortDirection == .ascending ? "chevron.up" : "chevron.down")
-                                    }
-                                }
-                            }
-                            .disabled(!viewModel.validSortOptions.contains(option))
-                        }
-                    }
+            InvoicesToolbarContent(viewModel: viewModel)
+        }
+        .modifier(InvoicesOnChangeModifier(viewModel: viewModel))
+    }
+}
 
-                    Divider()
+// MARK: - Toolbar (isolated observation scope)
 
-                    Section("Filter Period") {
-                        ForEach(DateFilterPeriod.allCases, id: \.self) { period in
-                            Button {
-                                if viewModel.filterPeriod != period {
-                                    viewModel.filterPeriod = period
-                                    viewModel.selectedPeriod = nil
-                                }
-                            } label: {
-                                HStack {
-                                    Text(period.rawValue)
-                                    if viewModel.filterPeriod == period {
-                                        Image(systemName: "checkmark")
-                                    }
-                                }
-                            }
-                        }
-                    }
+private struct InvoicesToolbarContent: ToolbarContent {
+    @Bindable var viewModel: InvoicesViewModel
 
-                    Divider()
+    private var sortFilterMenuLabel: String {
+        if let period = viewModel.selectedPeriod {
+            return viewModel.formatPeriod(period)
+        }
+        return "Sort & Filter"
+    }
 
-                    Section("Filter by \(viewModel.filterPeriod.rawValue)") {
+    var body: some ToolbarContent {
+        ToolbarItemGroup(placement: .automatic) {
+            Menu {
+                Section("Sort By") {
+                    ForEach(InvoiceSortOption.allCases, id: \.self) { option in
                         Button {
-                            viewModel.selectedPeriod = nil
+                            if viewModel.sortOption == option {
+                                viewModel.sortDirection.toggle()
+                            } else {
+                                viewModel.sortOption = option
+                                viewModel.sortDirection = .descending
+                            }
                         } label: {
                             HStack {
-                                Text("All")
-                                if viewModel.selectedPeriod == nil {
+                                Text(option.rawValue)
+                                if viewModel.sortOption == option {
+                                    Image(systemName: viewModel.sortDirection == .ascending ? "chevron.up" : "chevron.down")
+                                }
+                            }
+                        }
+                        .disabled(!viewModel.validSortOptions.contains(option))
+                    }
+                }
+
+                Divider()
+
+                Section("Filter Period") {
+                    ForEach(DateFilterPeriod.allCases, id: \.self) { period in
+                        Button {
+                            if viewModel.filterPeriod != period {
+                                viewModel.filterPeriod = period
+                                viewModel.selectedPeriod = nil
+                            }
+                        } label: {
+                            HStack {
+                                Text(period.rawValue)
+                                if viewModel.filterPeriod == period {
                                     Image(systemName: "checkmark")
                                 }
                             }
                         }
+                    }
+                }
 
-                        ForEach(viewModel.availablePeriods, id: \.self) { period in
-                            Button {
-                                viewModel.selectedPeriod = period
-                            } label: {
-                                HStack {
-                                    Text(viewModel.formatPeriod(period))
-                                    if let selected = viewModel.selectedPeriod, selected == period {
-                                        Image(systemName: "checkmark")
-                                    }
+                Divider()
+
+                Section("Filter by \(viewModel.filterPeriod.rawValue)") {
+                    Button {
+                        viewModel.selectedPeriod = nil
+                    } label: {
+                        HStack {
+                            Text("All")
+                            if viewModel.selectedPeriod == nil {
+                                Image(systemName: "checkmark")
+                            }
+                        }
+                    }
+
+                    ForEach(viewModel.availablePeriods, id: \.self) { period in
+                        Button {
+                            viewModel.selectedPeriod = period
+                        } label: {
+                            HStack {
+                                Text(viewModel.formatPeriod(period))
+                                if let selected = viewModel.selectedPeriod, selected == period {
+                                    Image(systemName: "checkmark")
                                 }
                             }
                         }
                     }
-                } label: {
-                    Label(sortFilterMenuLabel, systemImage: "line.3.horizontal.decrease.circle")
                 }
-                .focusable(false)
+            } label: {
+                Label(sortFilterMenuLabel, systemImage: "line.3.horizontal.decrease.circle")
+            }
+            .focusable(false)
 
-                Picker("Filter", selection: $viewModel.stateFilter) {
-                    Text("Open").tag(InvoiceState?.some(.open))
-                    Text("Paid").tag(InvoiceState?.some(.paid))
-                    Text("Draft").tag(InvoiceState?.some(.draft))
-                    Text("Closed").tag(InvoiceState?.some(.closed))
-                    Divider()
-                    Text("All").tag(InvoiceState?.none)
+            Picker("Filter", selection: $viewModel.stateFilter) {
+                Text("Open").tag(InvoiceState?.some(.open))
+                Text("Paid").tag(InvoiceState?.some(.paid))
+                Text("Draft").tag(InvoiceState?.some(.draft))
+                Text("Closed").tag(InvoiceState?.some(.closed))
+                Divider()
+                Text("All").tag(InvoiceState?.none)
+            }
+            .pickerStyle(.menu)
+        }
+    }
+}
+
+// MARK: - Alerts (isolated observation scope)
+
+private struct InvoicesAlertsModifier: ViewModifier {
+    @Bindable var viewModel: InvoicesViewModel
+
+    func body(content: Content) -> some View {
+        content
+            .alert("Export Error", isPresented: .init(
+                get: { viewModel.exportError != nil },
+                set: { if !$0 { viewModel.exportError = nil } }
+            )) {
+                Button("OK") { viewModel.exportError = nil }
+            } message: {
+                Text(viewModel.exportError ?? "")
+            }
+            .alert("Export Complete", isPresented: $viewModel.showExportSuccess) {
+                Button("OK") { }
+            } message: {
+                Text("Successfully exported \(viewModel.exportedCount) invoice(s).")
+            }
+            .alert("Update Error", isPresented: .init(
+                get: { viewModel.updateError != nil },
+                set: { if !$0 { viewModel.updateError = nil } }
+            )) {
+                Button("OK") { viewModel.updateError = nil }
+            } message: {
+                Text(viewModel.updateError ?? "")
+            }
+            .alert("Update Complete", isPresented: $viewModel.showUpdateSuccess) {
+                Button("OK") { }
+            } message: {
+                Text("Successfully updated \(viewModel.updatedCount) invoice(s).")
+            }
+    }
+}
+
+// MARK: - onChange handlers (isolated observation scope)
+
+private struct InvoicesOnChangeModifier: ViewModifier {
+    var viewModel: InvoicesViewModel
+
+    func body(content: Content) -> some View {
+        content
+            .onChange(of: viewModel.stateFilter) {
+                guard viewModel.isInitialized else { return }
+
+                if !viewModel.validSortOptions.contains(viewModel.sortOption) {
+                    viewModel.sortOption = .issueDate
                 }
-                .pickerStyle(.menu)
-            }
-        }
-        .onChange(of: viewModel.stateFilter) {
-            guard viewModel.isInitialized else { return }
 
-            if !viewModel.validSortOptions.contains(viewModel.sortOption) {
-                viewModel.sortOption = .issueDate
+                viewModel.deselectAll()
+                viewModel.loadInvoices()
+                viewModel.debouncedSaveState()
             }
-
-            viewModel.deselectAll()
-            viewModel.loadInvoices()
-            viewModel.debouncedSaveState()
-        }
-        .onChange(of: viewModel.sortOption) {
-            guard viewModel.isInitialized else { return }
-            viewModel.clearInvalidSelections()
-            viewModel.debouncedSaveState()
-        }
-        .onChange(of: viewModel.sortDirection) {
-            guard viewModel.isInitialized else { return }
-            viewModel.debouncedSaveState()
-        }
-        .onChange(of: viewModel.filterPeriod) {
-            guard viewModel.isInitialized else { return }
-            viewModel.clearInvalidSelections()
-            viewModel.debouncedSaveState()
-        }
-        .onChange(of: viewModel.selectedPeriod) {
-            guard viewModel.isInitialized else { return }
-            viewModel.clearInvalidSelections()
-            viewModel.debouncedSaveState()
-        }
+            .onChange(of: viewModel.sortOption) {
+                guard viewModel.isInitialized else { return }
+                viewModel.clearInvalidSelections()
+                viewModel.debouncedSaveState()
+            }
+            .onChange(of: viewModel.sortDirection) {
+                guard viewModel.isInitialized else { return }
+                viewModel.debouncedSaveState()
+            }
+            .onChange(of: viewModel.filterPeriod) {
+                guard viewModel.isInitialized else { return }
+                viewModel.clearInvalidSelections()
+                viewModel.debouncedSaveState()
+            }
+            .onChange(of: viewModel.selectedPeriod) {
+                guard viewModel.isInitialized else { return }
+                viewModel.clearInvalidSelections()
+                viewModel.debouncedSaveState()
+            }
     }
 }
 

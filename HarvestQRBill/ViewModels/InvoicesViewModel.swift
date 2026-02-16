@@ -127,15 +127,14 @@ final class InvoicesViewModel {
         didSet {
             invoicesById = Dictionary(uniqueKeysWithValues: invoices.map { ($0.id, $0) })
             updateSortedInvoices()
+            updateSelectedInvoice()
         }
     }
-    var selectedInvoiceIDs: Set<Int> = []
-
-    var selectedInvoice: Invoice? {
-        guard selectedInvoiceIDs.count == 1,
-              let id = selectedInvoiceIDs.first else { return nil }
-        return invoicesById[id]
+    var selectedInvoiceIDs: Set<Int> = [] {
+        didSet { updateSelectedInvoice() }
     }
+
+    private(set) var selectedInvoice: Invoice?
     var isLoading = false
     var isRefreshing = false
     var error: String?
@@ -150,21 +149,22 @@ final class InvoicesViewModel {
         didSet { if !isBatchUpdating { updateSortedInvoices() } }
     }
     var filterPeriod: DateFilterPeriod = .month {
-        didSet { if !isBatchUpdating { updateSortedInvoices() } }
+        didSet {
+            availablePeriods = filterPeriod.periods()
+            if !isBatchUpdating { updateSortedInvoices() }
+        }
     }
     var selectedPeriod: Date? {
         didSet { if !isBatchUpdating { updateSortedInvoices() } }
     }
     var hasValidCredentials = false
-    private(set) var isInitialized = false
+    @ObservationIgnored private(set) var isInitialized = false
 
-    private var isBatchUpdating = false
-    private var loadInvoicesTask: Task<Void, Never>?
-    private var saveStateTask: Task<Void, Never>?
+    @ObservationIgnored private var isBatchUpdating = false
+    @ObservationIgnored private var loadInvoicesTask: Task<Void, Never>?
+    @ObservationIgnored private var saveStateTask: Task<Void, Never>?
 
-    var availablePeriods: [Date] {
-        filterPeriod.periods()
-    }
+    private(set) var availablePeriods: [Date] = DateFilterPeriod.month.periods()
 
     var validSortOptions: [InvoiceSortOption] {
         switch stateFilter {
@@ -180,7 +180,7 @@ final class InvoicesViewModel {
     // Creditor info and settings for export validation
     var creditorInfo: CreditorInfo = .empty
     var appSettings: AppSettings = .default
-    private(set) var invoicesById: [Int: Invoice] = [:]
+    @ObservationIgnored private(set) var invoicesById: [Int: Invoice] = [:]
 
     var canExportWithQRBill: Bool {
         creditorInfo.isValid
@@ -212,7 +212,7 @@ final class InvoicesViewModel {
         return selectedInvoices.allSatisfy { $0.state == .open }
     }
 
-    var modelContext: ModelContext?
+    @ObservationIgnored var modelContext: ModelContext?
 
     private let apiService = HarvestAPIService.shared
     private let keychainService = KeychainService.shared
@@ -281,6 +281,18 @@ final class InvoicesViewModel {
     }
 
     private(set) var sortedInvoices: [Invoice] = []
+
+    private func updateSelectedInvoice() {
+        let newValue: Invoice?
+        if selectedInvoiceIDs.count == 1, let id = selectedInvoiceIDs.first {
+            newValue = invoicesById[id]
+        } else {
+            newValue = nil
+        }
+        if selectedInvoice != newValue {
+            selectedInvoice = newValue
+        }
+    }
 
     private func updateSortedInvoices() {
         var filtered = invoices
