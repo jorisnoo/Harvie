@@ -13,6 +13,7 @@ struct TemplateListView: View {
     @State private var showDeleteConfirmation = false
     @State private var templateToDelete: InvoiceTemplate?
     @State private var editorControllers: [NSWindowController] = []
+    @State private var previewControllers: [NSWindowController] = []
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -62,6 +63,12 @@ struct TemplateListView: View {
 
                 Spacer()
 
+                Button("Preview") {
+                    guard let selected = selectedTemplate else { return }
+                    openPreview(for: selected)
+                }
+                .disabled(selectedTemplate == nil)
+
                 Button("Edit") {
                     guard let selected = selectedTemplate else { return }
                     openEditor(for: selected)
@@ -84,6 +91,10 @@ struct TemplateListView: View {
 
     @ViewBuilder
     private func templateContextMenu(for template: InvoiceTemplate) -> some View {
+        Button("Preview") {
+            openPreview(for: template)
+        }
+
         Button("Edit") {
             openEditor(for: template)
         }
@@ -145,6 +156,57 @@ struct TemplateListView: View {
 
         let controller = NSWindowController(window: window)
         editorControllers.append(controller)
+        controller.showWindow(nil)
+        window.center()
+    }
+
+    private func openPreview(for template: InvoiceTemplate) {
+        previewControllers.removeAll { $0.window == nil || !$0.window!.isVisible }
+
+        var context = TemplateContext.sampleDictionary()
+        if let userLogo = LogoStorage.dataURI() {
+            var creditor = context["creditor"] as! [String: Any]
+            creditor["logo"] = userLogo
+            creditor["hasLogo"] = true
+            context["creditor"] = creditor
+        }
+
+        let processedHTML = TemplateEngine.render(template.htmlContent, with: context)
+        let css = template.cssContent + "\n" + template.columnVisibility.cssVariables()
+        let html = """
+            <!DOCTYPE html>
+            <html>
+            <head>
+            <meta charset="UTF-8">
+            <style>
+            * { margin: 0; padding: 0; box-sizing: border-box; }
+            html, body {
+                width: 210mm;
+                min-height: 297mm;
+                font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif;
+            }
+            \(css)
+            </style>
+            </head>
+            <body>
+            \(processedHTML)
+            </body>
+            </html>
+            """
+
+        let previewView = TemplatePreviewView(html: html)
+
+        let window = NSWindow(
+            contentRect: NSRect(x: 0, y: 0, width: 800, height: 900),
+            styleMask: [.titled, .closable, .resizable, .miniaturizable],
+            backing: .buffered,
+            defer: false
+        )
+        window.title = "Preview — \(template.name)"
+        window.contentView = NSHostingView(rootView: previewView)
+
+        let controller = NSWindowController(window: window)
+        previewControllers.append(controller)
         controller.showWindow(nil)
         window.center()
     }
