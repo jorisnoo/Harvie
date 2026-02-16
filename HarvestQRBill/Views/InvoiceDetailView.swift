@@ -305,11 +305,11 @@ struct InvoiceDetailView: View {
 
     private var amountsSection: some View {
         VStack(alignment: .leading, spacing: 4) {
-            Text(formattedDueAmount)
+            Text(invoice.state == .paid ? formattedAmount : formattedDueAmount)
                 .font(.title)
                 .fontWeight(.bold)
 
-            if invoice.dueAmount != invoice.amount {
+            if invoice.state != .paid, invoice.dueAmount != invoice.amount {
                 Text("of \(formattedAmount) total")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
