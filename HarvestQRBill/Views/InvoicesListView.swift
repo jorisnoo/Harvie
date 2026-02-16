@@ -246,30 +246,34 @@ struct InvoicesListView: View {
             }
         }
         .onChange(of: viewModel.stateFilter) {
+            guard viewModel.isInitialized else { return }
+
             if !viewModel.validSortOptions.contains(viewModel.sortOption) {
                 viewModel.sortOption = .issueDate
             }
 
             viewModel.deselectAll()
             viewModel.loadInvoices()
-            Task {
-                await viewModel.saveState()
-            }
+            viewModel.debouncedSaveState()
         }
         .onChange(of: viewModel.sortOption) {
+            guard viewModel.isInitialized else { return }
             viewModel.clearInvalidSelections()
-            Task { await viewModel.saveState() }
+            viewModel.debouncedSaveState()
         }
         .onChange(of: viewModel.sortDirection) {
-            Task { await viewModel.saveState() }
+            guard viewModel.isInitialized else { return }
+            viewModel.debouncedSaveState()
         }
         .onChange(of: viewModel.filterPeriod) {
+            guard viewModel.isInitialized else { return }
             viewModel.clearInvalidSelections()
-            Task { await viewModel.saveState() }
+            viewModel.debouncedSaveState()
         }
         .onChange(of: viewModel.selectedPeriod) {
+            guard viewModel.isInitialized else { return }
             viewModel.clearInvalidSelections()
-            Task { await viewModel.saveState() }
+            viewModel.debouncedSaveState()
         }
     }
 }

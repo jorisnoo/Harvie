@@ -35,6 +35,8 @@ final class SettingsViewModel {
     private let keychainService = KeychainService.shared
     private let apiService = HarvestAPIService.shared
     private var autoSaveTask: Task<Void, Never>?
+    private var lastSavedCredentials: HarvestCredentials?
+    private var lastSavedDemoMode: Bool?
 
     func loadSettings() async {
         harvestCredentials = (try? await keychainService.loadHarvestCredentials())
@@ -42,6 +44,9 @@ final class SettingsViewModel {
         creditorInfo = (try? await keychainService.loadCreditorInfo()) ?? .empty
         appSettings = (try? await keychainService.loadAppSettings()) ?? .default
         logoImage = LogoStorage.loadImage()
+
+        lastSavedCredentials = harvestCredentials
+        lastSavedDemoMode = appSettings.isDemoMode
     }
 
     static let settingsSavedNotification = Notification.Name("SettingsViewModelDidSaveSettings")
@@ -57,12 +62,11 @@ final class SettingsViewModel {
 
     func saveImmediately() {
         autoSaveTask?.cancel()
-        Task { await saveSettings() }
+        autoSaveTask = Task { await saveSettings() }
     }
 
     private func saveSettings() async {
-        let previousCredentials = try? await keychainService.loadHarvestCredentials()
-        let previousDemoMode = (try? await keychainService.loadAppSettings())?.isDemoMode ?? false
+        let needsAPIRefresh = harvestCredentials != lastSavedCredentials || appSettings.isDemoMode != lastSavedDemoMode
 
         do {
             try await keychainService.saveHarvestCredentials(harvestCredentials)
@@ -70,7 +74,9 @@ final class SettingsViewModel {
             try await keychainService.saveAppSettings(appSettings)
             Analytics.settingsSaved()
 
-            let needsAPIRefresh = harvestCredentials != previousCredentials || appSettings.isDemoMode != previousDemoMode
+            lastSavedCredentials = harvestCredentials
+            lastSavedDemoMode = appSettings.isDemoMode
+
             NotificationCenter.default.post(
                 name: Self.settingsSavedNotification,
                 object: nil,

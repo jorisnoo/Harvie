@@ -18,28 +18,37 @@ actor HarvestAPIService {
     )
     private let decoder: JSONDecoder
 
+    private let iso8601Formatter: ISO8601DateFormatter = {
+        let f = ISO8601DateFormatter()
+        f.formatOptions = [.withInternetDateTime]
+        return f
+    }()
+
+    private let dateOnlyFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.dateFormat = "yyyy-MM-dd"
+        f.timeZone = TimeZone(identifier: "UTC")
+        return f
+    }()
+
     init() {
         let config = URLSessionConfiguration.default
         config.timeoutIntervalForRequest = 30
         session = URLSession(configuration: config, delegate: sessionDelegate, delegateQueue: nil)
+
+        let iso = iso8601Formatter
+        let dateOnly = dateOnlyFormatter
 
         decoder = JSONDecoder()
         decoder.dateDecodingStrategy = .custom { decoder in
             let container = try decoder.singleValueContainer()
             let dateString = try container.decode(String.self)
 
-            // Try ISO8601 with time first (2017-06-27T16:34:24Z)
-            let iso8601Formatter = ISO8601DateFormatter()
-            iso8601Formatter.formatOptions = [.withInternetDateTime]
-            if let date = iso8601Formatter.date(from: dateString) {
+            if let date = iso.date(from: dateString) {
                 return date
             }
 
-            // Try date-only format (2017-06-27)
-            let dateOnlyFormatter = DateFormatter()
-            dateOnlyFormatter.dateFormat = "yyyy-MM-dd"
-            dateOnlyFormatter.timeZone = TimeZone(identifier: "UTC")
-            if let date = dateOnlyFormatter.date(from: dateString) {
+            if let date = dateOnly.date(from: dateString) {
                 return date
             }
 
@@ -277,11 +286,7 @@ actor HarvestAPIService {
         issueDate: Date,
         credentials: HarvestCredentials
     ) async throws {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "yyyy-MM-dd"
-        formatter.timeZone = TimeZone(identifier: "UTC")
-        let dateString = formatter.string(from: issueDate)
-
+        let dateString = dateOnlyFormatter.string(from: issueDate)
         try await updateInvoice(id: invoiceId, fields: ["issue_date": dateString], credentials: credentials)
     }
 

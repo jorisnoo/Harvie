@@ -7,7 +7,7 @@ import Foundation
 
 #if DEBUG
 enum DemoDataProvider {
-    static var invoices: [Invoice] {
+    static let invoices: [Invoice] = {
         let now = Date()
         let day: TimeInterval = 86400
 
@@ -689,7 +689,7 @@ enum DemoDataProvider {
                 ]
             )
         ]
-    }
+    }()
 
     static var defaultCreditorInfo: CreditorInfo {
         CreditorInfo(

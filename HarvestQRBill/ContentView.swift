@@ -45,11 +45,6 @@ struct ContentView: View {
             }
         }
         .focusedSceneValue(\.refresh) { viewModel.refresh() }
-        .onReceive(NotificationCenter.default.publisher(for: NSWindow.didBecomeMainNotification)) { _ in
-            Task {
-                await viewModel.reloadSettings()
-            }
-        }
         .onReceive(NotificationCenter.default.publisher(for: SettingsViewModel.settingsSavedNotification)) { notification in
             Task {
                 await viewModel.reloadSettings()

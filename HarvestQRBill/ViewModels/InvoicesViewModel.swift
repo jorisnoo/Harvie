@@ -156,9 +156,11 @@ final class InvoicesViewModel {
         didSet { if !isBatchUpdating { updateSortedInvoices() } }
     }
     var hasValidCredentials = false
+    private(set) var isInitialized = false
 
     private var isBatchUpdating = false
     private var loadInvoicesTask: Task<Void, Never>?
+    private var saveStateTask: Task<Void, Never>?
 
     var availablePeriods: [Date] {
         filterPeriod.periods()
@@ -248,6 +250,7 @@ final class InvoicesViewModel {
         }
 
         isBatchUpdating = false
+        isInitialized = true
         updateSortedInvoices()
     }
 
@@ -258,17 +261,23 @@ final class InvoicesViewModel {
         appSettings = (try? await keychainService.loadAppSettings()) ?? .default
     }
 
-    func saveState() async {
-        guard var settings = try? await keychainService.loadAppSettings() else { return }
+    func debouncedSaveState() {
+        saveStateTask?.cancel()
+        saveStateTask = Task {
+            try? await Task.sleep(for: .milliseconds(300))
+            guard !Task.isCancelled else { return }
+            await saveState()
+        }
+    }
 
+    func saveState() async {
+        var settings = appSettings
         settings.lastSortOption = sortOption.rawValue
         settings.lastSortAscending = sortDirection == .ascending
         settings.lastFilterPeriod = filterPeriod.rawValue
         settings.lastSelectedPeriod = selectedPeriod
         settings.lastStateFilter = stateFilter?.rawValue
-
         try? await keychainService.saveAppSettings(settings)
-        appSettings = settings
     }
 
     private(set) var sortedInvoices: [Invoice] = []
