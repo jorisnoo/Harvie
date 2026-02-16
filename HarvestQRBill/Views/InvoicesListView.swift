@@ -71,6 +71,11 @@ struct InvoicesListView: View {
                 viewModel.selectedInvoiceIDs = [firstID]
             }
         }
+        .safeAreaInset(edge: .top, spacing: 0) {
+            if !viewModel.canExportWithQRBill {
+                warningBanner
+            }
+        }
     }
 
     var body: some View {
@@ -115,12 +120,7 @@ struct InvoicesListView: View {
                     }
                 }
             } else {
-                VStack(spacing: 0) {
-                    if !viewModel.canExportWithQRBill {
-                        warningBanner
-                    }
-                    invoicesList
-                }
+                invoicesList
             }
         }
         .navigationTitle("Invoices")
