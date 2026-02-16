@@ -8,18 +8,24 @@ import SwiftData
 
 extension Notification.Name {
     static let refreshInvoices = Notification.Name("RefreshInvoices")
+    static let searchInvoices = Notification.Name("SearchInvoices")
 }
 
 struct ContentView: View {
     @Environment(\.modelContext) private var modelContext
     @State private var viewModel = InvoicesViewModel()
     @State private var columnVisibility: NavigationSplitViewVisibility = .all
+    @State private var isSearching = false
 
     var body: some View {
         NavigationSplitView(columnVisibility: $columnVisibility) {
             InvoicesListView(viewModel: viewModel, columnVisibility: columnVisibility)
         } detail: {
             DetailContentView(viewModel: viewModel)
+        }
+        .searchable(text: $viewModel.searchText, isPresented: $isSearching, placement: .sidebar, prompt: "Filter invoices")
+        .onReceive(NotificationCenter.default.publisher(for: .searchInvoices)) { _ in
+            isSearching = true
         }
         .overlay { ExportOverlayView(viewModel: viewModel) }
         .task {

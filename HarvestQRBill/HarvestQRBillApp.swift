@@ -47,6 +47,11 @@ struct HarvestQRBillApp: App {
                     NotificationCenter.default.post(name: .refreshInvoices, object: nil)
                 }
                 .keyboardShortcut("r", modifiers: .command)
+
+                Button("Find") {
+                    NotificationCenter.default.post(name: .searchInvoices, object: nil)
+                }
+                .keyboardShortcut("f", modifiers: .command)
             }
 
             #if !APP_STORE
