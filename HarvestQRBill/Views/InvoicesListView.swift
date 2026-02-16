@@ -25,6 +25,7 @@ struct InvoicesListView: View {
                 sortOption: viewModel.sortOption
             )
             .tag(invoice.id)
+            .onDrag { viewModel.createDragProvider(for: invoice) }
         }
         .background {
             Color.clear

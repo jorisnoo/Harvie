@@ -9,6 +9,7 @@ import SwiftUI
 import SwiftData
 import PDFKit
 import AppKit
+import UniformTypeIdentifiers
 
 private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "HarvestQRBill", category: "InvoicesVM")
 
@@ -728,6 +729,84 @@ final class InvoicesViewModel {
             #endif
             return nil
         }
+    }
+
+    // MARK: - Drag & Drop
+
+    func createDragProvider(for invoice: Invoice) -> NSItemProvider {
+        let provider = NSItemProvider()
+
+        let date: Date = switch sortOption {
+        case .issueDate, .dueDate:
+            invoice.issueDate
+        case .paidDate:
+            invoice.paidAt ?? invoice.paidDate ?? invoice.issueDate
+        }
+
+        let fileName = appSettings.generateFilename(
+            invoiceNumber: invoice.number,
+            creditorName: creditorInfo.name,
+            clientName: invoice.client.name,
+            date: date,
+            issueDate: invoice.issueDate,
+            dueDate: invoice.dueDate,
+            paidDate: invoice.paidAt ?? invoice.paidDate
+        )
+
+        provider.suggestedName = (fileName as NSString).deletingPathExtension
+
+        let settings = appSettings
+        let creditor = creditorInfo
+
+        provider.registerFileRepresentation(for: .pdf, visibility: .all) { completion in
+            Task { @MainActor [weak self] in
+                guard let self else {
+                    completion(nil, false, nil)
+                    return
+                }
+
+                do {
+                    let credentials = try await self.keychainService.loadHarvestCredentials()
+
+                    let document: PDFDocument
+                    if creditor.isValid {
+                        if settings.effectivePDFSource == .template,
+                           let templateId = settings.selectedTemplateId,
+                           let template = await self.loadTemplate(id: templateId) {
+                            document = try await self.pdfService.createInvoiceFromTemplate(
+                                invoice: invoice,
+                                template: template,
+                                creditorInfo: creditor,
+                                credentials: credentials
+                            )
+                        } else {
+                            document = try await self.pdfService.createInvoiceWithQRBill(
+                                invoice: invoice,
+                                credentials: credentials,
+                                creditorInfo: creditor
+                            )
+                        }
+                    } else {
+                        let pdfURL = try HarvestAPIService.shared.buildPDFURL(
+                            for: invoice,
+                            subdomain: credentials.subdomain
+                        )
+                        document = try await self.pdfService.downloadPDF(from: pdfURL)
+                    }
+
+                    let tempURL = FileManager.default.temporaryDirectory
+                        .appendingPathComponent(fileName)
+                    try await self.pdfService.savePDF(document, to: tempURL)
+                    completion(tempURL, false, nil)
+                } catch {
+                    completion(nil, false, error)
+                }
+            }
+
+            return Progress()
+        }
+
+        return provider
     }
 
 }
