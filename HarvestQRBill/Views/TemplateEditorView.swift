@@ -7,7 +7,7 @@ import SwiftUI
 
 struct TemplateEditorView: View {
     @State var viewModel: TemplateEditorViewModel
-    @State private var showVariablesPanel = true
+    @AppStorage("showVariablesPanel") private var showVariablesPanel = true
 
     var body: some View {
         VStack(spacing: 0) {
