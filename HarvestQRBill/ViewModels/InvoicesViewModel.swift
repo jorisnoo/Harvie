@@ -300,7 +300,8 @@ final class InvoicesViewModel {
         if !searchText.isEmpty {
             filtered = filtered.filter {
                 $0.number.localizedCaseInsensitiveContains(searchText) ||
-                $0.client.name.localizedCaseInsensitiveContains(searchText)
+                $0.client.name.localizedCaseInsensitiveContains(searchText) ||
+                ($0.subject?.localizedCaseInsensitiveContains(searchText) ?? false)
             }
         }
 
