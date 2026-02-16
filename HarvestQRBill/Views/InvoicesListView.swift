@@ -7,6 +7,7 @@ import SwiftUI
 
 struct InvoicesListView: View {
     @Bindable var viewModel: InvoicesViewModel
+    var columnVisibility: NavigationSplitViewVisibility = .all
     @Environment(\.openSettings) private var openSettings
 
     private var warningBanner: some View {
@@ -126,7 +127,7 @@ struct InvoicesListView: View {
         .navigationSubtitle(viewModel.isRefreshing ? "Updating..." : "")
         .modifier(InvoicesAlertsModifier(viewModel: viewModel))
         .toolbar {
-            InvoicesToolbarContent(viewModel: viewModel)
+            InvoicesToolbarContent(viewModel: viewModel, columnVisibility: columnVisibility)
         }
         .modifier(InvoicesOnChangeModifier(viewModel: viewModel))
     }
@@ -136,6 +137,7 @@ struct InvoicesListView: View {
 
 private struct InvoicesToolbarContent: ToolbarContent {
     @Bindable var viewModel: InvoicesViewModel
+    var columnVisibility: NavigationSplitViewVisibility = .all
 
     private var sortFilterMenuLabel: String {
         if let period = viewModel.selectedPeriod {
@@ -146,89 +148,91 @@ private struct InvoicesToolbarContent: ToolbarContent {
 
     var body: some ToolbarContent {
         ToolbarItemGroup(placement: .automatic) {
-            Menu {
-                Section("Sort By") {
-                    ForEach(InvoiceSortOption.allCases, id: \.self) { option in
-                        Button {
-                            if viewModel.sortOption == option {
-                                viewModel.sortDirection.toggle()
-                            } else {
-                                viewModel.sortOption = option
-                                viewModel.sortDirection = .descending
-                            }
-                        } label: {
-                            HStack {
-                                Text(option.rawValue)
+            if columnVisibility != .detailOnly {
+                Menu {
+                    Section("Sort By") {
+                        ForEach(InvoiceSortOption.allCases, id: \.self) { option in
+                            Button {
                                 if viewModel.sortOption == option {
-                                    Image(systemName: viewModel.sortDirection == .ascending ? "chevron.up" : "chevron.down")
+                                    viewModel.sortDirection.toggle()
+                                } else {
+                                    viewModel.sortOption = option
+                                    viewModel.sortDirection = .descending
+                                }
+                            } label: {
+                                HStack {
+                                    Text(option.rawValue)
+                                    if viewModel.sortOption == option {
+                                        Image(systemName: viewModel.sortDirection == .ascending ? "chevron.up" : "chevron.down")
+                                    }
+                                }
+                            }
+                            .disabled(!viewModel.validSortOptions.contains(option))
+                        }
+                    }
+
+                    Divider()
+
+                    Section("Filter Period") {
+                        ForEach(DateFilterPeriod.allCases, id: \.self) { period in
+                            Button {
+                                if viewModel.filterPeriod != period {
+                                    viewModel.filterPeriod = period
+                                    viewModel.selectedPeriod = nil
+                                }
+                            } label: {
+                                HStack {
+                                    Text(period.rawValue)
+                                    if viewModel.filterPeriod == period {
+                                        Image(systemName: "checkmark")
+                                    }
                                 }
                             }
                         }
-                        .disabled(!viewModel.validSortOptions.contains(option))
                     }
-                }
 
-                Divider()
+                    Divider()
 
-                Section("Filter Period") {
-                    ForEach(DateFilterPeriod.allCases, id: \.self) { period in
+                    Section("Filter by \(viewModel.filterPeriod.rawValue)") {
                         Button {
-                            if viewModel.filterPeriod != period {
-                                viewModel.filterPeriod = period
-                                viewModel.selectedPeriod = nil
-                            }
+                            viewModel.selectedPeriod = nil
                         } label: {
                             HStack {
-                                Text(period.rawValue)
-                                if viewModel.filterPeriod == period {
+                                Text("All")
+                                if viewModel.selectedPeriod == nil {
                                     Image(systemName: "checkmark")
                                 }
                             }
                         }
-                    }
-                }
 
-                Divider()
-
-                Section("Filter by \(viewModel.filterPeriod.rawValue)") {
-                    Button {
-                        viewModel.selectedPeriod = nil
-                    } label: {
-                        HStack {
-                            Text("All")
-                            if viewModel.selectedPeriod == nil {
-                                Image(systemName: "checkmark")
-                            }
-                        }
-                    }
-
-                    ForEach(viewModel.availablePeriods, id: \.self) { period in
-                        Button {
-                            viewModel.selectedPeriod = period
-                        } label: {
-                            HStack {
-                                Text(viewModel.formatPeriod(period))
-                                if let selected = viewModel.selectedPeriod, selected == period {
-                                    Image(systemName: "checkmark")
+                        ForEach(viewModel.availablePeriods, id: \.self) { period in
+                            Button {
+                                viewModel.selectedPeriod = period
+                            } label: {
+                                HStack {
+                                    Text(viewModel.formatPeriod(period))
+                                    if let selected = viewModel.selectedPeriod, selected == period {
+                                        Image(systemName: "checkmark")
+                                    }
                                 }
                             }
                         }
                     }
+                } label: {
+                    Label(sortFilterMenuLabel, systemImage: "line.3.horizontal.decrease.circle")
                 }
-            } label: {
-                Label(sortFilterMenuLabel, systemImage: "line.3.horizontal.decrease.circle")
-            }
-            .focusable(false)
+                .focusable(false)
 
-            Picker("Filter", selection: $viewModel.stateFilter) {
-                Text("Open").tag(InvoiceState?.some(.open))
-                Text("Paid").tag(InvoiceState?.some(.paid))
-                Text("Draft").tag(InvoiceState?.some(.draft))
-                Text("Closed").tag(InvoiceState?.some(.closed))
-                Divider()
-                Text("All").tag(InvoiceState?.none)
+                Picker("Filter", selection: $viewModel.stateFilter) {
+                    Text("Open").tag(InvoiceState?.some(.open))
+                    Text("Paid").tag(InvoiceState?.some(.paid))
+                    Text("Draft").tag(InvoiceState?.some(.draft))
+                    Text("Closed").tag(InvoiceState?.some(.closed))
+                    Divider()
+                    Text("All").tag(InvoiceState?.none)
+                }
+                .pickerStyle(.menu)
             }
-            .pickerStyle(.menu)
         }
     }
 }

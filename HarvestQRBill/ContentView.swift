@@ -17,7 +17,7 @@ struct ContentView: View {
 
     var body: some View {
         NavigationSplitView(columnVisibility: $columnVisibility) {
-            InvoicesListView(viewModel: viewModel)
+            InvoicesListView(viewModel: viewModel, columnVisibility: columnVisibility)
         } detail: {
             DetailContentView(viewModel: viewModel)
         }
