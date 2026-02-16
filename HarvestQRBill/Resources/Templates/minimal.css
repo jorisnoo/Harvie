@@ -111,6 +111,8 @@
     text-align: right;
     font-family: var(--font-family-mono);
     font-size: var(--font-size-base);
+    white-space: nowrap;
+    padding-left: 12px;
 }
 
 .items th.qty,

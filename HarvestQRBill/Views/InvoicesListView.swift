@@ -8,7 +8,6 @@ import SwiftUI
 struct InvoicesListView: View {
     @Bindable var viewModel: InvoicesViewModel
     @Environment(\.openSettings) private var openSettings
-    var sidebarVisible: Bool = true
 
     private var sortFilterMenuLabel: String {
         if let period = viewModel.selectedPeriod {
@@ -19,13 +18,16 @@ struct InvoicesListView: View {
 
     @ViewBuilder
     private var invoicesList: some View {
-        List(viewModel.sortedInvoices, selection: $viewModel.selectedInvoiceIDs) { invoice in
-            InvoiceRowView(
-                invoice: invoice,
-                sortOption: viewModel.sortOption
-            )
-            .tag(invoice.id)
-            .onDrag { viewModel.createDragProvider(for: invoice) }
+        List(selection: $viewModel.selectedInvoiceIDs) {
+            ForEach(viewModel.sortedInvoices) { invoice in
+                InvoiceRowView(
+                    invoice: invoice,
+                    sortOption: viewModel.sortOption
+                )
+                .tag(invoice.id)
+                // TODO: Re-enable drag-and-drop export once fully working
+                // .onDrag { viewModel.createDragProvider(for: invoice) }
+            }
         }
         .background {
             Color.clear
@@ -109,7 +111,6 @@ struct InvoicesListView: View {
                 invoicesList
             }
         }
-        .searchable(text: $viewModel.searchText, prompt: "Filter invoices")
         .navigationTitle("Invoices")
         .navigationSubtitle(viewModel.isRefreshing ? "Updating..." : "")
         .safeAreaInset(edge: .top) {
@@ -158,92 +159,90 @@ struct InvoicesListView: View {
             Text("Successfully updated \(viewModel.updatedCount) invoice(s).")
         }
         .toolbar {
-            if sidebarVisible {
-                ToolbarItemGroup(placement: .automatic) {
-                    Menu {
-                        Section("Sort By") {
-                            ForEach(InvoiceSortOption.allCases, id: \.self) { option in
-                                Button {
-                                    if viewModel.sortOption == option {
-                                        viewModel.sortDirection.toggle()
-                                    } else {
-                                        viewModel.sortOption = option
-                                        viewModel.sortDirection = .descending
-                                    }
-                                } label: {
-                                    HStack {
-                                        Text(option.rawValue)
-                                        if viewModel.sortOption == option {
-                                            Image(systemName: viewModel.sortDirection == .ascending ? "chevron.up" : "chevron.down")
-                                        }
-                                    }
-                                }
-                                .disabled(!viewModel.validSortOptions.contains(option))
-                            }
-                        }
-
-                        Divider()
-
-                        Section("Filter Period") {
-                            ForEach(DateFilterPeriod.allCases, id: \.self) { period in
-                                Button {
-                                    if viewModel.filterPeriod != period {
-                                        viewModel.filterPeriod = period
-                                        viewModel.selectedPeriod = nil
-                                    }
-                                } label: {
-                                    HStack {
-                                        Text(period.rawValue)
-                                        if viewModel.filterPeriod == period {
-                                            Image(systemName: "checkmark")
-                                        }
-                                    }
-                                }
-                            }
-                        }
-
-                        Divider()
-
-                        Section("Filter by \(viewModel.filterPeriod.rawValue)") {
+            ToolbarItemGroup(placement: .automatic) {
+                Menu {
+                    Section("Sort By") {
+                        ForEach(InvoiceSortOption.allCases, id: \.self) { option in
                             Button {
-                                viewModel.selectedPeriod = nil
+                                if viewModel.sortOption == option {
+                                    viewModel.sortDirection.toggle()
+                                } else {
+                                    viewModel.sortOption = option
+                                    viewModel.sortDirection = .descending
+                                }
                             } label: {
                                 HStack {
-                                    Text("All")
-                                    if viewModel.selectedPeriod == nil {
+                                    Text(option.rawValue)
+                                    if viewModel.sortOption == option {
+                                        Image(systemName: viewModel.sortDirection == .ascending ? "chevron.up" : "chevron.down")
+                                    }
+                                }
+                            }
+                            .disabled(!viewModel.validSortOptions.contains(option))
+                        }
+                    }
+
+                    Divider()
+
+                    Section("Filter Period") {
+                        ForEach(DateFilterPeriod.allCases, id: \.self) { period in
+                            Button {
+                                if viewModel.filterPeriod != period {
+                                    viewModel.filterPeriod = period
+                                    viewModel.selectedPeriod = nil
+                                }
+                            } label: {
+                                HStack {
+                                    Text(period.rawValue)
+                                    if viewModel.filterPeriod == period {
                                         Image(systemName: "checkmark")
                                     }
                                 }
                             }
+                        }
+                    }
 
-                            ForEach(viewModel.availablePeriods, id: \.self) { period in
-                                Button {
-                                    viewModel.selectedPeriod = period
-                                } label: {
-                                    HStack {
-                                        Text(viewModel.formatPeriod(period))
-                                        if let selected = viewModel.selectedPeriod, selected == period {
-                                            Image(systemName: "checkmark")
-                                        }
+                    Divider()
+
+                    Section("Filter by \(viewModel.filterPeriod.rawValue)") {
+                        Button {
+                            viewModel.selectedPeriod = nil
+                        } label: {
+                            HStack {
+                                Text("All")
+                                if viewModel.selectedPeriod == nil {
+                                    Image(systemName: "checkmark")
+                                }
+                            }
+                        }
+
+                        ForEach(viewModel.availablePeriods, id: \.self) { period in
+                            Button {
+                                viewModel.selectedPeriod = period
+                            } label: {
+                                HStack {
+                                    Text(viewModel.formatPeriod(period))
+                                    if let selected = viewModel.selectedPeriod, selected == period {
+                                        Image(systemName: "checkmark")
                                     }
                                 }
                             }
                         }
-                    } label: {
-                        Label(sortFilterMenuLabel, systemImage: "line.3.horizontal.decrease.circle")
                     }
-                    .focusable(false)
-
-                    Picker("Filter", selection: $viewModel.stateFilter) {
-                        Text("Open").tag(InvoiceState?.some(.open))
-                        Text("Paid").tag(InvoiceState?.some(.paid))
-                        Text("Draft").tag(InvoiceState?.some(.draft))
-                        Text("Closed").tag(InvoiceState?.some(.closed))
-                        Divider()
-                        Text("All").tag(InvoiceState?.none)
-                    }
-                    .pickerStyle(.menu)
+                } label: {
+                    Label(sortFilterMenuLabel, systemImage: "line.3.horizontal.decrease.circle")
                 }
+                .focusable(false)
+
+                Picker("Filter", selection: $viewModel.stateFilter) {
+                    Text("Open").tag(InvoiceState?.some(.open))
+                    Text("Paid").tag(InvoiceState?.some(.paid))
+                    Text("Draft").tag(InvoiceState?.some(.draft))
+                    Text("Closed").tag(InvoiceState?.some(.closed))
+                    Divider()
+                    Text("All").tag(InvoiceState?.none)
+                }
+                .pickerStyle(.menu)
             }
         }
         .onChange(of: viewModel.stateFilter) {

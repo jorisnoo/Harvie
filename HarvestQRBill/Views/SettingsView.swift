@@ -281,7 +281,7 @@ struct TemplatesSettings: View {
 
                         Spacer()
 
-                        VStack(spacing: 6) {
+                        HStack(spacing: 6) {
                             Button("Choose Image...") {
                                 viewModel.selectLogo()
                             }

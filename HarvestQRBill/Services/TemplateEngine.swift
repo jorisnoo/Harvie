@@ -41,6 +41,8 @@ struct TemplateEngine {
         formatter.numberStyle = .decimal
         formatter.minimumFractionDigits = digits
         formatter.maximumFractionDigits = digits
+        formatter.decimalSeparator = "."
+        formatter.groupingSeparator = "'"
         numberFormatters.setObject(formatter, forKey: key)
         return formatter
     }

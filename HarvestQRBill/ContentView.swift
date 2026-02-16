@@ -24,7 +24,7 @@ struct ContentView: View {
 
     var body: some View {
         NavigationSplitView(columnVisibility: $columnVisibility) {
-            InvoicesListView(viewModel: viewModel, sidebarVisible: columnVisibility != .detailOnly)
+            InvoicesListView(viewModel: viewModel)
                 .navigationSplitViewColumnWidth(min: 280, ideal: 320, max: 400)
         } detail: {
             if viewModel.selectedInvoiceIDs.count > 1 {

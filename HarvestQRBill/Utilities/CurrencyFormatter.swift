@@ -13,7 +13,7 @@ struct CurrencyFormatter {
         f.minimumFractionDigits = 2
         f.maximumFractionDigits = 2
         f.decimalSeparator = "."
-        f.groupingSeparator = " "
+        f.groupingSeparator = "'"
         return f
     }()
 
@@ -28,8 +28,8 @@ struct CurrencyFormatter {
         return formatter.string(from: amount as NSDecimalNumber) ?? "\(amount)"
     }
 
-    static func formatDecimal(_ amount: Decimal, groupingSeparator: String = " ") -> String {
-        if groupingSeparator == " " {
+    static func formatDecimal(_ amount: Decimal, groupingSeparator: String = "'") -> String {
+        if groupingSeparator == "'" {
             return decimalFormatter.string(from: amount as NSDecimalNumber) ?? "\(amount)"
         }
 

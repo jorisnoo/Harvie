@@ -732,6 +732,7 @@ final class InvoicesViewModel {
     }
 
     // MARK: - Drag & Drop
+    // TODO: Drag-and-drop export is temporarily disabled (see InvoicesListView)
 
     func createDragProvider(for invoice: Invoice) -> NSItemProvider {
         let provider = NSItemProvider()
