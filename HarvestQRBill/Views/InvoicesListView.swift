@@ -355,7 +355,7 @@ struct InvoiceRowView: View {
     var sortOption: InvoiceSortOption = .issueDate
 
     private var formattedAmount: String {
-        CurrencyFormatter.format(invoice.dueAmount, currency: invoice.currency)
+        CurrencyFormatter.format(invoice.displayAmount, currency: invoice.currency)
     }
 
     private var dateValue: Date {

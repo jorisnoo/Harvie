@@ -64,6 +64,10 @@ struct Invoice: Codable, Identifiable, Hashable, Sendable {
     let client: ClientReference
     let lineItems: [LineItem]?
 
+    var displayAmount: Decimal {
+        dueAmount > 0 ? dueAmount : amount
+    }
+
     enum CodingKeys: String, CodingKey {
         case id, number, amount, tax, discount, subject, notes, currency, state
         case clientKey = "client_key"

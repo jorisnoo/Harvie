@@ -18,7 +18,7 @@ struct MultiSelectionView: View {
     }
 
     private var totalAmount: Decimal {
-        selectedInvoices.reduce(0) { $0 + $1.dueAmount }
+        selectedInvoices.reduce(0) { $0 + $1.displayAmount }
     }
 
     private var uniqueClients: Int {
@@ -220,7 +220,7 @@ struct MultiSelectionView: View {
                         Text(invoice.client.name)
                             .foregroundStyle(.secondary)
                         Spacer()
-                        Text(CurrencyFormatter.format(invoice.dueAmount, currency: invoice.currency))
+                        Text(CurrencyFormatter.format(invoice.displayAmount, currency: invoice.currency))
                             .foregroundStyle(.secondary)
                     }
                     .font(.callout)
