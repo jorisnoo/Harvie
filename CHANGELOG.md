@@ -2,6 +2,33 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.0](https://github.com/jorisnoo/HarvestQRBill/releases/tag/v0.3.0) (2026-02-16)
+
+### Features
+
+- show invoice amount instead of zero when due amount is empty ([acdfb82](https://github.com/jorisnoo/HarvestQRBill/commit/acdfb82c3ca952d018e67dd133413ff2284ae601))
+- add drag-and-drop PDF export for invoices and pin Xcode 16 in CI ([c03cdc8](https://github.com/jorisnoo/HarvestQRBill/commit/c03cdc81a080381357fcd8195806fbd210c0d0bf))
+- add template preview window with sample data rendering ([0b70865](https://github.com/jorisnoo/HarvestQRBill/commit/0b70865809c351c170e950123b3c9176113db5a8))
+- add company logo support to invoice templates with storage, settings UI, and rendering ([431e043](https://github.com/jorisnoo/HarvestQRBill/commit/431e0432e41719d540da05b868db0606f57460e5))
+
+### Bug Fixes
+
+- freeze when collapsing sidebar ([ba0aff3](https://github.com/jorisnoo/HarvestQRBill/commit/ba0aff30ae8b70ca8ecf0cac5cee9a37ad826f80))
+- persist template editor variables panel visibility with @AppStorage ([a8d6e56](https://github.com/jorisnoo/HarvestQRBill/commit/a8d6e56a0f6d4b194ca280f3a5e3bca0dcf43ab2))
+- lower macOS deployment target from 15.0 to 14.0 (Sonoma) ([aae11c2](https://github.com/jorisnoo/HarvestQRBill/commit/aae11c277e0f445f4385f1a749c165558f41c6fe))
+- set macOS deployment target to 15.0 (Sequoia) ([4f9456f](https://github.com/jorisnoo/HarvestQRBill/commit/4f9456f694afff93848953b791e98ece25576a66))
+- only reload invoices from API when credentials or demo mode change ([9f67ef0](https://github.com/jorisnoo/HarvestQRBill/commit/9f67ef0324650333b4f8c047d01dc7e94ee13d6d))
+- include user company logo in template editor preview context ([66af7ba](https://github.com/jorisnoo/HarvestQRBill/commit/66af7ba824918bab1c0589b4b602724b4533b722))
+
+### Continuous Integration
+
+- add macos 26 to tests ([da73f8b](https://github.com/jorisnoo/HarvestQRBill/commit/da73f8b21329c4401ebc729f50a5d06eba6c3a74))
+- disable code signing in GitHub Actions build workflow ([d1cb799](https://github.com/jorisnoo/HarvestQRBill/commit/d1cb7991ec51cccbf5514cc60356a4a808fa6b43))
+- add GitHub Actions workflow to build and test on macOS 14/15 ([46ad2dc](https://github.com/jorisnoo/HarvestQRBill/commit/46ad2dc9bbc4215ba2fe718a6122d6e41457cc9e))
+
+### Chores
+
+- downgrade Xcode project objectVersion to 70 for broader compatibility ([f5cb4ef](https://github.com/jorisnoo/HarvestQRBill/commit/f5cb4ef5741bfb1093da78bd9f5b2e0504aae141))
 ## [0.2.6](https://github.com/jorisnoo/HarvestQRBill/releases/tag/v0.2.6) (2026-02-12)
 
 ### Features
