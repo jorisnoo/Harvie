@@ -320,7 +320,7 @@ final class InvoicesViewModel {
             }
         }
 
-        sortedInvoices = filtered.sorted { lhs, rhs in
+        let newSorted = filtered.sorted { lhs, rhs in
             let lhsDate: Date
             let rhsDate: Date
 
@@ -337,6 +337,10 @@ final class InvoicesViewModel {
             }
 
             return sortDirection == .ascending ? lhsDate < rhsDate : lhsDate > rhsDate
+        }
+
+        if newSorted != sortedInvoices {
+            sortedInvoices = newSorted
         }
     }
 

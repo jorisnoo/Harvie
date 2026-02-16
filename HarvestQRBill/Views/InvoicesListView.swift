@@ -9,6 +9,25 @@ struct InvoicesListView: View {
     @Bindable var viewModel: InvoicesViewModel
     @Environment(\.openSettings) private var openSettings
 
+    private var warningBanner: some View {
+        HStack(spacing: 8) {
+            Image(systemName: "exclamationmark.triangle.fill")
+                .foregroundStyle(.orange)
+            Text("Configure creditor info in Settings to enable QR bill export.")
+                .font(.callout)
+                .lineLimit(1)
+            Spacer()
+            Button("Settings") {
+                openSettings()
+            }
+            .buttonStyle(.bordered)
+            .controlSize(.small)
+        }
+        .padding(.horizontal)
+        .padding(.vertical, 8)
+        .background(.orange.opacity(0.1))
+    }
+
     @ViewBuilder
     private var invoicesList: some View {
         List(selection: $viewModel.selectedInvoiceIDs) {
@@ -95,30 +114,16 @@ struct InvoicesListView: View {
                     }
                 }
             } else {
-                invoicesList
+                VStack(spacing: 0) {
+                    if !viewModel.canExportWithQRBill {
+                        warningBanner
+                    }
+                    invoicesList
+                }
             }
         }
         .navigationTitle("Invoices")
         .navigationSubtitle(viewModel.isRefreshing ? "Updating..." : "")
-        .safeAreaInset(edge: .top) {
-            if !viewModel.canExportWithQRBill && !viewModel.invoices.isEmpty {
-                HStack(spacing: 8) {
-                    Image(systemName: "exclamationmark.triangle.fill")
-                        .foregroundStyle(.orange)
-                    Text("Configure creditor info in Settings to enable QR bill export.")
-                        .font(.callout)
-                    Spacer()
-                    Button("Settings") {
-                        openSettings()
-                    }
-                    .buttonStyle(.bordered)
-                    .controlSize(.small)
-                }
-                .padding(.horizontal)
-                .padding(.vertical, 8)
-                .background(.orange.opacity(0.1))
-            }
-        }
         .modifier(InvoicesAlertsModifier(viewModel: viewModel))
         .toolbar {
             InvoicesToolbarContent(viewModel: viewModel)
@@ -301,6 +306,15 @@ private struct InvoicesOnChangeModifier: ViewModifier {
                 viewModel.clearInvalidSelections()
                 viewModel.debouncedSaveState()
             }
+            .onReceive(NotificationCenter.default.publisher(for: .refreshInvoices)) { _ in
+                viewModel.refresh()
+            }
+            .onReceive(NotificationCenter.default.publisher(for: SettingsViewModel.settingsSavedNotification)) { notification in
+                Task { await viewModel.reloadSettings() }
+                if notification.userInfo?["needsAPIRefresh"] as? Bool == true {
+                    viewModel.loadInvoices()
+                }
+            }
     }
 }
 
@@ -361,7 +375,7 @@ struct InvoiceRowView: View {
                 Text(invoice.client.name)
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
-                    .lineLimit(2)
+                    .lineLimit(1)
             }
 
             Spacer(minLength: 8)

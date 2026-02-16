@@ -12,8 +12,6 @@ import AppUpdater
 @main
 struct HarvestQRBillApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
-    @FocusedValue(\.refresh) private var refresh
-
     let modelContainer: ModelContainer
 
     init() {
@@ -46,7 +44,7 @@ struct HarvestQRBillApp: App {
 
             CommandGroup(after: .toolbar) {
                 Button("Refresh") {
-                    refresh?()
+                    NotificationCenter.default.post(name: .refreshInvoices, object: nil)
                 }
                 .keyboardShortcut("r", modifiers: .command)
             }

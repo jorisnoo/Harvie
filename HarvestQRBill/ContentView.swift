@@ -6,15 +6,8 @@
 import SwiftUI
 import SwiftData
 
-private struct RefreshActionKey: FocusedValueKey {
-    typealias Value = () -> Void
-}
-
-extension FocusedValues {
-    var refresh: (() -> Void)? {
-        get { self[RefreshActionKey.self] }
-        set { self[RefreshActionKey.self] = newValue }
-    }
+extension Notification.Name {
+    static let refreshInvoices = Notification.Name("RefreshInvoices")
 }
 
 struct ContentView: View {
@@ -28,27 +21,24 @@ struct ContentView: View {
         } detail: {
             DetailContentView(viewModel: viewModel)
         }
-        .focusedSceneValue(\.refresh) { viewModel.refresh() }
-        .onReceive(NotificationCenter.default.publisher(for: SettingsViewModel.settingsSavedNotification)) { notification in
-            Task {
-                await viewModel.reloadSettings()
-            }
-            if notification.userInfo?["needsAPIRefresh"] as? Bool == true {
-                viewModel.loadInvoices()
-            }
-        }
-        .overlay {
-            if viewModel.isExporting {
-                ExportProgressOverlay(
-                    progress: viewModel.exportProgress,
-                    message: viewModel.exportProgressMessage
-                )
-            }
-        }
+        .overlay { ExportOverlayView(viewModel: viewModel) }
         .task {
             viewModel.modelContext = modelContext
             await viewModel.loadSavedState()
             viewModel.loadInvoices()
+        }
+    }
+}
+
+private struct ExportOverlayView: View {
+    var viewModel: InvoicesViewModel
+
+    var body: some View {
+        if viewModel.isExporting {
+            ExportProgressOverlay(
+                progress: viewModel.exportProgress,
+                message: viewModel.exportProgressMessage
+            )
         }
     }
 }
@@ -66,6 +56,7 @@ private struct DetailContentView: View {
                 appSettings: viewModel.appSettings,
                 onRefresh: { viewModel.refreshInvoices(ids: [invoice.id]) }
             )
+            .id(invoice.id)
         } else {
             ContentUnavailableView(
                 "Select an Invoice",
