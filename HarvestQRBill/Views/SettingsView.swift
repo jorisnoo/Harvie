@@ -309,13 +309,7 @@ struct TemplatesSettings: View {
                                 Text(template.name).tag(template.id as UUID?)
                             }
                         }
-                        .onAppear {
-                            if viewModel.appSettings.selectedTemplateId == nil,
-                               let first = templates.first {
-                                viewModel.appSettings.selectedTemplateId = first.id
-                            }
-                        }
-                        .onChange(of: templates) {
+                        .onChange(of: templates, initial: true) {
                             if viewModel.appSettings.selectedTemplateId == nil,
                                let first = templates.first {
                                 viewModel.appSettings.selectedTemplateId = first.id

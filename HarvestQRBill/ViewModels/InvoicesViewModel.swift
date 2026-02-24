@@ -467,7 +467,9 @@ final class InvoicesViewModel {
             }
 
             invoices = filtered.map { $0.toInvoice() }
-        } catch { }
+        } catch {
+            logger.warning("Failed to load from cache: \(error.localizedDescription)")
+        }
     }
 
     private func updateCache(with invoices: [Invoice], context: ModelContext) {
@@ -487,7 +489,11 @@ final class InvoicesViewModel {
         }
 
         // Save changes
-        try? context.save()
+        do {
+            try context.save()
+        } catch {
+            logger.warning("Failed to save cache: \(error.localizedDescription)")
+        }
     }
 
     func refresh() {

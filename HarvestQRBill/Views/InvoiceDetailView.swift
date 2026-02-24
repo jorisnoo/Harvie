@@ -28,34 +28,15 @@ struct InvoiceDetailView: View {
     private var creditorName: String { creditorInfo.name }
     private var canExportWithQRBill: Bool { creditorInfo.isValid }
 
-    // Subject editing
-    @State private var editedSubject: String = ""
-    @State private var lastSavedSubject: String = ""
-    @State private var isSavingSubject = false
-    @State private var subjectSaved = false
+    // Editable fields
+    var subject = EditableField("")
+    var notes = EditableField("")
+    var issueDate = EditableField(Date())
 
-    // Notes editing
-    @State private var editedNotes: String = ""
-    @State private var lastSavedNotes: String = ""
-    @State private var isSavingNotes = false
-    @State private var notesSaved = false
-
-    // Issue date editing (draft only)
-    @State private var editedIssueDate: Date = Date()
-    @State private var lastSavedIssueDate: Date = Date()
-    @State private var isSavingIssueDate = false
-    @State private var issueDateSaved = false
-
-    // Mark as sent / draft
-    @State private var isMarkingAsSent = false
-    @State private var showMarkAsSentSheet = false
-    @State private var showMarkAsSentSuccess = false
-    @State private var isMarkingAsDraft = false
-    @State private var showMarkAsDraftSheet = false
-    @State private var showMarkAsDraftSuccess = false
-
-    // Change issue date modal
-    @State private var showChangeDateSheet = false
+    // Sheet / action state
+    @State private var activeSheet: ActiveSheet?
+    @State private var completedAction: CompletedAction?
+    @State private var isPerformingSheetAction = false
 
     private let pdfService = PDFService.shared
     private let keychainService = KeychainService.shared
@@ -86,13 +67,9 @@ struct InvoiceDetailView: View {
         }
         .navigationTitle("Invoice \(invoice.number)")
         .onChange(of: invoice.id, initial: true) {
-            editedSubject = invoice.subject ?? ""
-            lastSavedSubject = invoice.subject ?? ""
-            editedNotes = invoice.notes ?? ""
-            lastSavedNotes = invoice.notes ?? ""
-            editedIssueDate = invoice.issueDate
-            lastSavedIssueDate = invoice.issueDate
-            issueDateSaved = false
+            subject.reset(to: invoice.subject ?? "")
+            notes.reset(to: invoice.notes ?? "")
+            issueDate.reset(to: invoice.issueDate)
         }
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
@@ -132,15 +109,15 @@ struct InvoiceDetailView: View {
                 Menu {
                     if invoice.state == .draft {
                         Button {
-                            showMarkAsSentSheet = true
+                            activeSheet = .markAsSent
                         } label: {
                             Label("Mark as Sent", systemImage: "paperplane")
                         }
-                        .disabled(isMarkingAsSent)
+                        .disabled(isPerformingSheetAction)
 
                         Button {
-                            editedIssueDate = invoice.issueDate
-                            showChangeDateSheet = true
+                            issueDate.current = invoice.issueDate
+                            activeSheet = .changeDate
                         } label: {
                             Label("Change Date", systemImage: "calendar")
                         }
@@ -148,11 +125,11 @@ struct InvoiceDetailView: View {
 
                     if invoice.state == .open {
                         Button {
-                            showMarkAsDraftSheet = true
+                            activeSheet = .markAsDraft
                         } label: {
                             Label("Mark as Draft", systemImage: "pencil")
                         }
-                        .disabled(isMarkingAsDraft)
+                        .disabled(isPerformingSheetAction)
                     }
                 } label: {
                     Label("Actions", systemImage: "ellipsis.circle")
@@ -182,6 +159,79 @@ struct InvoiceDetailView: View {
                 Text("Invoice with QR bill saved successfully.")
             }
         }
+        .sheet(item: $activeSheet) { sheet in
+            switch sheet {
+            case .changeDate:
+                ConfirmationSheet(
+                    title: "Change Issue Date",
+                    confirmLabel: "Save",
+                    isProcessing: issueDate.isSaving,
+                    onConfirm: {
+                        Task {
+                            await saveIssueDate()
+                            if issueDate.showSaved { activeSheet = nil }
+                        }
+                    },
+                    onCancel: { activeSheet = nil },
+                    width: 300
+                ) {
+                    HStack {
+                        Spacer()
+                        Button("Today") { issueDate.current = Date() }
+                            .buttonStyle(.bordered)
+                            .controlSize(.small)
+                            .disabled(Calendar.current.isDateInToday(issueDate.current))
+                    }
+
+                    DatePicker("Issue Date", selection: issueDate.binding, displayedComponents: .date)
+                        .datePickerStyle(.graphical)
+                        .labelsHidden()
+                }
+            case .markAsSent:
+                ConfirmationSheet(
+                    title: "Mark as Sent",
+                    message: "Mark invoice \(invoice.number) as sent?",
+                    detail: "The sent date will be set to now.",
+                    confirmLabel: "Mark as Sent",
+                    isProcessing: isPerformingSheetAction,
+                    onConfirm: {
+                        Task {
+                            await markAsSent()
+                            if completedAction == .markedAsSent { activeSheet = nil }
+                        }
+                    },
+                    onCancel: { activeSheet = nil }
+                )
+            case .markAsDraft:
+                ConfirmationSheet(
+                    title: "Mark as Draft",
+                    message: "Revert invoice \(invoice.number) to draft?",
+                    confirmLabel: "Mark as Draft",
+                    isProcessing: isPerformingSheetAction,
+                    onConfirm: {
+                        Task {
+                            await markAsDraft()
+                            if completedAction == .markedAsDraft { activeSheet = nil }
+                        }
+                    },
+                    onCancel: { activeSheet = nil }
+                )
+            }
+        }
+        .alert(item: $completedAction) { action in
+            switch action {
+            case .markedAsSent:
+                Alert(
+                    title: Text("Invoice Sent"),
+                    message: Text("Invoice \(invoice.number) has been marked as sent.")
+                )
+            case .markedAsDraft:
+                Alert(
+                    title: Text("Invoice Reverted"),
+                    message: Text("Invoice \(invoice.number) has been reverted to draft.")
+                )
+            }
+        }
     }
 
     // MARK: - Header
@@ -189,16 +239,13 @@ struct InvoiceDetailView: View {
     private var headerSection: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
-                TextField("Invoice title", text: $editedSubject)
+                TextField("Invoice title", text: subject.binding)
                     .font(.title2)
                     .fontWeight(.semibold)
                     .textFieldStyle(.plain)
-                    .onChange(of: editedSubject) {
-                        subjectSaved = false
-                    }
 
-                if editedSubject != lastSavedSubject {
-                    if subjectSaved {
+                if subject.isModified {
+                    if subject.showSaved {
                         Image(systemName: "checkmark.circle.fill")
                             .foregroundStyle(.green)
                     }
@@ -206,7 +253,7 @@ struct InvoiceDetailView: View {
                     Button {
                         Task { await saveSubject() }
                     } label: {
-                        if isSavingSubject {
+                        if subject.isSaving {
                             ProgressView()
                                 .scaleEffect(0.6)
                         } else {
@@ -214,7 +261,7 @@ struct InvoiceDetailView: View {
                         }
                     }
                     .buttonStyle(.borderless)
-                    .disabled(isSavingSubject)
+                    .disabled(subject.isSaving)
                     .help("Save title")
                 }
 
@@ -230,74 +277,6 @@ struct InvoiceDetailView: View {
             }
             .font(.subheadline)
             .foregroundStyle(.secondary)
-        }
-        .sheet(isPresented: $showChangeDateSheet) {
-            ConfirmationSheet(
-                title: "Change Issue Date",
-                confirmLabel: "Save",
-                isProcessing: isSavingIssueDate,
-                onConfirm: {
-                    Task {
-                        await saveIssueDate()
-                        if issueDateSaved { showChangeDateSheet = false }
-                    }
-                },
-                onCancel: { showChangeDateSheet = false },
-                width: 300
-            ) {
-                HStack {
-                    Spacer()
-                    Button("Today") { editedIssueDate = Date() }
-                        .buttonStyle(.bordered)
-                        .controlSize(.small)
-                        .disabled(Calendar.current.isDateInToday(editedIssueDate))
-                }
-
-                DatePicker("Issue Date", selection: $editedIssueDate, displayedComponents: .date)
-                    .datePickerStyle(.graphical)
-                    .labelsHidden()
-            }
-        }
-        .sheet(isPresented: $showMarkAsSentSheet) {
-            ConfirmationSheet(
-                title: "Mark as Sent",
-                message: "Mark invoice \(invoice.number) as sent?",
-                detail: "The sent date will be set to now.",
-                confirmLabel: "Mark as Sent",
-                isProcessing: isMarkingAsSent,
-                onConfirm: {
-                    Task {
-                        await markAsSent()
-                        if showMarkAsSentSuccess { showMarkAsSentSheet = false }
-                    }
-                },
-                onCancel: { showMarkAsSentSheet = false }
-            )
-        }
-        .alert("Invoice Sent", isPresented: $showMarkAsSentSuccess) {
-            Button("OK") { }
-        } message: {
-            Text("Invoice \(invoice.number) has been marked as sent.")
-        }
-        .sheet(isPresented: $showMarkAsDraftSheet) {
-            ConfirmationSheet(
-                title: "Mark as Draft",
-                message: "Revert invoice \(invoice.number) to draft?",
-                confirmLabel: "Mark as Draft",
-                isProcessing: isMarkingAsDraft,
-                onConfirm: {
-                    Task {
-                        await markAsDraft()
-                        if showMarkAsDraftSuccess { showMarkAsDraftSheet = false }
-                    }
-                },
-                onCancel: { showMarkAsDraftSheet = false }
-            )
-        }
-        .alert("Invoice Reverted", isPresented: $showMarkAsDraftSuccess) {
-            Button("OK") { }
-        } message: {
-            Text("Invoice \(invoice.number) has been reverted to draft.")
         }
     }
 
@@ -397,26 +376,23 @@ struct InvoiceDetailView: View {
             Text("Notes")
                 .font(.headline)
 
-            TextEditor(text: $editedNotes)
+            TextEditor(text: notes.binding)
                 .font(.body)
                 .foregroundStyle(.secondary)
                 .frame(minHeight: 60)
                 .scrollContentBackground(.hidden)
-                .onChange(of: editedNotes) {
-                    notesSaved = false
-                }
 
-            if editedNotes != lastSavedNotes {
+            if notes.isModified {
                 HStack {
                     Spacer()
-                    if notesSaved {
+                    if notes.showSaved {
                         Image(systemName: "checkmark.circle.fill")
                             .foregroundStyle(.green)
                     }
                     Button {
                         Task { await saveNotes() }
                     } label: {
-                        if isSavingNotes {
+                        if notes.isSaving {
                             ProgressView()
                                 .scaleEffect(0.7)
                         } else {
@@ -425,7 +401,7 @@ struct InvoiceDetailView: View {
                     }
                     .buttonStyle(.bordered)
                     .controlSize(.small)
-                    .disabled(isSavingNotes)
+                    .disabled(notes.isSaving)
                 }
             }
         }
@@ -453,70 +429,62 @@ struct InvoiceDetailView: View {
     }
 
     private func saveSubject() async {
-        isSavingSubject = true
+        subject.markSaving()
         let success = await performAPIAction(label: "save title") { credentials in
             try await apiService.updateInvoiceSubject(
-                invoiceId: invoice.id, subject: editedSubject, credentials: credentials
+                invoiceId: invoice.id, subject: subject.current, credentials: credentials
             )
         }
-        if success {
-            lastSavedSubject = editedSubject
-            subjectSaved = true
-        }
-        isSavingSubject = false
+        if success { subject.markSaved() } else { subject.markFailed() }
     }
 
     private func saveNotes() async {
-        isSavingNotes = true
+        notes.markSaving()
         let success = await performAPIAction(label: "save notes") { credentials in
             try await apiService.updateInvoiceNotes(
-                invoiceId: invoice.id, notes: editedNotes, credentials: credentials
+                invoiceId: invoice.id, notes: notes.current, credentials: credentials
             )
         }
-        if success {
-            lastSavedNotes = editedNotes
-            notesSaved = true
-        }
-        isSavingNotes = false
+        if success { notes.markSaved() } else { notes.markFailed() }
     }
 
     private func saveIssueDate() async {
-        isSavingIssueDate = true
+        issueDate.markSaving()
         let success = await performAPIAction(label: "save issue date") { credentials in
             try await apiService.updateInvoiceIssueDate(
-                invoiceId: invoice.id, issueDate: editedIssueDate, credentials: credentials
+                invoiceId: invoice.id, issueDate: issueDate.current, credentials: credentials
             )
         }
         if success {
-            lastSavedIssueDate = editedIssueDate
-            issueDateSaved = true
+            issueDate.markSaved()
             onRefresh?()
+        } else {
+            issueDate.markFailed()
         }
-        isSavingIssueDate = false
     }
 
     private func markAsSent() async {
-        isMarkingAsSent = true
+        isPerformingSheetAction = true
         let success = await performAPIAction(label: "mark as sent") { credentials in
             try await apiService.markInvoiceAsSent(invoiceId: invoice.id, credentials: credentials)
         }
         if success {
-            showMarkAsSentSuccess = true
+            completedAction = .markedAsSent
             onRefresh?()
         }
-        isMarkingAsSent = false
+        isPerformingSheetAction = false
     }
 
     private func markAsDraft() async {
-        isMarkingAsDraft = true
+        isPerformingSheetAction = true
         let success = await performAPIAction(label: "mark as draft") { credentials in
             try await apiService.markInvoiceAsDraft(invoiceId: invoice.id, credentials: credentials)
         }
         if success {
-            showMarkAsDraftSuccess = true
+            completedAction = .markedAsDraft
             onRefresh?()
         }
-        isMarkingAsDraft = false
+        isPerformingSheetAction = false
     }
 
     // MARK: - PDF Generation
@@ -643,6 +611,16 @@ struct InvoiceDetailView: View {
         var errorDescription: String? {
             "Please configure your creditor information in Settings."
         }
+    }
+
+    private enum ActiveSheet: Identifiable {
+        case changeDate, markAsSent, markAsDraft
+        var id: Self { self }
+    }
+
+    private enum CompletedAction: Identifiable {
+        case markedAsSent, markedAsDraft
+        var id: Self { self }
     }
 }
 
