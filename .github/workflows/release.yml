@@ -101,6 +101,29 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Update Homebrew cask
+        env:
+          HOMEBREW_TAP_TOKEN: ${{ secrets.HOMEBREW_TAP_PAT }}
+        run: |
+          VERSION="${{ steps.version.outputs.VERSION }}"
+          DMG_PATH="build/${{ env.APP_NAME }}-${VERSION}.dmg"
+          SHA256=$(shasum -a 256 "$DMG_PATH" | awk '{print $1}')
+
+          echo "Version: $VERSION"
+          echo "SHA256: $SHA256"
+
+          git clone "https://x-access-token:${HOMEBREW_TAP_TOKEN}@github.com/jorisnoo/homebrew-tap.git" tap-repo
+          cd tap-repo
+
+          sed -i '' "s/version \".*\"/version \"${VERSION}\"/" Casks/harvest-qr-bill.rb
+          sed -i '' "s/sha256 \".*\"/sha256 \"${SHA256}\"/" Casks/harvest-qr-bill.rb
+
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add Casks/harvest-qr-bill.rb
+          git commit -m "Update harvest-qr-bill to ${VERSION}"
+          git push
+
       - name: Cleanup keychain
         if: always()
         run: |
