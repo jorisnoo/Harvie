@@ -29,20 +29,23 @@ final class TemplateEditorViewModel {
     }
 
     @ObservationIgnored nonisolated(unsafe) private var renderTask: Task<Void, Never>?
+    @ObservationIgnored private var fileWatcher: TemplateFileWatcher?
     private let modelContext: ModelContext
 
     deinit {
         renderTask?.cancel()
+        fileWatcher?.stop()
     }
 
     init(template: InvoiceTemplate, modelContext: ModelContext) {
         self.template = template
-        self.htmlContent = template.htmlContent
-        self.cssContent = template.cssContent
+        self.htmlContent = template.resolvedHTMLContent()
+        self.cssContent = template.resolvedCSSContent()
         self.name = template.name
         self.columnVisibility = template.columnVisibility
         self.modelContext = modelContext
         updatePreview()
+        startFileWatcher()
     }
 
     var isBuiltIn: Bool {
@@ -56,12 +59,38 @@ final class TemplateEditorViewModel {
 
     func save() {
         template.name = name
-        template.htmlContent = htmlContent
-        template.cssContent = cssContent
         template.columnVisibility = columnVisibility
         template.updatedAt = Date()
+
+        if !template.isBuiltIn {
+            TemplateFileManager.save(html: htmlContent, css: cssContent, for: template.id, name: name)
+            // Clear SwiftData content — disk is source of truth
+            template.htmlContent = ""
+            template.cssContent = ""
+        }
+
         try? modelContext.save()
         isDirty = false
+
+        // Restart watcher since files may have been recreated
+        startFileWatcher()
+    }
+
+    func openInExternalEditor() {
+        guard !template.isBuiltIn else { return }
+        // Ensure files exist on disk before opening
+        if !TemplateFileManager.filesExist(for: template.id) {
+            TemplateFileManager.save(html: htmlContent, css: cssContent, for: template.id, name: name)
+        }
+        TemplateFileManager.openInEditor(for: template.id)
+    }
+
+    func revealInFinder() {
+        guard !template.isBuiltIn else { return }
+        if !TemplateFileManager.filesExist(for: template.id) {
+            TemplateFileManager.save(html: htmlContent, css: cssContent, for: template.id, name: name)
+        }
+        TemplateFileManager.revealInFinder(for: template.id)
     }
 
     func columnVisibilityChanged() {
@@ -81,6 +110,30 @@ final class TemplateEditorViewModel {
         }
 
         contentChanged()
+    }
+
+    private func startFileWatcher() {
+        fileWatcher?.stop()
+        guard !template.isBuiltIn else { return }
+
+        let dir = TemplateFileManager.existingDirectory(for: template.id)
+            ?? TemplateFileManager.templateDirectory(for: template.id, name: name)
+        fileWatcher = TemplateFileWatcher { [weak self] in
+            self?.reloadFromDisk()
+        }
+        fileWatcher?.watch(directory: dir)
+    }
+
+    private func reloadFromDisk() {
+        guard !template.isBuiltIn else { return }
+        if let html = TemplateFileManager.loadHTML(for: template.id) {
+            htmlContent = html
+        }
+        if let css = TemplateFileManager.loadCSS(for: template.id) {
+            cssContent = css
+        }
+        isDirty = false
+        updatePreview()
     }
 
     private func schedulePreviewUpdate() {

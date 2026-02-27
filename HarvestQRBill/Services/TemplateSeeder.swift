@@ -50,7 +50,38 @@ struct TemplateSeeder {
             refreshBuiltInTemplates(existingTemplates)
         }
 
+        migrateUserTemplatesToDisk(context: context)
         try? context.save()
+    }
+
+    /// One-time migration: for user templates with content in SwiftData but no files on disk,
+    /// write content to disk and clear the SwiftData fields.
+    @MainActor
+    private static func migrateUserTemplatesToDisk(context: ModelContext) {
+        let descriptor = FetchDescriptor<InvoiceTemplate>(
+            predicate: #Predicate { $0.isBuiltIn == false }
+        )
+        guard let userTemplates = try? context.fetch(descriptor) else { return }
+
+        for template in userTemplates {
+            let hasContent = !template.htmlContent.isEmpty || !template.cssContent.isEmpty
+            let hasFiles = TemplateFileManager.filesExist(for: template.id)
+
+            if hasContent && !hasFiles {
+                TemplateFileManager.save(
+                    html: template.htmlContent,
+                    css: template.cssContent,
+                    for: template.id,
+                    name: template.name
+                )
+                template.htmlContent = ""
+                template.cssContent = ""
+
+                #if DEBUG
+                logger.debug("Migrated user template '\(template.name)' to disk")
+                #endif
+            }
+        }
     }
 
     private static func refreshBuiltInTemplates(_ templates: [InvoiceTemplate]) {

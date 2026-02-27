@@ -8,6 +8,7 @@ import SwiftUI
 struct TemplateEditorView: View {
     @State var viewModel: TemplateEditorViewModel
     @AppStorage("showVariablesPanel") private var showVariablesPanel = true
+    @State private var showColumnsInfo = false
 
     var body: some View {
         VStack(spacing: 0) {
@@ -43,6 +44,15 @@ struct TemplateEditorView: View {
                     .foregroundStyle(.secondary)
             }
 
+            if !viewModel.isBuiltIn {
+                Button {
+                    viewModel.openInExternalEditor()
+                } label: {
+                    Label("Open in Editor", systemImage: "rectangle.portrait.and.arrow.right")
+                }
+                .controlSize(.small)
+            }
+
             Toggle(isOn: $showVariablesPanel) {
                 Label("Variables", systemImage: "chevron.left.forwardslash.chevron.right")
             }
@@ -69,6 +79,33 @@ struct TemplateEditorView: View {
             Text("Columns:")
                 .font(.caption)
                 .foregroundStyle(.secondary)
+
+            Button {
+                showColumnsInfo.toggle()
+            } label: {
+                Image(systemName: "info.circle")
+            }
+            .buttonStyle(.borderless)
+            .foregroundStyle(.secondary)
+            .controlSize(.small)
+            .popover(isPresented: $showColumnsInfo) {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Column Visibility")
+                        .font(.headline)
+
+                    Text("Controls which columns appear in the invoice line items table. This setting is saved per template.")
+
+                    Text("How it works")
+                        .font(.subheadline.bold())
+                        .padding(.top, 2)
+
+                    Text("Each toggle maps to a CSS variable (e.g. `--col-qty-display`) injected into the template. Templates use these via `var(--col-qty-display)` to show or hide columns. Custom templates can reference these same variables.")
+                        .foregroundStyle(.secondary)
+                }
+                .font(.callout)
+                .frame(width: 280)
+                .padding()
+            }
 
             Toggle("Qty", isOn: $viewModel.columnVisibility.showQuantity)
                 .onChange(of: viewModel.columnVisibility.showQuantity) {

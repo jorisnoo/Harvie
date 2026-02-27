@@ -63,6 +63,13 @@ struct TemplateListView: View {
 
                 Spacer()
 
+                Button {
+                    TemplateFileManager.revealTemplatesFolder()
+                } label: {
+                    Image(systemName: "folder")
+                }
+                .help("Reveal templates folder")
+
                 Button("Preview") {
                     guard let selected = selectedTemplate else { return }
                     openPreview(for: selected)
@@ -75,6 +82,7 @@ struct TemplateListView: View {
                 }
                 .disabled(selectedTemplate == nil)
             }
+            .controlSize(.small)
             .padding(8)
         }
         .alert("Delete Template", isPresented: $showDeleteConfirmation) {
@@ -105,6 +113,33 @@ struct TemplateListView: View {
 
         if !template.isBuiltIn {
             Divider()
+
+            Button("Open in External Editor") {
+                if !TemplateFileManager.filesExist(for: template.id) {
+                    TemplateFileManager.save(
+                        html: template.resolvedHTMLContent(),
+                        css: template.resolvedCSSContent(),
+                        for: template.id,
+                        name: template.name
+                    )
+                }
+                TemplateFileManager.openInEditor(for: template.id)
+            }
+
+            Button("Reveal in Finder") {
+                if !TemplateFileManager.filesExist(for: template.id) {
+                    TemplateFileManager.save(
+                        html: template.resolvedHTMLContent(),
+                        css: template.resolvedCSSContent(),
+                        for: template.id,
+                        name: template.name
+                    )
+                }
+                TemplateFileManager.revealInFinder(for: template.id)
+            }
+
+            Divider()
+
             Button("Delete", role: .destructive) {
                 templateToDelete = template
                 showDeleteConfirmation = true
@@ -113,21 +148,39 @@ struct TemplateListView: View {
     }
 
     private func createTemplate() {
+        let html = "<div class=\"invoice\">\n    <h1>{{creditor.name}}</h1>\n    <p>Invoice {{invoice.number}}</p>\n</div>"
+        let css = ".invoice {\n    padding: 40px;\n    font-family: sans-serif;\n}"
+
         let template = InvoiceTemplate(
             name: "Untitled Template",
-            htmlContent: "<div class=\"invoice\">\n    <h1>{{creditor.name}}</h1>\n    <p>Invoice {{invoice.number}}</p>\n</div>",
-            cssContent: ".invoice {\n    padding: 40px;\n    font-family: sans-serif;\n}"
+            htmlContent: "",
+            cssContent: ""
         )
         modelContext.insert(template)
         try? modelContext.save()
+
+        TemplateFileManager.save(html: html, css: css, for: template.id, name: template.name)
+
         selectedTemplate = template
         openEditor(for: template)
     }
 
     private func duplicateTemplate(_ template: InvoiceTemplate) {
+        let resolvedHTML = template.resolvedHTMLContent()
+        let resolvedCSS = template.resolvedCSSContent()
+
         let copy = template.duplicate()
         modelContext.insert(copy)
         try? modelContext.save()
+
+        if !copy.isBuiltIn {
+            TemplateFileManager.save(html: resolvedHTML, css: resolvedCSS, for: copy.id, name: copy.name)
+            // Clear SwiftData content — disk is source of truth
+            copy.htmlContent = ""
+            copy.cssContent = ""
+            try? modelContext.save()
+        }
+
         selectedTemplate = copy
     }
 
@@ -135,6 +188,7 @@ struct TemplateListView: View {
         if selectedTemplate == template {
             selectedTemplate = nil
         }
+        TemplateFileManager.delete(for: template.id)
         modelContext.delete(template)
         try? modelContext.save()
     }
@@ -171,8 +225,8 @@ struct TemplateListView: View {
             context["creditor"] = creditor
         }
 
-        let processedHTML = TemplateEngine.render(template.htmlContent, with: context)
-        let css = template.cssContent + "\n" + template.columnVisibility.cssVariables()
+        let processedHTML = TemplateEngine.render(template.resolvedHTMLContent(), with: context)
+        let css = template.resolvedCSSContent() + "\n" + template.columnVisibility.cssVariables()
         let html = """
             <!DOCTYPE html>
             <html>

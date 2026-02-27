@@ -63,11 +63,27 @@ final class InvoiceTemplate {
         self.updatedAt = updatedAt
     }
 
+    /// Returns HTML content from disk for user templates, or stored content for built-in.
+    func resolvedHTMLContent() -> String {
+        if !isBuiltIn, let diskContent = TemplateFileManager.loadHTML(for: id) {
+            return diskContent
+        }
+        return htmlContent
+    }
+
+    /// Returns CSS content from disk for user templates, or stored content for built-in.
+    func resolvedCSSContent() -> String {
+        if !isBuiltIn, let diskContent = TemplateFileManager.loadCSS(for: id) {
+            return diskContent
+        }
+        return cssContent
+    }
+
     func duplicate() -> InvoiceTemplate {
         let copy = InvoiceTemplate(
             name: "\(name) Copy",
-            htmlContent: htmlContent,
-            cssContent: cssContent,
+            htmlContent: resolvedHTMLContent(),
+            cssContent: resolvedCSSContent(),
             isBuiltIn: false
         )
         copy.columnVisibilityData = columnVisibilityData

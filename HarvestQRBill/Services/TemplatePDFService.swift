@@ -45,8 +45,8 @@ final class TemplatePDFService {
         template: InvoiceTemplate,
         context: [String: Any]
     ) async throws -> PDFDocument {
-        let processedHTML = TemplateEngine.render(template.htmlContent, with: context)
-        let css = template.cssContent + "\n" + template.columnVisibility.cssVariables()
+        let processedHTML = TemplateEngine.render(template.resolvedHTMLContent(), with: context)
+        let css = template.resolvedCSSContent() + "\n" + template.columnVisibility.cssVariables()
         return try await renderPDF(html: processedHTML, css: css)
     }
 
