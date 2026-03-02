@@ -262,7 +262,6 @@ struct DownloadsSettings: View {
 
 struct TemplatesSettings: View {
     @Bindable var viewModel: SettingsViewModel
-    @Query(sort: \InvoiceTemplate.name) private var templates: [InvoiceTemplate]
 
     var body: some View {
         VStack(spacing: 0) {
@@ -303,18 +302,16 @@ struct TemplatesSettings: View {
                     }
                     .pickerStyle(.radioGroup)
 
+                    Picker("Language", selection: $viewModel.appSettings.templateLanguage) {
+                        ForEach(TemplateLanguage.allCases, id: \.self) { lang in
+                            Text(lang.displayName).tag(lang)
+                        }
+                    }
+
                     if viewModel.appSettings.pdfSource == .template {
-                        Picker("Template", selection: $viewModel.appSettings.selectedTemplateId) {
-                            ForEach(templates) { template in
-                                Text(template.name).tag(template.id as UUID?)
-                            }
-                        }
-                        .onChange(of: templates, initial: true) {
-                            if viewModel.appSettings.selectedTemplateId == nil,
-                               let first = templates.first {
-                                viewModel.appSettings.selectedTemplateId = first.id
-                            }
-                        }
+                        Text("Double-click a template below to select it.")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
                     }
                 }
             }
@@ -322,9 +319,13 @@ struct TemplatesSettings: View {
             .frame(maxHeight: .infinity, alignment: .top)
             .fixedSize(horizontal: false, vertical: true)
 
-            TemplateListView()
-                .padding(.horizontal)
-                .padding(.bottom, 12)
+            TemplateListView(
+                activeTemplateId: viewModel.appSettings.pdfSource == .template
+                    ? $viewModel.appSettings.selectedTemplateId : nil,
+                language: viewModel.appSettings.templateLanguage
+            )
+            .padding(.horizontal)
+            .padding(.bottom, 12)
         }
     }
 }

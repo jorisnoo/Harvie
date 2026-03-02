@@ -508,7 +508,8 @@ struct InvoiceDetailView: View {
                 invoice: invoice,
                 template: template,
                 creditorInfo: effectiveCreditorInfo,
-                credentials: credentials
+                credentials: credentials,
+                language: appSettings.templateLanguage
             )
             return (pdf, appSettings)
         }

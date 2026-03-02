@@ -22,6 +22,7 @@ final class TemplateEditorViewModel {
     var previewHTML: String = ""
     var selectedTab: EditorTab = .html
     var error: String?
+    var language: TemplateLanguage
 
     enum EditorTab: String, CaseIterable {
         case html = "HTML"
@@ -37,12 +38,13 @@ final class TemplateEditorViewModel {
         fileWatcher?.stop()
     }
 
-    init(template: InvoiceTemplate, modelContext: ModelContext) {
+    init(template: InvoiceTemplate, modelContext: ModelContext, language: TemplateLanguage = .en) {
         self.template = template
         self.htmlContent = template.resolvedHTMLContent()
         self.cssContent = template.resolvedCSSContent()
         self.name = template.name
         self.columnVisibility = template.columnVisibility
+        self.language = language
         self.modelContext = modelContext
         updatePreview()
         startFileWatcher()
@@ -149,6 +151,7 @@ final class TemplateEditorViewModel {
 
     func updatePreview() {
         var context = TemplateContext.sampleDictionary()
+        context["labels"] = language.labels
         if let userLogo = LogoStorage.dataURI() {
             var creditor = context["creditor"] as! [String: Any]
             creditor["logo"] = userLogo

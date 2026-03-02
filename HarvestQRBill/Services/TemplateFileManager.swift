@@ -86,6 +86,44 @@ enum TemplateFileManager {
         NSWorkspace.shared.open(dir)
     }
 
+    /// Scans the templates directory for folders matching `<name>-<UUID>` that contain
+    /// both `template.html` and `styles.css`, returning discovered template metadata.
+    static func discoverTemplates() -> [(id: UUID, name: String)] {
+        let fm = FileManager.default
+        let root = templatesRoot
+        guard let entries = try? fm.contentsOfDirectory(at: root, includingPropertiesForKeys: [.isDirectoryKey]) else {
+            return []
+        }
+
+        var results: [(id: UUID, name: String)] = []
+        let uuidLength = 36 // "550E8400-E29B-41D4-A716-446655440000"
+
+        for entry in entries {
+            let folderName = entry.lastPathComponent
+
+            // Need at least a name, a hyphen, and a UUID
+            guard folderName.count > uuidLength + 1 else { continue }
+
+            let uuidStart = folderName.index(folderName.endIndex, offsetBy: -uuidLength)
+            guard let id = UUID(uuidString: String(folderName[uuidStart...])) else { continue }
+
+            // Verify both required files exist
+            let htmlExists = fm.fileExists(atPath: entry.appendingPathComponent("template.html").path)
+            let cssExists = fm.fileExists(atPath: entry.appendingPathComponent("styles.css").path)
+            guard htmlExists && cssExists else { continue }
+
+            // Derive display name: strip "-UUID" suffix, replace hyphens with spaces, capitalize words
+            let prefix = folderName[..<folderName.index(before: uuidStart)] // drop the separator hyphen too
+            let displayName = String(prefix)
+                .replacingOccurrences(of: "-", with: " ")
+                .capitalized
+
+            results.append((id: id, name: displayName))
+        }
+
+        return results
+    }
+
     static func revealTemplatesFolder() {
         let dir = templatesRoot
         try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)

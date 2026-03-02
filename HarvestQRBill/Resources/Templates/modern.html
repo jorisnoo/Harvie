@@ -28,10 +28,10 @@
     <table class="line-items">
         <thead>
             <tr>
-                <th class="description-col">Description</th>
-                <th class="qty-col">Qty</th>
-                <th class="price-col">Unit Price</th>
-                <th class="amount-col">Amount</th>
+                <th class="description-col">{{labels.description}}</th>
+                <th class="qty-col">{{labels.quantity}}</th>
+                <th class="price-col">{{labels.unitPrice}}</th>
+                <th class="amount-col">{{labels.amount}}</th>
             </tr>
         </thead>
         <tbody>
@@ -48,35 +48,35 @@
 
     <div class="totals">
         <div class="totals-row total-hours-row">
-            <span class="totals-label">Total Hours</span>
+            <span class="totals-label">{{labels.totalHours}}</span>
             <span class="totals-value">{{invoice.totalHours | number:1}}</span>
         </div>
         <div class="totals-row subtotal">
-            <span class="totals-label">Subtotal</span>
+            <span class="totals-label">{{labels.subtotal}}</span>
             <span class="totals-value">{{invoice.subtotal | currency}}</span>
         </div>
         {{#if invoice.hasTax}}
         <div class="totals-row tax">
-            <span class="totals-label">VAT {{invoice.tax}}%</span>
+            <span class="totals-label">{{labels.vat}} {{invoice.tax}}%</span>
             <span class="totals-value">{{invoice.taxAmount | currency}}</span>
         </div>
         {{/if}}
         {{#if invoice.hasDiscount}}
         <div class="totals-row discount">
-            <span class="totals-label">Discount {{invoice.discount}}%</span>
+            <span class="totals-label">{{labels.discount}} {{invoice.discount}}%</span>
             <span class="totals-value">-{{invoice.discountAmount | currency}}</span>
         </div>
         {{/if}}
         <div class="totals-row total">
-            <span class="totals-label">Total ({{invoice.currency}})</span>
+            <span class="totals-label">{{labels.total}} ({{invoice.currency}})</span>
             <span class="totals-value">{{invoice.amount | currency}}</span>
         </div>
     </div>
 
     <div class="footer-section">
         <div class="payment-info">
-            <div class="due-date">Due: {{invoice.dueDate | date:"dd.MM.yyyy"}}</div>
-            <div class="iban">IBAN: {{creditor.iban}}</div>
+            <div class="due-date">{{labels.due}}: {{invoice.dueDate | date:"dd.MM.yyyy"}}</div>
+            <div class="iban">{{labels.iban}}: {{creditor.iban}}</div>
         </div>
         {{#if invoice.hasNotes}}
         <div class="notes">

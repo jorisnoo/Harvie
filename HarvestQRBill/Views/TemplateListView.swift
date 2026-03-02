@@ -7,6 +7,10 @@ import SwiftData
 import SwiftUI
 
 struct TemplateListView: View {
+    /// When non-nil, double-clicking a template selects it as the active template.
+    var activeTemplateId: Binding<UUID?>?
+    var language: TemplateLanguage = .en
+
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \InvoiceTemplate.createdAt) private var templates: [InvoiceTemplate]
     @State private var selectedTemplate: InvoiceTemplate?
@@ -19,11 +23,21 @@ struct TemplateListView: View {
         VStack(alignment: .leading, spacing: 0) {
             List(selection: $selectedTemplate) {
                 ForEach(templates) { template in
-                    TemplateRow(template: template)
-                        .tag(template)
-                        .contextMenu {
-                            templateContextMenu(for: template)
+                    TemplateRow(
+                        template: template,
+                        isActive: activeTemplateId?.wrappedValue == template.id
+                    )
+                    .tag(template)
+                    .onDoubleClick {
+                        if activeTemplateId != nil {
+                            activeTemplateId?.wrappedValue = template.id
+                        } else {
+                            openEditor(for: template)
                         }
+                    }
+                    .contextMenu {
+                        templateContextMenu(for: template)
+                    }
                 }
             }
             .listStyle(.bordered)
@@ -42,6 +56,7 @@ struct TemplateListView: View {
                     duplicateTemplate(selected)
                 } label: {
                     Image(systemName: "doc.on.doc")
+                        .imageScale(.small)
                 }
                 .disabled(selectedTemplate == nil)
                 .help("Duplicate template")
@@ -72,7 +87,7 @@ struct TemplateListView: View {
 
                 Button("Preview") {
                     guard let selected = selectedTemplate else { return }
-                    openPreview(for: selected)
+                    Task { await openPreview(for: selected) }
                 }
                 .disabled(selectedTemplate == nil)
 
@@ -100,7 +115,7 @@ struct TemplateListView: View {
     @ViewBuilder
     private func templateContextMenu(for template: InvoiceTemplate) -> some View {
         Button("Preview") {
-            openPreview(for: template)
+            Task { await openPreview(for: template) }
         }
 
         Button("Edit") {
@@ -196,7 +211,7 @@ struct TemplateListView: View {
     private func openEditor(for template: InvoiceTemplate) {
         editorControllers.removeAll { $0.window == nil || !$0.window!.isVisible }
 
-        let viewModel = TemplateEditorViewModel(template: template, modelContext: modelContext)
+        let viewModel = TemplateEditorViewModel(template: template, modelContext: modelContext, language: language)
         let editorView = TemplateEditorView(viewModel: viewModel)
 
         let window = NSWindow(
@@ -214,16 +229,29 @@ struct TemplateListView: View {
         window.center()
     }
 
-    private func openPreview(for template: InvoiceTemplate) {
+    private func openPreview(for template: InvoiceTemplate) async {
         previewControllers.removeAll { $0.window == nil || !$0.window!.isVisible }
 
         var context = TemplateContext.sampleDictionary()
+        context["labels"] = language.labels
+        var creditor = context["creditor"] as! [String: Any]
+
+        if let info = try? await KeychainService.shared.loadCreditorInfo(), info.isValid {
+            creditor["name"] = info.name
+            creditor["iban"] = info.iban
+            creditor["street"] = info.streetName
+            creditor["buildingNumber"] = info.buildingNumber
+            creditor["postalCode"] = info.postalCode
+            creditor["town"] = info.town
+            creditor["country"] = info.country
+        }
+
         if let userLogo = LogoStorage.dataURI() {
-            var creditor = context["creditor"] as! [String: Any]
             creditor["logo"] = userLogo
             creditor["hasLogo"] = true
-            context["creditor"] = creditor
         }
+
+        context["creditor"] = creditor
 
         let processedHTML = TemplateEngine.render(template.resolvedHTMLContent(), with: context)
         let css = template.resolvedCSSContent() + "\n" + template.columnVisibility.cssVariables()
@@ -268,6 +296,7 @@ struct TemplateListView: View {
 
 private struct TemplateRow: View {
     let template: InvoiceTemplate
+    var isActive: Bool = false
 
     var body: some View {
         HStack {
@@ -292,7 +321,55 @@ private struct TemplateRow: View {
             }
 
             Spacer()
+
+            if isActive {
+                Image(systemName: "checkmark.circle.fill")
+                    .foregroundStyle(.tint)
+            }
         }
         .contentShape(Rectangle())
+    }
+}
+
+// MARK: - Double Click Modifier
+
+private struct OnDoubleClickModifier: ViewModifier {
+    let action: () -> Void
+
+    func body(content: Content) -> some View {
+        content.overlay {
+            DoubleClickOverlay(action: action)
+        }
+    }
+}
+
+private struct DoubleClickOverlay: NSViewRepresentable {
+    let action: () -> Void
+
+    func makeNSView(context: Context) -> NSView {
+        let view = DoubleClickView()
+        view.action = action
+        return view
+    }
+
+    func updateNSView(_ nsView: NSView, context: Context) {
+        (nsView as? DoubleClickView)?.action = action
+    }
+
+    private class DoubleClickView: NSView {
+        var action: (() -> Void)?
+
+        override func mouseDown(with event: NSEvent) {
+            super.mouseDown(with: event)
+            if event.clickCount == 2 {
+                action?()
+            }
+        }
+    }
+}
+
+extension View {
+    func onDoubleClick(perform action: @escaping () -> Void) -> some View {
+        modifier(OnDoubleClickModifier(action: action))
     }
 }

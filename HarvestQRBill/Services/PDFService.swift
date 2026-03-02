@@ -132,7 +132,8 @@ actor PDFService {
         template: InvoiceTemplate,
         creditorInfo: CreditorInfo,
         clientAddress: String? = nil,
-        credentials: HarvestCredentials? = nil
+        credentials: HarvestCredentials? = nil,
+        language: TemplateLanguage = .en
     ) async throws -> PDFDocument {
         // Fetch client once and reuse for both address and debtor
         var resolvedClientAddress = clientAddress
@@ -147,16 +148,17 @@ actor PDFService {
 
         let logoDataURI = await LogoStorage.dataURI()
 
-        let context = TemplateContext.from(
+        var context = TemplateContext.from(
             invoice: invoice,
             creditorInfo: creditorInfo,
             clientAddress: resolvedClientAddress,
             logoDataURI: logoDataURI
-        )
+        ).toDictionary()
+        context["labels"] = language.labels
 
         let templatePDF = try await TemplatePDFService.shared.renderTemplate(
             template: template,
-            context: context.toDictionary()
+            context: context
         )
 
         guard QRBillService.isCurrencySupported(invoice.currency) else {

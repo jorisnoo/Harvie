@@ -95,6 +95,7 @@ struct AppSettings: Codable, Sendable, Equatable {
     // PDF source settings
     var pdfSource: InvoicePDFSource
     var selectedTemplateId: UUID?
+    var templateLanguage: TemplateLanguage
 
     // Persisted filter/sort state
     var lastSortOption: String?
@@ -115,11 +116,12 @@ struct AppSettings: Codable, Sendable, Equatable {
             dateFormat: defaultDateFormat,
             isDemoMode: false,
             pdfSource: .harvestPDF,
-            selectedTemplateId: nil
+            selectedTemplateId: nil,
+            templateLanguage: .en
         )
     }
 
-    init(downloadBehavior: DownloadBehavior, defaultDownloadPath: String?, downloadBookmarkData: Data?, filenamePattern: String = defaultFilenamePattern, dateFormat: String = defaultDateFormat, isDemoMode: Bool = false, pdfSource: InvoicePDFSource = .harvestPDF, selectedTemplateId: UUID? = nil) {
+    init(downloadBehavior: DownloadBehavior, defaultDownloadPath: String?, downloadBookmarkData: Data?, filenamePattern: String = defaultFilenamePattern, dateFormat: String = defaultDateFormat, isDemoMode: Bool = false, pdfSource: InvoicePDFSource = .harvestPDF, selectedTemplateId: UUID? = nil, templateLanguage: TemplateLanguage = .en) {
         self.downloadBehavior = downloadBehavior
         self.defaultDownloadPath = defaultDownloadPath
         self.downloadBookmarkData = downloadBookmarkData
@@ -128,6 +130,7 @@ struct AppSettings: Codable, Sendable, Equatable {
         self.isDemoMode = isDemoMode
         self.pdfSource = pdfSource
         self.selectedTemplateId = selectedTemplateId
+        self.templateLanguage = templateLanguage
     }
 
     init(from decoder: Decoder) throws {
@@ -140,6 +143,7 @@ struct AppSettings: Codable, Sendable, Equatable {
         isDemoMode = try container.decodeIfPresent(Bool.self, forKey: .isDemoMode) ?? false
         pdfSource = try container.decodeIfPresent(InvoicePDFSource.self, forKey: .pdfSource) ?? .harvestPDF
         selectedTemplateId = try container.decodeIfPresent(UUID.self, forKey: .selectedTemplateId)
+        templateLanguage = try container.decodeIfPresent(TemplateLanguage.self, forKey: .templateLanguage) ?? .en
         lastSortOption = try container.decodeIfPresent(String.self, forKey: .lastSortOption)
         lastSortAscending = try container.decodeIfPresent(Bool.self, forKey: .lastSortAscending)
         lastFilterPeriod = try container.decodeIfPresent(String.self, forKey: .lastFilterPeriod)
