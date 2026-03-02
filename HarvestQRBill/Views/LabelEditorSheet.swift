@@ -26,7 +26,7 @@ struct LabelEditorSheet: View {
             Text("Customize Labels")
                 .font(.headline)
             Spacer()
-            Picker("Language", selection: $selectedLanguage) {
+            Picker("", selection: $selectedLanguage) {
                 ForEach(TemplateLanguage.allCases, id: \.self) { lang in
                     Text(lang.displayName).tag(lang)
                 }
@@ -106,7 +106,7 @@ private struct LabelRow: View {
     var body: some View {
         LabeledContent(displayKey) {
             HStack(spacing: 4) {
-                TextField(defaultValue, text: binding)
+                TextField("", text: binding)
                     .textFieldStyle(.roundedBorder)
                     .frame(maxWidth: 250)
 
@@ -126,9 +126,10 @@ private struct LabelRow: View {
 
     private var binding: Binding<String> {
         Binding(
-            get: { labelOverrides?[language.rawValue]?[key] ?? "" },
+            get: { labelOverrides?[language.rawValue]?[key] ?? defaultValue },
             set: { newValue in
-                setOverride(newValue.isEmpty ? nil : newValue)
+                let trimmed = newValue.isEmpty || newValue == defaultValue ? nil : newValue
+                setOverride(trimmed)
             }
         )
     }

@@ -533,7 +533,13 @@ struct InvoiceDetailView: View {
             )
         }
         savingLineItems.remove(item.id)
-        if success { savedLineItems.insert(item.id) }
+        if success {
+            savedLineItems.insert(item.id)
+            Task {
+                try? await Task.sleep(for: .seconds(2))
+                savedLineItems.remove(item.id)
+            }
+        }
     }
 
     private func saveIssueDate() async {
