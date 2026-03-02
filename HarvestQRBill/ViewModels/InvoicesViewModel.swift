@@ -712,7 +712,8 @@ final class InvoicesViewModel {
                         document = try await pdfService.createInvoiceWithQRBill(
                             invoice: invoice,
                             credentials: credentials,
-                            creditorInfo: creditorInfo
+                            creditorInfo: creditorInfo,
+                            language: appSettings.templateLanguage
                         )
                     }
                 } else {
@@ -828,7 +829,8 @@ final class InvoicesViewModel {
                             document = try await self.pdfService.createInvoiceWithQRBill(
                                 invoice: invoice,
                                 credentials: credentials,
-                                creditorInfo: creditor
+                                creditorInfo: creditor,
+                                language: settings.templateLanguage
                             )
                         }
                     } else {

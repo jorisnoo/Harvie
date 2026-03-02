@@ -8,6 +8,49 @@ import Foundation
 enum TemplateLanguage: String, Codable, CaseIterable, Sendable {
     case en, de, fr, it
 
+    struct QRBillLabels {
+        let receipt, paymentPart, accountPayableTo, reference: String
+        let additionalInfo, payableBy, payableByPlaceholder: String
+        let currency, amount, invoice: String
+    }
+
+    var qrBillLabels: QRBillLabels {
+        switch self {
+        case .de:
+            QRBillLabels(
+                receipt: "Empfangsschein", paymentPart: "Zahlteil",
+                accountPayableTo: "Konto / Zahlbar an", reference: "Referenz",
+                additionalInfo: "Zusätzliche Informationen",
+                payableBy: "Zahlbar durch", payableByPlaceholder: "Zahlbar durch (Name/Adresse)",
+                currency: "Währung", amount: "Betrag", invoice: "Rechnung"
+            )
+        case .fr:
+            QRBillLabels(
+                receipt: "Récépissé", paymentPart: "Section paiement",
+                accountPayableTo: "Compte / Payable à", reference: "Référence",
+                additionalInfo: "Informations supplémentaires",
+                payableBy: "Payable par", payableByPlaceholder: "Payable par (nom/adresse)",
+                currency: "Monnaie", amount: "Montant", invoice: "Facture"
+            )
+        case .it:
+            QRBillLabels(
+                receipt: "Ricevuta", paymentPart: "Sezione pagamento",
+                accountPayableTo: "Conto / Pagabile a", reference: "Riferimento",
+                additionalInfo: "Informazioni supplementari",
+                payableBy: "Pagabile da", payableByPlaceholder: "Pagabile da (nome/indirizzo)",
+                currency: "Valuta", amount: "Importo", invoice: "Fattura"
+            )
+        case .en:
+            QRBillLabels(
+                receipt: "Receipt", paymentPart: "Payment part",
+                accountPayableTo: "Account / Payable to", reference: "Reference",
+                additionalInfo: "Additional information",
+                payableBy: "Payable by", payableByPlaceholder: "Payable by (name/address)",
+                currency: "Currency", amount: "Amount", invoice: "Invoice"
+            )
+        }
+    }
+
     var displayName: String {
         switch self {
         case .en: "English"

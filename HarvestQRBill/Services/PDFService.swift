@@ -74,15 +74,17 @@ actor PDFService {
     func generateQRBillPage(
         invoice: Invoice,
         creditorInfo: CreditorInfo,
-        debtorAddress: StructuredAddress?
+        debtorAddress: StructuredAddress?,
+        language: TemplateLanguage = .en
     ) throws -> PDFPage {
         let qrBillService = QRBillService()
-        let qrBillRenderer = QRBillRenderer()
+        let qrBillRenderer = QRBillRenderer(labels: language.qrBillLabels)
 
         let qrBillData = try qrBillService.createQRBillData(
             invoice: invoice,
             creditorInfo: creditorInfo,
-            debtorAddress: debtorAddress
+            debtorAddress: debtorAddress,
+            language: language
         )
 
         guard let qrImage = qrBillService.generateQRCodeImage(from: qrBillData) else {
@@ -99,7 +101,8 @@ actor PDFService {
     func createInvoiceWithQRBill(
         invoice: Invoice,
         credentials: HarvestCredentials,
-        creditorInfo: CreditorInfo
+        creditorInfo: CreditorInfo,
+        language: TemplateLanguage = .en
     ) async throws -> PDFDocument {
         let apiService = HarvestAPIService.shared
 
@@ -120,7 +123,8 @@ actor PDFService {
             try generateQRBillPage(
                 invoice: invoice,
                 creditorInfo: creditorInfo,
-                debtorAddress: debtorAddress
+                debtorAddress: debtorAddress,
+                language: language
             )
         }
 
@@ -184,7 +188,8 @@ actor PDFService {
             try generateQRBillPage(
                 invoice: invoice,
                 creditorInfo: creditorInfo,
-                debtorAddress: debtorAddress
+                debtorAddress: debtorAddress,
+                language: language
             )
         }
 

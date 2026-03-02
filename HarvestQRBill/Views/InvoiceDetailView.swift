@@ -527,7 +527,8 @@ struct InvoiceDetailView: View {
 
         let credentials = try await keychainService.loadHarvestCredentials()
         let pdf = try await pdfService.createInvoiceWithQRBill(
-            invoice: invoice, credentials: credentials, creditorInfo: effectiveCreditorInfo
+            invoice: invoice, credentials: credentials, creditorInfo: effectiveCreditorInfo,
+            language: appSettings.templateLanguage
         )
         return (pdf, appSettings)
     }
