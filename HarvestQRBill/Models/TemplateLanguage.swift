@@ -180,4 +180,75 @@ enum TemplateLanguage: String, Codable, CaseIterable, Sendable {
         "number": "Numero",
         "tax": "Imposta",
     ]
+
+    // MARK: - Label Keys (ordered for UI display)
+
+    static let templateLabelKeys: [String] = [
+        "invoice", "number", "date", "due", "from", "billTo", "re",
+        "description", "quantity", "unitPrice", "rate", "price", "amount",
+        "subtotal", "discount", "vat", "tax", "total", "totalDue", "totalHours",
+        "currency", "details", "iban", "paymentDetails", "notes",
+    ]
+
+    static let qrBillLabelKeys: [String] = [
+        "qr.receipt", "qr.paymentPart", "qr.accountPayableTo", "qr.reference",
+        "qr.additionalInfo", "qr.payableBy", "qr.payableByPlaceholder",
+        "qr.currency", "qr.amount", "qr.invoice",
+    ]
+
+    // MARK: - Resolved Labels
+
+    func resolvedLabels(overrides: [String: [String: String]]?) -> [String: String] {
+        var result = labels
+        guard let langOverrides = overrides?[rawValue] else { return result }
+        for (key, value) in langOverrides where !value.isEmpty && !key.hasPrefix("qr.") {
+            result[key] = value
+        }
+        return result
+    }
+
+    func resolvedQRBillLabels(overrides: [String: [String: String]]?) -> QRBillLabels {
+        let defaults = qrBillLabels
+        guard let langOverrides = overrides?[rawValue] else { return defaults }
+
+        func resolve(_ key: String, _ fallback: String) -> String {
+            if let v = langOverrides["qr.\(key)"], !v.isEmpty { return v }
+            return fallback
+        }
+
+        return QRBillLabels(
+            receipt: resolve("receipt", defaults.receipt),
+            paymentPart: resolve("paymentPart", defaults.paymentPart),
+            accountPayableTo: resolve("accountPayableTo", defaults.accountPayableTo),
+            reference: resolve("reference", defaults.reference),
+            additionalInfo: resolve("additionalInfo", defaults.additionalInfo),
+            payableBy: resolve("payableBy", defaults.payableBy),
+            payableByPlaceholder: resolve("payableByPlaceholder", defaults.payableByPlaceholder),
+            currency: resolve("currency", defaults.currency),
+            amount: resolve("amount", defaults.amount),
+            invoice: resolve("invoice", defaults.invoice)
+        )
+    }
+
+    /// Default value for a label key (template or QR bill)
+    func defaultValue(for key: String) -> String {
+        if key.hasPrefix("qr.") {
+            let qrKey = String(key.dropFirst(3))
+            let l = qrBillLabels
+            switch qrKey {
+            case "receipt": return l.receipt
+            case "paymentPart": return l.paymentPart
+            case "accountPayableTo": return l.accountPayableTo
+            case "reference": return l.reference
+            case "additionalInfo": return l.additionalInfo
+            case "payableBy": return l.payableBy
+            case "payableByPlaceholder": return l.payableByPlaceholder
+            case "currency": return l.currency
+            case "amount": return l.amount
+            case "invoice": return l.invoice
+            default: return ""
+            }
+        }
+        return labels[key] ?? ""
+    }
 }

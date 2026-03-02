@@ -97,6 +97,10 @@ struct AppSettings: Codable, Sendable, Equatable {
     var selectedTemplateId: UUID?
     var templateLanguage: TemplateLanguage
 
+    // Label customization: [languageRawValue: [labelKey: customValue]]
+    // Template keys are bare ("invoice", "subtotal"). QR bill keys prefixed with "qr." ("qr.receipt").
+    var labelOverrides: [String: [String: String]]?
+
     // Persisted filter/sort state
     var lastSortOption: String?
     var lastSortAscending: Bool?
@@ -121,7 +125,7 @@ struct AppSettings: Codable, Sendable, Equatable {
         )
     }
 
-    init(downloadBehavior: DownloadBehavior, defaultDownloadPath: String?, downloadBookmarkData: Data?, filenamePattern: String = defaultFilenamePattern, dateFormat: String = defaultDateFormat, isDemoMode: Bool = false, pdfSource: InvoicePDFSource = .harvestPDF, selectedTemplateId: UUID? = nil, templateLanguage: TemplateLanguage = .en) {
+    init(downloadBehavior: DownloadBehavior, defaultDownloadPath: String?, downloadBookmarkData: Data?, filenamePattern: String = defaultFilenamePattern, dateFormat: String = defaultDateFormat, isDemoMode: Bool = false, pdfSource: InvoicePDFSource = .harvestPDF, selectedTemplateId: UUID? = nil, templateLanguage: TemplateLanguage = .en, labelOverrides: [String: [String: String]]? = nil) {
         self.downloadBehavior = downloadBehavior
         self.defaultDownloadPath = defaultDownloadPath
         self.downloadBookmarkData = downloadBookmarkData
@@ -131,6 +135,7 @@ struct AppSettings: Codable, Sendable, Equatable {
         self.pdfSource = pdfSource
         self.selectedTemplateId = selectedTemplateId
         self.templateLanguage = templateLanguage
+        self.labelOverrides = labelOverrides
     }
 
     init(from decoder: Decoder) throws {
@@ -149,6 +154,7 @@ struct AppSettings: Codable, Sendable, Equatable {
         lastFilterPeriod = try container.decodeIfPresent(String.self, forKey: .lastFilterPeriod)
         lastSelectedPeriod = try container.decodeIfPresent(Date.self, forKey: .lastSelectedPeriod)
         lastStateFilter = try container.decodeIfPresent(String.self, forKey: .lastStateFilter)
+        labelOverrides = try container.decodeIfPresent([String: [String: String]].self, forKey: .labelOverrides)
     }
 
     var effectivePDFSource: InvoicePDFSource {

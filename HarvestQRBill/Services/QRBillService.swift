@@ -44,7 +44,8 @@ struct QRBillService {
         invoice: Invoice,
         creditorInfo: CreditorInfo,
         debtorAddress: StructuredAddress? = nil,
-        language: TemplateLanguage = .en
+        language: TemplateLanguage = .en,
+        labelOverrides: [String: [String: String]]? = nil
     ) throws -> QRBillData {
         guard IBANValidator.validate(creditorInfo.iban) else {
             throw ValidationError.invalidIBAN
@@ -73,7 +74,7 @@ struct QRBillService {
             currency: currency,
             debtorAddress: debtorAddress,
             reference: reference,
-            unstructuredMessage: "\(language.qrBillLabels.invoice) \(invoice.number)",
+            unstructuredMessage: "\(language.resolvedQRBillLabels(overrides: labelOverrides).invoice) \(invoice.number)",
             billingInfo: nil
         )
     }
