@@ -42,7 +42,7 @@ final class SettingsViewModel {
         harvestCredentials = (try? await keychainService.loadHarvestCredentials())
             ?? HarvestCredentials(accessToken: "", accountId: "", subdomain: "")
         creditorInfo = (try? await keychainService.loadCreditorInfo()) ?? .empty
-        appSettings = (try? await keychainService.loadAppSettings()) ?? .default
+        appSettings = AppSettingsStorage.load()
         logoImage = LogoStorage.loadImage()
 
         lastSavedCredentials = harvestCredentials
@@ -71,7 +71,7 @@ final class SettingsViewModel {
         do {
             try await keychainService.saveHarvestCredentials(harvestCredentials)
             try await keychainService.saveCreditorInfo(creditorInfo)
-            try await keychainService.saveAppSettings(appSettings)
+            AppSettingsStorage.save(appSettings)
             Analytics.settingsSaved()
 
             lastSavedCredentials = harvestCredentials

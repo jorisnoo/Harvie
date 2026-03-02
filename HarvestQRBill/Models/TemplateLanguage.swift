@@ -50,6 +50,8 @@ enum TemplateLanguage: String, Codable, CaseIterable, Sendable {
         "paymentDetails": "Payment Details",
         "notes": "Notes",
         "re": "Re",
+        "number": "Number",
+        "tax": "Tax",
     ]
 
     private static let de_labels: [String: String] = [
@@ -76,6 +78,8 @@ enum TemplateLanguage: String, Codable, CaseIterable, Sendable {
         "paymentDetails": "Zahlungsdetails",
         "notes": "Bemerkungen",
         "re": "Betr.",
+        "number": "Nummer",
+        "tax": "Steuer",
     ]
 
     private static let fr_labels: [String: String] = [
@@ -102,6 +106,8 @@ enum TemplateLanguage: String, Codable, CaseIterable, Sendable {
         "paymentDetails": "D\u{00E9}tails de paiement",
         "notes": "Remarques",
         "re": "Objet",
+        "number": "Numéro",
+        "tax": "Taxe",
     ]
 
     private static let it_labels: [String: String] = [
@@ -128,5 +134,7 @@ enum TemplateLanguage: String, Codable, CaseIterable, Sendable {
         "paymentDetails": "Dettagli di pagamento",
         "notes": "Note",
         "re": "Rif.",
+        "number": "Numero",
+        "tax": "Imposta",
     ]
 }

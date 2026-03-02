@@ -224,7 +224,7 @@ final class InvoicesViewModel {
             creditorInfo = loadedCreditorInfo
         }
 
-        let settings = (try? await keychainService.loadAppSettings()) ?? .default
+        let settings = AppSettingsStorage.load()
         appSettings = settings
 
         isBatchUpdating = true
@@ -258,7 +258,7 @@ final class InvoicesViewModel {
         if let loadedCreditorInfo = try? await keychainService.loadCreditorInfo() {
             creditorInfo = loadedCreditorInfo
         }
-        appSettings = (try? await keychainService.loadAppSettings()) ?? .default
+        appSettings = AppSettingsStorage.load()
     }
 
     func debouncedSaveState() {
@@ -266,18 +266,18 @@ final class InvoicesViewModel {
         saveStateTask = Task {
             try? await Task.sleep(for: .milliseconds(300))
             guard !Task.isCancelled else { return }
-            await saveState()
+            saveState()
         }
     }
 
-    func saveState() async {
+    func saveState() {
         var settings = appSettings
         settings.lastSortOption = sortOption.rawValue
         settings.lastSortAscending = sortDirection == .ascending
         settings.lastFilterPeriod = filterPeriod.rawValue
         settings.lastSelectedPeriod = selectedPeriod
         settings.lastStateFilter = stateFilter?.rawValue
-        try? await keychainService.saveAppSettings(settings)
+        AppSettingsStorage.save(settings)
     }
 
     private(set) var sortedInvoices: [Invoice] = []
@@ -684,8 +684,14 @@ final class InvoicesViewModel {
 
             // Load template if using template mode
             var template: InvoiceTemplate?
-            if withQRBill && appSettings.effectivePDFSource == .template, let templateId = appSettings.selectedTemplateId {
-                template = await loadTemplate(id: templateId)
+            if withQRBill && appSettings.effectivePDFSource == .template {
+                guard let templateId = appSettings.selectedTemplateId,
+                      let loaded = await loadTemplate(id: templateId) else {
+                    exportError = "No template selected. Please select a template in Settings > Templates."
+                    isExporting = false
+                    return
+                }
+                template = loaded
             }
 
             for (index, invoice) in invoicesToExport.enumerated() {
@@ -804,9 +810,13 @@ final class InvoicesViewModel {
 
                     let document: PDFDocument
                     if creditor.isValid {
-                        if settings.effectivePDFSource == .template,
-                           let templateId = settings.selectedTemplateId,
-                           let template = await self.loadTemplate(id: templateId) {
+                        if settings.effectivePDFSource == .template {
+                            guard let templateId = settings.selectedTemplateId,
+                                  let template = await self.loadTemplate(id: templateId) else {
+                                throw NSError(domain: "HarvestQRBill", code: 1, userInfo: [
+                                    NSLocalizedDescriptionKey: "No template selected. Please select a template in Settings > Templates."
+                                ])
+                            }
                             document = try await self.pdfService.createInvoiceFromTemplate(
                                 invoice: invoice,
                                 template: template,

@@ -262,6 +262,7 @@ struct DownloadsSettings: View {
 
 struct TemplatesSettings: View {
     @Bindable var viewModel: SettingsViewModel
+    @Environment(\.modelContext) private var modelContext
 
     var body: some View {
         VStack(spacing: 0) {
@@ -307,12 +308,6 @@ struct TemplatesSettings: View {
                             Text(lang.displayName).tag(lang)
                         }
                     }
-
-                    if viewModel.appSettings.pdfSource == .template {
-                        Text("Double-click a template below to select it.")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
                 }
             }
             .formStyle(.grouped)
@@ -326,6 +321,17 @@ struct TemplatesSettings: View {
             )
             .padding(.horizontal)
             .padding(.bottom, 12)
+        }
+        .onChange(of: viewModel.appSettings.pdfSource) {
+            guard viewModel.appSettings.pdfSource == .template,
+                  viewModel.appSettings.selectedTemplateId == nil else { return }
+
+            let descriptor = FetchDescriptor<InvoiceTemplate>(
+                sortBy: [SortDescriptor(\.name)]
+            )
+            if let first = try? modelContext.fetch(descriptor).first {
+                viewModel.appSettings.selectedTemplateId = first.id
+            }
         }
     }
 }

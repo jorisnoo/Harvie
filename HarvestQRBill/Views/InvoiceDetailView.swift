@@ -500,9 +500,11 @@ struct InvoiceDetailView: View {
             throw GenerationError.invalidCreditor
         }
 
-        if appSettings.effectivePDFSource == .template,
-           let templateId = appSettings.selectedTemplateId,
-           let template = loadTemplate(id: templateId) {
+        if appSettings.effectivePDFSource == .template {
+            guard let templateId = appSettings.selectedTemplateId,
+                  let template = loadTemplate(id: templateId) else {
+                throw GenerationError.templateNotFound
+            }
             let credentials = try? await keychainService.loadHarvestCredentials()
             let pdf = try await pdfService.createInvoiceFromTemplate(
                 invoice: invoice,
@@ -608,9 +610,15 @@ struct InvoiceDetailView: View {
 
     private enum GenerationError: LocalizedError {
         case invalidCreditor
+        case templateNotFound
 
         var errorDescription: String? {
-            "Please configure your creditor information in Settings."
+            switch self {
+            case .invalidCreditor:
+                "Please configure your creditor information in Settings."
+            case .templateNotFound:
+                "No template selected. Please select a template in Settings > Templates."
+            }
         }
     }
 

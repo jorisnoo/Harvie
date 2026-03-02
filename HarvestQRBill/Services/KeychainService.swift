@@ -128,11 +128,4 @@ actor KeychainService {
         try load(for: .creditorInfo)
     }
 
-    func saveAppSettings(_ settings: AppSettings) throws {
-        try save(settings, for: .appSettings)
-    }
-
-    func loadAppSettings() throws -> AppSettings {
-        try load(for: .appSettings)
-    }
 }
