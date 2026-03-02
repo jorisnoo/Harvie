@@ -51,6 +51,15 @@ enum TemplateLanguage: String, Codable, CaseIterable, Sendable {
         }
     }
 
+    var paidMark: String {
+        switch self {
+        case .en: "PAID"
+        case .de: "BEZAHLT"
+        case .fr: "PAYÉ"
+        case .it: "PAGATO"
+        }
+    }
+
     var displayName: String {
         switch self {
         case .en: "English"
