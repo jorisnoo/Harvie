@@ -33,6 +33,9 @@ struct InvoiceDetailView: View {
     var notes = EditableField("")
     var issueDate = EditableField(Date())
 
+    // Focus
+    @FocusState private var focusedField: FocusedField?
+
     // Sheet / action state
     @State private var activeSheet: ActiveSheet?
     @State private var completedAction: CompletedAction?
@@ -64,7 +67,10 @@ struct InvoiceDetailView: View {
                 notesSection
             }
             .padding()
+            .contentShape(Rectangle())
+            .onTapGesture { focusedField = nil }
         }
+        .onExitCommand { focusedField = nil }
         .navigationTitle("Invoice \(invoice.number)")
         .onChange(of: invoice.id, initial: true) {
             subject.reset(to: invoice.subject ?? "")
@@ -243,6 +249,13 @@ struct InvoiceDetailView: View {
                     .font(.title2)
                     .fontWeight(.semibold)
                     .textFieldStyle(.plain)
+                    .focused($focusedField, equals: .subject)
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 4)
+                    .background(
+                        RoundedRectangle(cornerRadius: 6)
+                            .strokeBorder(focusedField == .subject ? Color.accentColor.opacity(0.5) : .clear, lineWidth: 1.5)
+                    )
 
                 if subject.isModified {
                     if subject.showSaved {
@@ -381,6 +394,12 @@ struct InvoiceDetailView: View {
                 .foregroundStyle(.secondary)
                 .frame(minHeight: 60)
                 .scrollContentBackground(.hidden)
+                .focused($focusedField, equals: .notes)
+                .padding(4)
+                .background(
+                    RoundedRectangle(cornerRadius: 6)
+                        .strokeBorder(focusedField == .notes ? Color.accentColor.opacity(0.5) : .clear, lineWidth: 1.5)
+                )
 
             if notes.isModified {
                 HStack {
@@ -621,6 +640,10 @@ struct InvoiceDetailView: View {
                 "No template selected. Please select a template in Settings > Templates."
             }
         }
+    }
+
+    private enum FocusedField {
+        case subject, notes
     }
 
     private enum ActiveSheet: Identifiable {
