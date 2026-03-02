@@ -9,6 +9,7 @@ import SwiftData
 extension Notification.Name {
     static let refreshInvoices = Notification.Name("RefreshInvoices")
     static let searchInvoices = Notification.Name("SearchInvoices")
+    static let insertTemplateVariable = Notification.Name("InsertTemplateVariable")
 }
 
 struct ContentView: View {

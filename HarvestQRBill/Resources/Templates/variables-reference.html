@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HarvestQRBill – Template Variables Reference</title>
+<style>
+  :root {
+    --bg: #ffffff;
+    --fg: #1d1d1f;
+    --muted: #6e6e73;
+    --accent: #0071e3;
+    --border: #d2d2d7;
+    --code-bg: #f5f5f7;
+    --section-bg: #fbfbfd;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1d1d1f;
+      --fg: #f5f5f7;
+      --muted: #98989d;
+      --accent: #2997ff;
+      --border: #424245;
+      --code-bg: #2c2c2e;
+      --section-bg: #232325;
+    }
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif;
+    color: var(--fg);
+    background: var(--bg);
+    line-height: 1.6;
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 3rem 2rem;
+  }
+  h1 { font-size: 2rem; font-weight: 700; margin-bottom: 0.5rem; }
+  h2 {
+    font-size: 1.25rem; font-weight: 600;
+    margin-top: 2.5rem; margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--border);
+  }
+  h3 { font-size: 1rem; font-weight: 600; margin-top: 1.5rem; margin-bottom: 0.5rem; }
+  p { margin-bottom: 0.75rem; }
+  .subtitle { color: var(--muted); margin-bottom: 2rem; }
+  .note {
+    background: var(--section-bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1rem 1.25rem;
+    margin-bottom: 2rem;
+    font-size: 0.875rem;
+    color: var(--muted);
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 1.5rem;
+    font-size: 0.9rem;
+  }
+  th, td {
+    text-align: left;
+    padding: 0.5rem 0.75rem;
+    border-bottom: 1px solid var(--border);
+  }
+  th {
+    font-weight: 600;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--muted);
+  }
+  code {
+    font-family: 'SF Mono', Menlo, monospace;
+    font-size: 0.85em;
+    background: var(--code-bg);
+    padding: 0.15em 0.4em;
+    border-radius: 4px;
+  }
+  pre {
+    background: var(--code-bg);
+    border-radius: 8px;
+    padding: 1rem 1.25rem;
+    overflow-x: auto;
+    margin-bottom: 1rem;
+    font-size: 0.85rem;
+    line-height: 1.5;
+  }
+  pre code { background: none; padding: 0; }
+</style>
+</head>
+<body>
+
+<h1>Template Variables Reference</h1>
+<p class="subtitle">All variables, sections, conditionals, and filters available in HarvestQRBill templates.</p>
+
+<div class="note">
+  This file is auto-generated and will be overwritten on app updates.
+  It is placed in your Templates folder for easy reference while editing templates.
+</div>
+
+<h2>Syntax</h2>
+
+<h3>Variables</h3>
+<p>Use double curly braces to output a value:</p>
+<pre><code>{{invoice.number}}
+{{client.name}}</code></pre>
+
+<h3>Sections (Loops)</h3>
+<p>Iterate over arrays with <code>{{#section}}...{{/section}}</code>:</p>
+<pre><code>{{#lineItems}}
+  &lt;tr&gt;
+    &lt;td&gt;{{description}}&lt;/td&gt;
+    &lt;td&gt;{{amount}}&lt;/td&gt;
+  &lt;/tr&gt;
+{{/lineItems}}</code></pre>
+<p>Inside a section, variables resolve against the current item.</p>
+
+<h3>Conditionals</h3>
+<p>Show or hide blocks based on a boolean value:</p>
+<pre><code>{{#if invoice.hasDiscount}}
+  &lt;tr&gt;&lt;td&gt;Discount&lt;/td&gt;&lt;td&gt;{{invoice.discountAmount | currency}}&lt;/td&gt;&lt;/tr&gt;
+{{/if}}</code></pre>
+
+<h3>Filters</h3>
+<p>Apply formatting to a value with the pipe <code>|</code> syntax:</p>
+<pre><code>{{invoice.amount | currency}}
+{{invoice.issueDate | date:"dd.MM.yyyy"}}
+{{invoice.tax | number:1}}
+{{invoice.notes | markdown}}</code></pre>
+
+<h2>Filters Reference</h2>
+
+<table>
+  <tr><th>Filter</th><th>Description</th><th>Example</th></tr>
+  <tr>
+    <td><code>currency</code></td>
+    <td>Formats a number with grouping separators and two decimal places</td>
+    <td><code>{{invoice.amount | currency}}</code> → <code>9'427.08</code></td>
+  </tr>
+  <tr>
+    <td><code>date:"format"</code></td>
+    <td>Formats a date using the given format string</td>
+    <td><code>{{invoice.issueDate | date:"dd.MM.yyyy"}}</code> → <code>01.03.2026</code></td>
+  </tr>
+  <tr>
+    <td><code>number:digits</code></td>
+    <td>Formats a decimal with the specified number of decimal places</td>
+    <td><code>{{invoice.tax | number:1}}</code> → <code>8.1</code></td>
+  </tr>
+  <tr>
+    <td><code>markdown</code></td>
+    <td>Converts markdown to HTML (<code>**bold**</code>, <code>*emphasis*</code>, <code>- lists</code>, line breaks)</td>
+    <td><code>{{invoice.notes | markdown}}</code></td>
+  </tr>
+</table>
+
+<h2>Invoice Variables</h2>
+
+<table>
+  <tr><th>Variable</th><th>Type</th><th>Description</th></tr>
+  <tr><td><code>invoice.number</code></td><td>String</td><td>Invoice number</td></tr>
+  <tr><td><code>invoice.amount</code></td><td>Decimal</td><td>Total amount due</td></tr>
+  <tr><td><code>invoice.currency</code></td><td>String</td><td>Currency code (e.g. CHF, EUR)</td></tr>
+  <tr><td><code>invoice.subject</code></td><td>String</td><td>Invoice subject line</td></tr>
+  <tr><td><code>invoice.notes</code></td><td>String</td><td>Invoice notes / payment terms</td></tr>
+  <tr><td><code>invoice.issueDate</code></td><td>Date</td><td>Date the invoice was issued</td></tr>
+  <tr><td><code>invoice.dueDate</code></td><td>Date</td><td>Payment due date</td></tr>
+  <tr><td><code>invoice.subtotal</code></td><td>Decimal</td><td>Subtotal before tax and discount</td></tr>
+  <tr><td><code>invoice.tax</code></td><td>Decimal</td><td>Primary tax rate (percentage)</td></tr>
+  <tr><td><code>invoice.taxAmount</code></td><td>Decimal</td><td>Primary tax amount</td></tr>
+  <tr><td><code>invoice.tax2</code></td><td>Decimal</td><td>Secondary tax rate (percentage)</td></tr>
+  <tr><td><code>invoice.tax2Amount</code></td><td>Decimal</td><td>Secondary tax amount</td></tr>
+  <tr><td><code>invoice.discount</code></td><td>Decimal</td><td>Discount rate (percentage)</td></tr>
+  <tr><td><code>invoice.discountAmount</code></td><td>Decimal</td><td>Discount amount</td></tr>
+  <tr><td><code>invoice.totalHours</code></td><td>Decimal</td><td>Total hours across all line items</td></tr>
+</table>
+
+<h3>Invoice Conditionals</h3>
+
+<table>
+  <tr><th>Variable</th><th>Description</th></tr>
+  <tr><td><code>invoice.hasSubject</code></td><td>True when the invoice has a subject</td></tr>
+  <tr><td><code>invoice.hasNotes</code></td><td>True when the invoice has notes</td></tr>
+  <tr><td><code>invoice.hasTax</code></td><td>True when primary tax is applied</td></tr>
+  <tr><td><code>invoice.hasTax2</code></td><td>True when secondary tax is applied</td></tr>
+  <tr><td><code>invoice.hasDiscount</code></td><td>True when a discount is applied</td></tr>
+</table>
+
+<h2>Client Variables</h2>
+
+<table>
+  <tr><th>Variable</th><th>Type</th><th>Description</th></tr>
+  <tr><td><code>client.name</code></td><td>String</td><td>Client company or person name</td></tr>
+  <tr><td><code>client.address</code></td><td>String</td><td>Client address (may contain line breaks)</td></tr>
+</table>
+
+<h2>Creditor Variables</h2>
+
+<table>
+  <tr><th>Variable</th><th>Type</th><th>Description</th></tr>
+  <tr><td><code>creditor.name</code></td><td>String</td><td>Your company or person name</td></tr>
+  <tr><td><code>creditor.iban</code></td><td>String</td><td>IBAN for payment</td></tr>
+  <tr><td><code>creditor.street</code></td><td>String</td><td>Street name</td></tr>
+  <tr><td><code>creditor.buildingNumber</code></td><td>String</td><td>Building / house number</td></tr>
+  <tr><td><code>creditor.postalCode</code></td><td>String</td><td>Postal / ZIP code</td></tr>
+  <tr><td><code>creditor.town</code></td><td>String</td><td>City or town</td></tr>
+  <tr><td><code>creditor.country</code></td><td>String</td><td>Country code (e.g. CH)</td></tr>
+  <tr><td><code>creditor.logo</code></td><td>String</td><td>Logo as a data URI (base64-encoded image)</td></tr>
+</table>
+
+<h3>Creditor Conditionals</h3>
+
+<table>
+  <tr><th>Variable</th><th>Description</th></tr>
+  <tr><td><code>creditor.hasLogo</code></td><td>True when a logo has been configured in settings</td></tr>
+</table>
+
+<h2>Line Items</h2>
+
+<p>Use the <code>{{#lineItems}}</code> section to iterate over invoice line items.</p>
+
+<table>
+  <tr><th>Variable</th><th>Type</th><th>Description</th></tr>
+  <tr><td><code>description</code></td><td>String</td><td>Line item description</td></tr>
+  <tr><td><code>quantity</code></td><td>Decimal</td><td>Quantity or hours</td></tr>
+  <tr><td><code>unitPrice</code></td><td>Decimal</td><td>Price per unit</td></tr>
+  <tr><td><code>amount</code></td><td>Decimal</td><td>Line total</td></tr>
+  <tr><td><code>kind</code></td><td>String</td><td>Item type (e.g. "Service", "Product")</td></tr>
+  <tr><td><code>taxed</code></td><td>Bool</td><td>Whether this line item is taxed</td></tr>
+</table>
+
+<pre><code>{{#lineItems}}
+&lt;tr&gt;
+  &lt;td&gt;{{description}}&lt;/td&gt;
+  &lt;td&gt;{{quantity | number:2}}&lt;/td&gt;
+  &lt;td&gt;{{unitPrice | currency}}&lt;/td&gt;
+  &lt;td&gt;{{amount | currency}}&lt;/td&gt;
+&lt;/tr&gt;
+{{/lineItems}}</code></pre>
+
+<h2>Labels (Localized)</h2>
+
+<p>Labels are provided by the selected template language (EN, DE, FR, IT).
+Use these to make your templates multilingual.</p>
+
+<table>
+  <tr><th>Variable</th><th>EN</th><th>DE</th></tr>
+  <tr><td><code>labels.invoice</code></td><td>Invoice</td><td>Rechnung</td></tr>
+  <tr><td><code>labels.number</code></td><td>Number</td><td>Nummer</td></tr>
+  <tr><td><code>labels.date</code></td><td>Date</td><td>Datum</td></tr>
+  <tr><td><code>labels.due</code></td><td>Due</td><td>Fällig</td></tr>
+  <tr><td><code>labels.description</code></td><td>Description</td><td>Beschreibung</td></tr>
+  <tr><td><code>labels.quantity</code></td><td>Qty</td><td>Menge</td></tr>
+  <tr><td><code>labels.unitPrice</code></td><td>Unit Price</td><td>Einzelpreis</td></tr>
+  <tr><td><code>labels.rate</code></td><td>Rate</td><td>Ansatz</td></tr>
+  <tr><td><code>labels.price</code></td><td>Price</td><td>Preis</td></tr>
+  <tr><td><code>labels.amount</code></td><td>Amount</td><td>Betrag</td></tr>
+  <tr><td><code>labels.subtotal</code></td><td>Subtotal</td><td>Zwischensumme</td></tr>
+  <tr><td><code>labels.total</code></td><td>Total</td><td>Total</td></tr>
+  <tr><td><code>labels.totalDue</code></td><td>Total Due</td><td>Gesamtbetrag</td></tr>
+  <tr><td><code>labels.totalHours</code></td><td>Total Hours</td><td>Gesamtstunden</td></tr>
+  <tr><td><code>labels.tax</code></td><td>Tax</td><td>MwSt</td></tr>
+  <tr><td><code>labels.vat</code></td><td>VAT</td><td>MwSt</td></tr>
+  <tr><td><code>labels.discount</code></td><td>Discount</td><td>Rabatt</td></tr>
+  <tr><td><code>labels.currency</code></td><td>Currency</td><td>Währung</td></tr>
+  <tr><td><code>labels.from</code></td><td>From</td><td>Von</td></tr>
+  <tr><td><code>labels.billTo</code></td><td>Bill To</td><td>Rechnung an</td></tr>
+  <tr><td><code>labels.re</code></td><td>Re</td><td>Betr.</td></tr>
+  <tr><td><code>labels.details</code></td><td>Details</td><td>Details</td></tr>
+  <tr><td><code>labels.iban</code></td><td>IBAN</td><td>IBAN</td></tr>
+  <tr><td><code>labels.paymentDetails</code></td><td>Payment Details</td><td>Zahlungsangaben</td></tr>
+  <tr><td><code>labels.notes</code></td><td>Notes</td><td>Bemerkungen</td></tr>
+</table>
+
+<h2>Column Visibility CSS Variables</h2>
+
+<p>These CSS custom properties are injected automatically based on the column visibility settings
+configured in the template editor. Use them in your CSS to show/hide columns:</p>
+
+<table>
+  <tr><th>CSS Variable</th><th>Controls</th><th>Values</th></tr>
+  <tr><td><code>--col-qty-display</code></td><td>Quantity column</td><td><code>table-cell</code> or <code>none</code></td></tr>
+  <tr><td><code>--col-price-display</code></td><td>Unit Price column</td><td><code>table-cell</code> or <code>none</code></td></tr>
+  <tr><td><code>--total-hours-display</code></td><td>Total Hours row</td><td><code>flex</code> or <code>none</code></td></tr>
+</table>
+
+<h3>Usage Example</h3>
+<pre><code>.col-qty { display: var(--col-qty-display, table-cell); }
+.col-price { display: var(--col-price-display, table-cell); }
+.total-hours { display: var(--total-hours-display, none); }</code></pre>
+
+</body>
+</html>

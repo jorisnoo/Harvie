@@ -103,15 +103,7 @@ final class TemplateEditorViewModel {
 
     func insertVariable(_ variable: String) {
         let token = "{{\(variable)}}"
-
-        switch selectedTab {
-        case .html:
-            htmlContent += token
-        case .css:
-            cssContent += token
-        }
-
-        contentChanged()
+        NotificationCenter.default.post(name: .insertTemplateVariable, object: token)
     }
 
     private func startFileWatcher() {
