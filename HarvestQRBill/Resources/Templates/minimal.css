@@ -168,6 +168,18 @@
     color: var(--color-secondary);
 }
 
+.md-list {
+    list-style: none;
+    padding-left: 1.2em;
+    margin: 0.3em 0;
+}
+.md-list li {
+    text-indent: -1.2em;
+}
+.md-list li::before {
+    content: "\2014\00a0";
+}
+
 @media print {
     .invoice {
         padding: 50px;

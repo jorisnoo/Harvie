@@ -344,7 +344,8 @@ struct TemplateEngine {
     }
 
     private static func convertMarkdown(_ text: String) -> String {
-        var result = text
+        // Normalize line endings (\r\n is a single Character in Swift, so split(separator: "\n") won't match it)
+        var result = text.replacingOccurrences(of: "\r\n", with: "\n").replacingOccurrences(of: "\r", with: "\n")
 
         // HTML-escape to prevent injection
         result = result
@@ -361,8 +362,30 @@ struct TemplateEngine {
 
         result = nsResult as String
 
-        // Line breaks
-        result = result.replacingOccurrences(of: "\n", with: "<br>")
+        // List items and line breaks
+        let lines = result.split(separator: "\n", omittingEmptySubsequences: false)
+        var html = ""
+        var inList = false
+        for line in lines {
+            let trimmed = line.drop(while: { $0 == " " })
+            let isListItem = trimmed.hasPrefix("- ") || trimmed.hasPrefix("\u{2014} ") || trimmed.hasPrefix("\u{2014}\u{00A0}")
+            if isListItem {
+                let text: Substring
+                if trimmed.hasPrefix("- ") {
+                    text = trimmed.dropFirst(2)
+                } else {
+                    text = trimmed.dropFirst(2)
+                }
+                if !inList { html += "<ul class=\"md-list\">"; inList = true }
+                html += "<li>\(text)</li>"
+            } else {
+                if inList { html += "</ul>"; inList = false }
+                if !html.isEmpty { html += "<br>" }
+                html += line
+            }
+        }
+        if inList { html += "</ul>" }
+        result = html
 
         return result
     }
