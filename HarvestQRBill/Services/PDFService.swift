@@ -64,6 +64,22 @@ actor PDFService {
         return document
     }
 
+    func applyPaidMark(
+        to document: PDFDocument,
+        text: String,
+        paidDate: Date?,
+        excludingLastPage: Bool
+    ) {
+        let lastIndex = document.pageCount - 1
+        let endIndex = excludingLastPage ? lastIndex : document.pageCount
+        for i in 0..<endIndex {
+            guard let page = document.page(at: i) else { continue }
+            let watermarked = WatermarkedPDFPage(page: page, text: text, paidDate: paidDate)
+            document.removePage(at: i)
+            document.insert(watermarked, at: i)
+        }
+    }
+
     func savePDF(_ document: PDFDocument, to url: URL) throws {
         guard document.write(to: url) else {
             throw PDFError.saveFailed
@@ -110,6 +126,14 @@ actor PDFService {
         let invoicePDF = try await downloadPDF(from: pdfURL)
 
         guard QRBillService.isCurrencySupported(invoice.currency) else {
+            if invoice.state == .paid {
+                applyPaidMark(
+                    to: invoicePDF,
+                    text: language.paidMark,
+                    paidDate: invoice.paidDate ?? invoice.paidAt,
+                    excludingLastPage: false
+                )
+            }
             return invoicePDF
         }
 
@@ -128,7 +152,18 @@ actor PDFService {
             )
         }
 
-        return appendQRBill(to: invoicePDF, qrBillPage: qrBillPage)
+        let document = appendQRBill(to: invoicePDF, qrBillPage: qrBillPage)
+
+        if invoice.state == .paid {
+            applyPaidMark(
+                to: document,
+                text: language.paidMark,
+                paidDate: invoice.paidDate ?? invoice.paidAt,
+                excludingLastPage: true
+            )
+        }
+
+        return document
     }
 
     func createInvoiceFromTemplate(
@@ -166,6 +201,14 @@ actor PDFService {
         )
 
         guard QRBillService.isCurrencySupported(invoice.currency) else {
+            if invoice.state == .paid {
+                applyPaidMark(
+                    to: templatePDF,
+                    text: language.paidMark,
+                    paidDate: invoice.paidDate ?? invoice.paidAt,
+                    excludingLastPage: false
+                )
+            }
             return templatePDF
         }
 
@@ -193,7 +236,18 @@ actor PDFService {
             )
         }
 
-        return appendQRBill(to: templatePDF, qrBillPage: qrBillPage)
+        let document = appendQRBill(to: templatePDF, qrBillPage: qrBillPage)
+
+        if invoice.state == .paid {
+            applyPaidMark(
+                to: document,
+                text: language.paidMark,
+                paidDate: invoice.paidDate ?? invoice.paidAt,
+                excludingLastPage: true
+            )
+        }
+
+        return document
     }
 
     private func fetchDebtorAddress(
@@ -268,7 +322,18 @@ actor PDFService {
             )
         }
 
-        return appendQRBill(to: demoPDF, qrBillPage: qrBillPage)
+        let document = appendQRBill(to: demoPDF, qrBillPage: qrBillPage)
+
+        if invoice.state == .paid {
+            applyPaidMark(
+                to: document,
+                text: "BEZAHLT",
+                paidDate: invoice.paidDate ?? invoice.paidAt,
+                excludingLastPage: true
+            )
+        }
+
+        return document
     }
 
     @MainActor
