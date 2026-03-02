@@ -363,7 +363,7 @@ struct InvoiceDetailView: View {
                 HStack(alignment: .top) {
                     VStack(alignment: .leading, spacing: 2) {
                         HStack {
-                            TextField("Description", text: descriptionBinding(for: item))
+                            TextField("Description", text: descriptionBinding(for: item), axis: .vertical)
                                 .font(.body)
                                 .textFieldStyle(.plain)
                                 .focused($focusedField, equals: .lineItem(item.id))
@@ -373,6 +373,7 @@ struct InvoiceDetailView: View {
                                     RoundedRectangle(cornerRadius: 6)
                                         .strokeBorder(focusedField == .lineItem(item.id) ? Color.accentColor.opacity(0.5) : .clear, lineWidth: 1.5)
                                 )
+                                .padding(.leading, -6)
 
                             if isLineItemModified(item) {
                                 if savedLineItems.contains(item.id) {
@@ -437,6 +438,7 @@ struct InvoiceDetailView: View {
                     RoundedRectangle(cornerRadius: 6)
                         .strokeBorder(focusedField == .notes ? Color.accentColor.opacity(0.5) : .clear, lineWidth: 1.5)
                 )
+                .padding(.leading, -4)
 
             if notes.isModified {
                 HStack {
