@@ -10,6 +10,7 @@ struct TemplateListView: View {
     /// When non-nil, double-clicking a template selects it as the active template.
     var activeTemplateId: Binding<UUID?>?
     var language: TemplateLanguage = .en
+    var labelOverrides: [String: [String: String]]?
 
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \InvoiceTemplate.createdAt) private var templates: [InvoiceTemplate]
@@ -211,7 +212,7 @@ struct TemplateListView: View {
     private func openEditor(for template: InvoiceTemplate) {
         editorControllers.removeAll { $0.window == nil || !$0.window!.isVisible }
 
-        let viewModel = TemplateEditorViewModel(template: template, modelContext: modelContext, language: language)
+        let viewModel = TemplateEditorViewModel(template: template, modelContext: modelContext, language: language, labelOverrides: labelOverrides)
         let editorView = TemplateEditorView(viewModel: viewModel)
 
         let window = NSWindow(
@@ -233,7 +234,7 @@ struct TemplateListView: View {
         previewControllers.removeAll { $0.window == nil || !$0.window!.isVisible }
 
         var context = TemplateContext.sampleDictionary()
-        context["labels"] = language.labels
+        context["labels"] = language.resolvedLabels(overrides: labelOverrides)
         var creditor = context["creditor"] as! [String: Any]
 
         if let info = try? await KeychainService.shared.loadCreditorInfo(), info.isValid {

@@ -706,14 +706,16 @@ final class InvoicesViewModel {
                             template: template,
                             creditorInfo: creditorInfo,
                             credentials: credentials,
-                            language: appSettings.templateLanguage
+                            language: appSettings.templateLanguage,
+                            labelOverrides: appSettings.labelOverrides
                         )
                     } else {
                         document = try await pdfService.createInvoiceWithQRBill(
                             invoice: invoice,
                             credentials: credentials,
                             creditorInfo: creditorInfo,
-                            language: appSettings.templateLanguage
+                            language: appSettings.templateLanguage,
+                            labelOverrides: appSettings.labelOverrides
                         )
                     }
                 } else {
@@ -823,14 +825,16 @@ final class InvoicesViewModel {
                                 template: template,
                                 creditorInfo: creditor,
                                 credentials: credentials,
-                                language: settings.templateLanguage
+                                language: settings.templateLanguage,
+                                labelOverrides: settings.labelOverrides
                             )
                         } else {
                             document = try await self.pdfService.createInvoiceWithQRBill(
                                 invoice: invoice,
                                 credentials: credentials,
                                 creditorInfo: creditor,
-                                language: settings.templateLanguage
+                                language: settings.templateLanguage,
+                                labelOverrides: settings.labelOverrides
                             )
                         }
                     } else {

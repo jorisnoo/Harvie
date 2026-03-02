@@ -530,7 +530,8 @@ struct InvoiceDetailView: View {
                 template: template,
                 creditorInfo: effectiveCreditorInfo,
                 credentials: credentials,
-                language: appSettings.templateLanguage
+                language: appSettings.templateLanguage,
+                labelOverrides: appSettings.labelOverrides
             )
             return (pdf, appSettings)
         }
@@ -547,7 +548,8 @@ struct InvoiceDetailView: View {
         let credentials = try await keychainService.loadHarvestCredentials()
         let pdf = try await pdfService.createInvoiceWithQRBill(
             invoice: invoice, credentials: credentials, creditorInfo: effectiveCreditorInfo,
-            language: appSettings.templateLanguage
+            language: appSettings.templateLanguage,
+            labelOverrides: appSettings.labelOverrides
         )
         return (pdf, appSettings)
     }

@@ -75,16 +75,18 @@ actor PDFService {
         invoice: Invoice,
         creditorInfo: CreditorInfo,
         debtorAddress: StructuredAddress?,
-        language: TemplateLanguage = .en
+        language: TemplateLanguage = .en,
+        labelOverrides: [String: [String: String]]? = nil
     ) throws -> PDFPage {
         let qrBillService = QRBillService()
-        let qrBillRenderer = QRBillRenderer(labels: language.qrBillLabels)
+        let qrBillRenderer = QRBillRenderer(labels: language.resolvedQRBillLabels(overrides: labelOverrides))
 
         let qrBillData = try qrBillService.createQRBillData(
             invoice: invoice,
             creditorInfo: creditorInfo,
             debtorAddress: debtorAddress,
-            language: language
+            language: language,
+            labelOverrides: labelOverrides
         )
 
         guard let qrImage = qrBillService.generateQRCodeImage(from: qrBillData) else {
@@ -102,7 +104,8 @@ actor PDFService {
         invoice: Invoice,
         credentials: HarvestCredentials,
         creditorInfo: CreditorInfo,
-        language: TemplateLanguage = .en
+        language: TemplateLanguage = .en,
+        labelOverrides: [String: [String: String]]? = nil
     ) async throws -> PDFDocument {
         let apiService = HarvestAPIService.shared
 
@@ -124,7 +127,8 @@ actor PDFService {
                 invoice: invoice,
                 creditorInfo: creditorInfo,
                 debtorAddress: debtorAddress,
-                language: language
+                language: language,
+                labelOverrides: labelOverrides
             )
         }
 
@@ -137,7 +141,8 @@ actor PDFService {
         creditorInfo: CreditorInfo,
         clientAddress: String? = nil,
         credentials: HarvestCredentials? = nil,
-        language: TemplateLanguage = .en
+        language: TemplateLanguage = .en,
+        labelOverrides: [String: [String: String]]? = nil
     ) async throws -> PDFDocument {
         // Fetch client once and reuse for both address and debtor
         var resolvedClientAddress = clientAddress
@@ -158,7 +163,7 @@ actor PDFService {
             clientAddress: resolvedClientAddress,
             logoDataURI: logoDataURI
         ).toDictionary()
-        context["labels"] = language.labels
+        context["labels"] = language.resolvedLabels(overrides: labelOverrides)
 
         let templatePDF = try await TemplatePDFService.shared.renderTemplate(
             template: template,
@@ -189,7 +194,8 @@ actor PDFService {
                 invoice: invoice,
                 creditorInfo: creditorInfo,
                 debtorAddress: debtorAddress,
-                language: language
+                language: language,
+                labelOverrides: labelOverrides
             )
         }
 

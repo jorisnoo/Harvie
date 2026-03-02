@@ -23,6 +23,7 @@ final class TemplateEditorViewModel {
     var selectedTab: EditorTab = .html
     var error: String?
     var language: TemplateLanguage
+    var labelOverrides: [String: [String: String]]?
 
     enum EditorTab: String, CaseIterable {
         case html = "HTML"
@@ -38,13 +39,14 @@ final class TemplateEditorViewModel {
         fileWatcher?.stop()
     }
 
-    init(template: InvoiceTemplate, modelContext: ModelContext, language: TemplateLanguage = .en) {
+    init(template: InvoiceTemplate, modelContext: ModelContext, language: TemplateLanguage = .en, labelOverrides: [String: [String: String]]? = nil) {
         self.template = template
         self.htmlContent = template.resolvedHTMLContent()
         self.cssContent = template.resolvedCSSContent()
         self.name = template.name
         self.columnVisibility = template.columnVisibility
         self.language = language
+        self.labelOverrides = labelOverrides
         self.modelContext = modelContext
         updatePreview()
         startFileWatcher()
@@ -143,7 +145,7 @@ final class TemplateEditorViewModel {
 
     func updatePreview() {
         var context = TemplateContext.sampleDictionary()
-        context["labels"] = language.labels
+        context["labels"] = language.resolvedLabels(overrides: labelOverrides)
         if let userLogo = LogoStorage.dataURI() {
             var creditor = context["creditor"] as! [String: Any]
             creditor["logo"] = userLogo

@@ -263,6 +263,7 @@ struct DownloadsSettings: View {
 struct TemplatesSettings: View {
     @Bindable var viewModel: SettingsViewModel
     @Environment(\.modelContext) private var modelContext
+    @State private var showLabelEditor = false
 
     var body: some View {
         VStack(spacing: 0) {
@@ -306,12 +307,24 @@ struct TemplatesSettings: View {
                     }
                     .pickerStyle(.radioGroup)
 
-                    Picker("Language", selection: $viewModel.appSettings.templateLanguage) {
-                        ForEach(TemplateLanguage.allCases, id: \.self) { lang in
-                            Text(lang.displayName).tag(lang)
+                    HStack {
+                        Picker("Language", selection: $viewModel.appSettings.templateLanguage) {
+                            ForEach(TemplateLanguage.allCases, id: \.self) { lang in
+                                Text(lang.displayName).tag(lang)
+                            }
                         }
+
+                        Button {
+                            showLabelEditor = true
+                        } label: {
+                            Image(systemName: "character.textbox")
+                        }
+                        .help("Customize labels")
                     }
                 }
+            }
+            .sheet(isPresented: $showLabelEditor) {
+                LabelEditorSheet(labelOverrides: $viewModel.appSettings.labelOverrides)
             }
             .formStyle(.grouped)
             .frame(maxHeight: .infinity, alignment: .top)
@@ -320,7 +333,8 @@ struct TemplatesSettings: View {
             TemplateListView(
                 activeTemplateId: viewModel.appSettings.pdfSource == .template
                     ? $viewModel.appSettings.selectedTemplateId : nil,
-                language: viewModel.appSettings.templateLanguage
+                language: viewModel.appSettings.templateLanguage,
+                labelOverrides: viewModel.appSettings.labelOverrides
             )
             .padding(.horizontal)
             .padding(.bottom, 12)
