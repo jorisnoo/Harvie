@@ -20,7 +20,7 @@ struct TemplateEditorView: View {
                 editorPanel
                     .frame(minWidth: 400)
 
-                previewPanel
+                PreviewPanel(viewModel: viewModel)
                     .frame(minWidth: 300)
             }
         }
@@ -165,7 +165,12 @@ struct TemplateEditorView: View {
         }
     }
 
-    private var previewPanel: some View {
+}
+
+private struct PreviewPanel: View {
+    let viewModel: TemplateEditorViewModel
+
+    var body: some View {
         VStack(spacing: 0) {
             HStack {
                 Text("Preview")

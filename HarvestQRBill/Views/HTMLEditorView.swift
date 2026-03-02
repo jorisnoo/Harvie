@@ -54,10 +54,12 @@ struct HTMLEditorView: NSViewRepresentable {
         textView.isEditable = isEditable
 
         if textView.string != text {
+            let visibleRect = scrollView.documentVisibleRect
             let selectedRanges = textView.selectedRanges
             textView.string = text
             context.coordinator.applyHighlighting(to: textView)
             textView.selectedRanges = selectedRanges
+            scrollView.documentView?.scroll(visibleRect.origin)
         }
     }
 
@@ -97,6 +99,8 @@ struct HTMLEditorView: NSViewRepresentable {
         func applyHighlighting(to textView: NSTextView) {
             guard let textStorage = textView.textStorage else { return }
 
+            textStorage.beginEditing()
+
             let fullRange = NSRange(location: 0, length: textStorage.length)
             let string = textStorage.string
 
@@ -109,6 +113,8 @@ struct HTMLEditorView: NSViewRepresentable {
                     textStorage.addAttribute(.foregroundColor, value: color, range: match.range)
                 }
             }
+
+            textStorage.endEditing()
         }
     }
 }
