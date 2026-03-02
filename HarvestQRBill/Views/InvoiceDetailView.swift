@@ -33,6 +33,11 @@ struct InvoiceDetailView: View {
     var notes = EditableField("")
     var issueDate = EditableField(Date())
 
+    // Line item editing
+    @State private var editedDescriptions: [Int: String] = [:]
+    @State private var savingLineItems: Set<Int> = []
+    @State private var savedLineItems: Set<Int> = []
+
     // Focus
     @FocusState private var focusedField: FocusedField?
 
@@ -76,6 +81,9 @@ struct InvoiceDetailView: View {
             subject.reset(to: invoice.subject ?? "")
             notes.reset(to: invoice.notes ?? "")
             issueDate.reset(to: invoice.issueDate)
+            editedDescriptions = [:]
+            savingLineItems = []
+            savedLineItems = []
         }
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
@@ -354,9 +362,38 @@ struct InvoiceDetailView: View {
             ForEach(items) { item in
                 HStack(alignment: .top) {
                     VStack(alignment: .leading, spacing: 2) {
-                        if let description = item.description, !description.isEmpty {
-                            Text(description.markdown)
+                        HStack {
+                            TextField("Description", text: descriptionBinding(for: item))
                                 .font(.body)
+                                .textFieldStyle(.plain)
+                                .focused($focusedField, equals: .lineItem(item.id))
+                                .padding(.horizontal, 6)
+                                .padding(.vertical, 4)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 6)
+                                        .strokeBorder(focusedField == .lineItem(item.id) ? Color.accentColor.opacity(0.5) : .clear, lineWidth: 1.5)
+                                )
+
+                            if isLineItemModified(item) {
+                                if savedLineItems.contains(item.id) {
+                                    Image(systemName: "checkmark.circle.fill")
+                                        .foregroundStyle(.green)
+                                }
+
+                                Button {
+                                    Task { await saveLineItemDescription(item) }
+                                } label: {
+                                    if savingLineItems.contains(item.id) {
+                                        ProgressView()
+                                            .scaleEffect(0.6)
+                                    } else {
+                                        Image(systemName: "checkmark.circle")
+                                    }
+                                }
+                                .buttonStyle(.borderless)
+                                .disabled(savingLineItems.contains(item.id))
+                                .help("Save description")
+                            }
                         }
 
                         Text("\(item.quantity.formatted()) × \(CurrencyFormatter.format(item.unitPrice, currency: invoice.currency))")
@@ -465,6 +502,36 @@ struct InvoiceDetailView: View {
             )
         }
         if success { notes.markSaved() } else { notes.markFailed() }
+    }
+
+    // MARK: - Line Item Editing
+
+    private func descriptionBinding(for item: LineItem) -> Binding<String> {
+        Binding(
+            get: { editedDescriptions[item.id] ?? item.description ?? "" },
+            set: { newValue in
+                editedDescriptions[item.id] = newValue
+                savedLineItems.remove(item.id)
+            }
+        )
+    }
+
+    private func isLineItemModified(_ item: LineItem) -> Bool {
+        guard let edited = editedDescriptions[item.id] else { return false }
+        return edited != (item.description ?? "")
+    }
+
+    private func saveLineItemDescription(_ item: LineItem) async {
+        guard let description = editedDescriptions[item.id] else { return }
+        savingLineItems.insert(item.id)
+        let success = await performAPIAction(label: "save description") { credentials in
+            try await apiService.updateLineItemDescription(
+                invoiceId: invoice.id, lineItemId: item.id,
+                description: description, credentials: credentials
+            )
+        }
+        savingLineItems.remove(item.id)
+        if success { savedLineItems.insert(item.id) }
     }
 
     private func saveIssueDate() async {
@@ -644,8 +711,8 @@ struct InvoiceDetailView: View {
         }
     }
 
-    private enum FocusedField {
-        case subject, notes
+    private enum FocusedField: Hashable {
+        case subject, notes, lineItem(Int)
     }
 
     private enum ActiveSheet: Identifiable {

@@ -315,6 +315,21 @@ actor HarvestAPIService {
         try await performMutation(request)
     }
 
+    func updateLineItemDescription(
+        invoiceId: Int,
+        lineItemId: Int,
+        description: String,
+        credentials: HarvestCredentials
+    ) async throws {
+        var request = try makeRequest(path: "invoices/\(invoiceId)", credentials: credentials)
+        request.httpMethod = "PATCH"
+        let payload = LineItemUpdatePayload(lineItems: [
+            .init(id: lineItemId, description: description)
+        ])
+        request.httpBody = try JSONEncoder().encode(payload)
+        try await performMutation(request)
+    }
+
     private func updateInvoice(
         id: Int,
         fields: [String: String],
@@ -324,6 +339,19 @@ actor HarvestAPIService {
         request.httpMethod = "PATCH"
         request.httpBody = try JSONEncoder().encode(fields)
         try await performMutation(request)
+    }
+
+    private struct LineItemUpdatePayload: Encodable {
+        let lineItems: [Item]
+
+        enum CodingKeys: String, CodingKey {
+            case lineItems = "line_items"
+        }
+
+        struct Item: Encodable {
+            let id: Int
+            let description: String
+        }
     }
 
     func testConnection(credentials: HarvestCredentials) async throws -> Bool {
