@@ -9,3 +9,4 @@ DerivedData/
 
 # macOS
 .DS_Store
+/.worktrees/
