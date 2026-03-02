@@ -52,6 +52,7 @@ struct TemplateSeeder {
 
         migrateUserTemplatesToDisk(context: context)
         synchronizeDiskTemplates(context: context)
+        seedVariablesReference()
         try? context.save()
     }
 
@@ -120,6 +121,27 @@ struct TemplateSeeder {
             #if DEBUG
             logger.debug("Removed orphaned template '\(template.name)' (folder deleted from disk)")
             #endif
+        }
+    }
+
+    /// Copies the variables reference HTML from the app bundle to the user's templates directory.
+    /// Overwrites on every launch to keep it current with new releases.
+    private static func seedVariablesReference() {
+        guard let sourceURL = Bundle.main.url(forResource: "variables-reference", withExtension: "html", subdirectory: "Templates")
+                ?? Bundle.main.url(forResource: "variables-reference", withExtension: "html") else {
+            #if DEBUG
+            logger.warning("variables-reference.html not found in bundle")
+            #endif
+            return
+        }
+
+        let dest = TemplateFileManager.templatesRoot.appendingPathComponent("variables-reference.html")
+        do {
+            try FileManager.default.createDirectory(at: dest.deletingLastPathComponent(), withIntermediateDirectories: true)
+            let content = try String(contentsOf: sourceURL, encoding: .utf8)
+            try content.write(to: dest, atomically: true, encoding: .utf8)
+        } catch {
+            logger.error("Failed to seed variables reference: \(error.localizedDescription)")
         }
     }
 

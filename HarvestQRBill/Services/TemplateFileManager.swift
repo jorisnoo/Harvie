@@ -10,7 +10,7 @@ import os.log
 private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "HarvestQRBill", category: "TemplateFileManager")
 
 enum TemplateFileManager {
-    private static var templatesRoot: URL {
+    static var templatesRoot: URL {
         let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
         return appSupport.appendingPathComponent("HarvestQRBill/Templates")
     }

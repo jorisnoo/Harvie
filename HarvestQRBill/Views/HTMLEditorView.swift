@@ -41,6 +41,7 @@ struct HTMLEditorView: NSViewRepresentable {
         textView.delegate = context.coordinator
 
         textView.string = text
+        context.coordinator.textView = textView
         context.coordinator.applyHighlighting(to: textView)
 
         scrollView.documentView = textView
@@ -70,6 +71,7 @@ struct HTMLEditorView: NSViewRepresentable {
     final class Coordinator: NSObject, NSTextViewDelegate {
         @Binding var text: String
         var onChange: () -> Void
+        weak var textView: NSTextView?
         private var isUpdating = false
 
         private static let highlightRules: [(NSRegularExpression, NSColor)] = [
@@ -84,6 +86,23 @@ struct HTMLEditorView: NSViewRepresentable {
         init(text: Binding<String>, onChange: @escaping () -> Void) {
             self._text = text
             self.onChange = onChange
+            super.init()
+            NotificationCenter.default.addObserver(
+                self,
+                selector: #selector(handleInsertVariable(_:)),
+                name: .insertTemplateVariable,
+                object: nil
+            )
+        }
+
+        deinit {
+            NotificationCenter.default.removeObserver(self)
+        }
+
+        @objc private func handleInsertVariable(_ notification: Notification) {
+            guard let token = notification.object as? String,
+                  let textView, textView.window?.firstResponder === textView else { return }
+            textView.insertText(token, replacementRange: textView.selectedRange())
         }
 
         func textDidChange(_ notification: Notification) {
