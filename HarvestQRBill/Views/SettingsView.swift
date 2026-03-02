@@ -293,6 +293,9 @@ struct TemplatesSettings: View {
                             }
                         }
                     }
+                    Text("Used only in custom templates. Harvest PDFs use the logo configured in Harvest.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
                 }
 
                 Section("Invoice PDF Source") {
