@@ -246,6 +246,7 @@ struct DownloadsSettings: View {
                 }
                 .font(.caption)
                 .foregroundStyle(.secondary)
+                .textSelection(.enabled)
             }
 
             PaidMarkSettings(viewModel: viewModel)
