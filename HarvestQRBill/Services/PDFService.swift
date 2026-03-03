@@ -90,7 +90,7 @@ actor PDFService {
 
         let text = paidMarkStyle.customText.isEmpty ? language.paidMark : paidMarkStyle.customText
         let dateText: String?
-        if paidMarkStyle.showDate, let paidDate = invoice.paidDate ?? invoice.paidAt {
+        if paidMarkStyle.showDate, let paidDate = invoice.effectivePaidDate {
             let formatter = DateFormatter()
             formatter.dateStyle = .medium
             formatter.timeStyle = .none

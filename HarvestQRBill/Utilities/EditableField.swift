@@ -10,6 +10,7 @@ struct EditableField<Value: Equatable & Sendable>: DynamicProperty, Sendable {
     @State var lastSaved: Value
     @State var isSaving: Bool = false
     @State var showSaved: Bool = false
+    @State var clearSavedTask: Task<Void, Never>?
 
     var isModified: Bool { current != lastSaved }
 
@@ -40,6 +41,12 @@ struct EditableField<Value: Equatable & Sendable>: DynamicProperty, Sendable {
         lastSaved = current
         showSaved = true
         isSaving = false
+        clearSavedTask?.cancel()
+        clearSavedTask = Task {
+            try? await Task.sleep(for: .seconds(2))
+            guard !Task.isCancelled else { return }
+            showSaved = false
+        }
     }
 
     func markFailed() { isSaving = false }

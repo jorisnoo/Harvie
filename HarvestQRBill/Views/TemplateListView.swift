@@ -256,26 +256,7 @@ struct TemplateListView: View {
 
         let processedHTML = TemplateEngine.render(template.resolvedHTMLContent(), with: context)
         let css = template.resolvedCSSContent() + "\n" + template.columnVisibility.cssVariables()
-        let html = """
-            <!DOCTYPE html>
-            <html>
-            <head>
-            <meta charset="UTF-8">
-            <style>
-            * { margin: 0; padding: 0; box-sizing: border-box; }
-            html, body {
-                width: 210mm;
-                min-height: 297mm;
-                font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif;
-            }
-            \(css)
-            </style>
-            </head>
-            <body>
-            \(processedHTML)
-            </body>
-            </html>
-            """
+        let html = TemplateEditorViewModel.buildPreviewDocument(html: processedHTML, css: css)
 
         let previewView = TemplatePreviewView(html: html)
 

@@ -154,10 +154,10 @@ final class TemplateEditorViewModel {
         }
         let processedHTML = TemplateEngine.render(htmlContent, with: context)
         let css = cssContent + "\n" + columnVisibility.cssVariables()
-        previewHTML = buildPreviewDocument(html: processedHTML, css: css)
+        previewHTML = Self.buildPreviewDocument(html: processedHTML, css: css)
     }
 
-    private func buildPreviewDocument(html: String, css: String) -> String {
+    static func buildPreviewDocument(html: String, css: String) -> String {
         """
         <!DOCTYPE html>
         <html>

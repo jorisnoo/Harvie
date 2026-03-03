@@ -37,6 +37,7 @@ struct InvoiceDetailView: View {
     @State private var editedDescriptions: [Int: String] = [:]
     @State private var savingLineItems: Set<Int> = []
     @State private var savedLineItems: Set<Int> = []
+    @State private var savedTimers: [Int: Task<Void, Never>] = [:]
 
     // Focus
     @FocusState private var focusedField: FocusedField?
@@ -84,6 +85,8 @@ struct InvoiceDetailView: View {
             editedDescriptions = [:]
             savingLineItems = []
             savedLineItems = []
+            savedTimers.values.forEach { $0.cancel() }
+            savedTimers = [:]
         }
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
@@ -535,8 +538,10 @@ struct InvoiceDetailView: View {
         savingLineItems.remove(item.id)
         if success {
             savedLineItems.insert(item.id)
-            Task {
+            savedTimers[item.id]?.cancel()
+            savedTimers[item.id] = Task {
                 try? await Task.sleep(for: .seconds(2))
+                guard !Task.isCancelled else { return }
                 savedLineItems.remove(item.id)
             }
         }
@@ -703,7 +708,7 @@ struct InvoiceDetailView: View {
             date: invoice.issueDate,
             issueDate: invoice.issueDate,
             dueDate: invoice.dueDate,
-            paidDate: invoice.paidAt ?? invoice.paidDate
+            paidDate: invoice.effectivePaidDate
         )
         return InvoiceFileSaver.sanitizeFilename(rawFilename)
     }

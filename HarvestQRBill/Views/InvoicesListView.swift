@@ -362,7 +362,7 @@ struct InvoiceRowView: View {
         switch sortOption {
         case .issueDate: invoice.issueDate
         case .dueDate: invoice.dueDate
-        case .paidDate: invoice.paidAt ?? invoice.paidDate ?? invoice.issueDate
+        case .paidDate: invoice.effectivePaidDate ?? invoice.issueDate
         }
     }
 

@@ -315,7 +315,7 @@ final class InvoicesViewModel {
                 case .dueDate:
                     dateToCheck = invoice.dueDate
                 case .paidDate:
-                    dateToCheck = invoice.paidAt ?? invoice.paidDate ?? invoice.issueDate
+                    dateToCheck = invoice.effectivePaidDate ?? invoice.issueDate
                 }
                 return filterPeriod.contains(dateToCheck, in: period, calendar: calendar)
             }
@@ -333,8 +333,8 @@ final class InvoicesViewModel {
                 lhsDate = lhs.dueDate
                 rhsDate = rhs.dueDate
             case .paidDate:
-                lhsDate = lhs.paidAt ?? lhs.paidDate ?? .distantPast
-                rhsDate = rhs.paidAt ?? rhs.paidDate ?? .distantPast
+                lhsDate = lhs.effectivePaidDate ?? .distantPast
+                rhsDate = rhs.effectivePaidDate ?? .distantPast
             }
 
             return sortDirection == .ascending ? lhsDate < rhsDate : lhsDate > rhsDate
@@ -729,7 +729,7 @@ final class InvoicesViewModel {
                 case .issueDate, .dueDate:
                     invoice.issueDate
                 case .paidDate:
-                    invoice.paidAt ?? invoice.paidDate ?? invoice.issueDate
+                    invoice.effectivePaidDate ?? invoice.issueDate
                 }
 
                 let fileName = appSettings.generateFilename(
@@ -739,7 +739,7 @@ final class InvoicesViewModel {
                     date: date,
                     issueDate: invoice.issueDate,
                     dueDate: invoice.dueDate,
-                    paidDate: invoice.paidAt ?? invoice.paidDate
+                    paidDate: invoice.effectivePaidDate
                 )
                 let fileURL = folderURL.appendingPathComponent(fileName)
 
@@ -785,7 +785,7 @@ final class InvoicesViewModel {
         case .issueDate, .dueDate:
             invoice.issueDate
         case .paidDate:
-            invoice.paidAt ?? invoice.paidDate ?? invoice.issueDate
+            invoice.effectivePaidDate ?? invoice.issueDate
         }
 
         let fileName = appSettings.generateFilename(
@@ -795,7 +795,7 @@ final class InvoicesViewModel {
             date: date,
             issueDate: invoice.issueDate,
             dueDate: invoice.dueDate,
-            paidDate: invoice.paidAt ?? invoice.paidDate
+            paidDate: invoice.effectivePaidDate
         )
 
         provider.suggestedName = (fileName as NSString).deletingPathExtension

@@ -68,6 +68,10 @@ struct Invoice: Codable, Identifiable, Hashable, Sendable {
         dueAmount > 0 ? dueAmount : amount
     }
 
+    var effectivePaidDate: Date? {
+        paidAt ?? paidDate
+    }
+
     enum CodingKeys: String, CodingKey {
         case id, number, amount, tax, discount, subject, notes, currency, state
         case clientKey = "client_key"
