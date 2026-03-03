@@ -248,6 +248,8 @@ struct DownloadsSettings: View {
                 .foregroundStyle(.secondary)
             }
 
+            PaidMarkSettings(viewModel: viewModel)
+
             #if DEBUG
             Section("Demo") {
                 Toggle("Demo Mode", isOn: $viewModel.appSettings.isDemoMode)
@@ -255,6 +257,58 @@ struct DownloadsSettings: View {
             #endif
         }
         .formStyle(.grouped)
+    }
+}
+
+// MARK: - Paid Mark Settings
+
+struct PaidMarkSettings: View {
+    @Bindable var viewModel: SettingsViewModel
+    @State private var isStyleExpanded = false
+
+    var body: some View {
+        Section("Paid Mark") {
+            Toggle("Show watermark on paid invoices", isOn: $viewModel.appSettings.paidMarkStyle.enabled)
+
+            if viewModel.appSettings.paidMarkStyle.enabled {
+                LabeledContent("Custom text") {
+                    TextField(
+                        viewModel.appSettings.templateLanguage.paidMark,
+                        text: $viewModel.appSettings.paidMarkStyle.customText
+                    )
+                    .multilineTextAlignment(.trailing)
+                }
+
+                Toggle("Show paid date", isOn: $viewModel.appSettings.paidMarkStyle.showDate)
+
+                DisclosureGroup("Watermark Style", isExpanded: $isStyleExpanded) {
+                    TextEditor(text: $viewModel.appSettings.paidMarkStyle.css)
+                        .font(.system(.body, design: .monospaced))
+                        .frame(minHeight: 160)
+                        .scrollContentBackground(.hidden)
+                        .padding(4)
+                        .background(
+                            RoundedRectangle(cornerRadius: 6)
+                                .fill(.background)
+                                .shadow(color: .black.opacity(0.05), radius: 1)
+                        )
+
+                    HStack {
+                        Text("HTML: .watermark > .text + .date")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+
+                        Spacer()
+
+                        Button("Reset to Default") {
+                            viewModel.appSettings.paidMarkStyle.css = PaidMarkStyle.defaultCSS
+                        }
+                        .controlSize(.small)
+                        .disabled(viewModel.appSettings.paidMarkStyle.css == PaidMarkStyle.defaultCSS)
+                    }
+                }
+            }
+        }
     }
 }
 

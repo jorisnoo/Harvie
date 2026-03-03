@@ -707,7 +707,8 @@ final class InvoicesViewModel {
                             creditorInfo: creditorInfo,
                             credentials: credentials,
                             language: appSettings.templateLanguage,
-                            labelOverrides: appSettings.labelOverrides
+                            labelOverrides: appSettings.labelOverrides,
+                            paidMarkStyle: appSettings.paidMarkStyle
                         )
                     } else {
                         document = try await pdfService.createInvoiceWithQRBill(
@@ -715,7 +716,8 @@ final class InvoicesViewModel {
                             credentials: credentials,
                             creditorInfo: creditorInfo,
                             language: appSettings.templateLanguage,
-                            labelOverrides: appSettings.labelOverrides
+                            labelOverrides: appSettings.labelOverrides,
+                            paidMarkStyle: appSettings.paidMarkStyle
                         )
                     }
                 } else {
@@ -826,7 +828,8 @@ final class InvoicesViewModel {
                                 creditorInfo: creditor,
                                 credentials: credentials,
                                 language: settings.templateLanguage,
-                                labelOverrides: settings.labelOverrides
+                                labelOverrides: settings.labelOverrides,
+                                paidMarkStyle: settings.paidMarkStyle
                             )
                         } else {
                             document = try await self.pdfService.createInvoiceWithQRBill(
@@ -834,7 +837,8 @@ final class InvoicesViewModel {
                                 credentials: credentials,
                                 creditorInfo: creditor,
                                 language: settings.templateLanguage,
-                                labelOverrides: settings.labelOverrides
+                                labelOverrides: settings.labelOverrides,
+                                paidMarkStyle: settings.paidMarkStyle
                             )
                         }
                     } else {

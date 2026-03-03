@@ -41,6 +41,40 @@ final class TemplatePDFService {
         return try await renderHTMLToPDF(fullHTML)
     }
 
+    func renderWatermarkPage(text: String, dateText: String?, css: String) async throws -> PDFPage {
+        var dateDiv = ""
+        if let dateText {
+            dateDiv = "<div class=\"date\">\(dateText)</div>"
+        }
+
+        let html = """
+        <!DOCTYPE html>
+        <html>
+        <head>
+        <meta charset="UTF-8">
+        <style>
+        @page { size: A4; margin: 0; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { width: 210mm; height: 297mm; }
+        \(css)
+        </style>
+        </head>
+        <body>
+        <div class="watermark">
+            <div class="text">\(text)</div>
+            \(dateDiv)
+        </div>
+        </body>
+        </html>
+        """
+
+        let document = try await renderHTMLToPDF(html)
+        guard let page = document.page(at: 0) else {
+            throw PDFNavigationDelegate.PDFError.renderingFailed
+        }
+        return page
+    }
+
     func renderTemplate(
         template: InvoiceTemplate,
         context: [String: Any]

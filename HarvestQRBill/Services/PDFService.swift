@@ -66,18 +66,43 @@ actor PDFService {
 
     func applyPaidMark(
         to document: PDFDocument,
-        text: String,
-        paidDate: Date?,
+        watermarkPage: PDFPage,
         excludingLastPage: Bool
     ) {
         let lastIndex = document.pageCount - 1
         let endIndex = excludingLastPage ? lastIndex : document.pageCount
         for i in 0..<endIndex {
             guard let page = document.page(at: i) else { continue }
-            let watermarked = WatermarkedPDFPage(page: page, text: text, paidDate: paidDate)
+            let watermarked = WatermarkedPDFPage(page: page, watermarkPage: watermarkPage)
             document.removePage(at: i)
             document.insert(watermarked, at: i)
         }
+    }
+
+    private func renderAndApplyPaidMark(
+        to document: PDFDocument,
+        invoice: Invoice,
+        language: TemplateLanguage,
+        paidMarkStyle: PaidMarkStyle,
+        excludingLastPage: Bool
+    ) async throws {
+        guard invoice.state == .paid && paidMarkStyle.enabled else { return }
+
+        let text = paidMarkStyle.customText.isEmpty ? language.paidMark : paidMarkStyle.customText
+        let dateText: String?
+        if paidMarkStyle.showDate, let paidDate = invoice.paidDate ?? invoice.paidAt {
+            let formatter = DateFormatter()
+            formatter.dateStyle = .medium
+            formatter.timeStyle = .none
+            dateText = formatter.string(from: paidDate)
+        } else {
+            dateText = nil
+        }
+
+        let watermarkPage = try await TemplatePDFService.shared.renderWatermarkPage(
+            text: text, dateText: dateText, css: paidMarkStyle.css
+        )
+        applyPaidMark(to: document, watermarkPage: watermarkPage, excludingLastPage: excludingLastPage)
     }
 
     func savePDF(_ document: PDFDocument, to url: URL) throws {
@@ -121,7 +146,8 @@ actor PDFService {
         credentials: HarvestCredentials,
         creditorInfo: CreditorInfo,
         language: TemplateLanguage = .en,
-        labelOverrides: [String: [String: String]]? = nil
+        labelOverrides: [String: [String: String]]? = nil,
+        paidMarkStyle: PaidMarkStyle = .default
     ) async throws -> PDFDocument {
         let apiService = HarvestAPIService.shared
 
@@ -129,14 +155,10 @@ actor PDFService {
         let invoicePDF = try await downloadPDF(from: pdfURL)
 
         guard QRBillService.isCurrencySupported(invoice.currency) else {
-            if invoice.state == .paid {
-                applyPaidMark(
-                    to: invoicePDF,
-                    text: language.paidMark,
-                    paidDate: invoice.paidDate ?? invoice.paidAt,
-                    excludingLastPage: false
-                )
-            }
+            try await renderAndApplyPaidMark(
+                to: invoicePDF, invoice: invoice, language: language,
+                paidMarkStyle: paidMarkStyle, excludingLastPage: false
+            )
             return invoicePDF
         }
 
@@ -158,14 +180,10 @@ actor PDFService {
 
         let document = appendQRBill(to: invoicePDF, qrBillPage: qrBillPage)
 
-        if invoice.state == .paid {
-            applyPaidMark(
-                to: document,
-                text: language.paidMark,
-                paidDate: invoice.paidDate ?? invoice.paidAt,
-                excludingLastPage: true
-            )
-        }
+        try await renderAndApplyPaidMark(
+            to: document, invoice: invoice, language: language,
+            paidMarkStyle: paidMarkStyle, excludingLastPage: true
+        )
 
         return document
     }
@@ -177,7 +195,8 @@ actor PDFService {
         clientAddress: String? = nil,
         credentials: HarvestCredentials? = nil,
         language: TemplateLanguage = .en,
-        labelOverrides: [String: [String: String]]? = nil
+        labelOverrides: [String: [String: String]]? = nil,
+        paidMarkStyle: PaidMarkStyle = .default
     ) async throws -> PDFDocument {
         // Fetch client once and reuse for both address and debtor
         var resolvedClientAddress = clientAddress
@@ -206,14 +225,10 @@ actor PDFService {
         )
 
         guard QRBillService.isCurrencySupported(invoice.currency) else {
-            if invoice.state == .paid {
-                applyPaidMark(
-                    to: templatePDF,
-                    text: language.paidMark,
-                    paidDate: invoice.paidDate ?? invoice.paidAt,
-                    excludingLastPage: false
-                )
-            }
+            try await renderAndApplyPaidMark(
+                to: templatePDF, invoice: invoice, language: language,
+                paidMarkStyle: paidMarkStyle, excludingLastPage: false
+            )
             return templatePDF
         }
 
@@ -244,14 +259,10 @@ actor PDFService {
 
         let document = appendQRBill(to: templatePDF, qrBillPage: qrBillPage)
 
-        if invoice.state == .paid {
-            applyPaidMark(
-                to: document,
-                text: language.paidMark,
-                paidDate: invoice.paidDate ?? invoice.paidAt,
-                excludingLastPage: true
-            )
-        }
+        try await renderAndApplyPaidMark(
+            to: document, invoice: invoice, language: language,
+            paidMarkStyle: paidMarkStyle, excludingLastPage: true
+        )
 
         return document
     }
@@ -301,7 +312,8 @@ actor PDFService {
     #if DEBUG
     func createDemoInvoiceWithQRBill(
         invoice: Invoice,
-        creditorInfo: CreditorInfo
+        creditorInfo: CreditorInfo,
+        paidMarkStyle: PaidMarkStyle = .default
     ) async throws -> PDFDocument {
         let demoPDF = await MainActor.run {
             createDemoInvoicePDF(invoice: invoice, creditorInfo: creditorInfo)
@@ -330,14 +342,10 @@ actor PDFService {
 
         let document = appendQRBill(to: demoPDF, qrBillPage: qrBillPage)
 
-        if invoice.state == .paid {
-            applyPaidMark(
-                to: document,
-                text: "BEZAHLT",
-                paidDate: invoice.paidDate ?? invoice.paidAt,
-                excludingLastPage: true
-            )
-        }
+        try await renderAndApplyPaidMark(
+            to: document, invoice: invoice, language: .de,
+            paidMarkStyle: paidMarkStyle, excludingLastPage: true
+        )
 
         return document
     }

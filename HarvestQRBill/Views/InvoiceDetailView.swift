@@ -606,7 +606,8 @@ struct InvoiceDetailView: View {
                 creditorInfo: effectiveCreditorInfo,
                 credentials: credentials,
                 language: appSettings.templateLanguage,
-                labelOverrides: appSettings.labelOverrides
+                labelOverrides: appSettings.labelOverrides,
+                paidMarkStyle: appSettings.paidMarkStyle
             )
             return (pdf, appSettings)
         }
@@ -614,7 +615,8 @@ struct InvoiceDetailView: View {
         #if DEBUG
         if appSettings.isDemoMode {
             let pdf = try await pdfService.createDemoInvoiceWithQRBill(
-                invoice: invoice, creditorInfo: effectiveCreditorInfo
+                invoice: invoice, creditorInfo: effectiveCreditorInfo,
+                paidMarkStyle: appSettings.paidMarkStyle
             )
             return (pdf, appSettings)
         }
@@ -624,7 +626,8 @@ struct InvoiceDetailView: View {
         let pdf = try await pdfService.createInvoiceWithQRBill(
             invoice: invoice, credentials: credentials, creditorInfo: effectiveCreditorInfo,
             language: appSettings.templateLanguage,
-            labelOverrides: appSettings.labelOverrides
+            labelOverrides: appSettings.labelOverrides,
+            paidMarkStyle: appSettings.paidMarkStyle
         )
         return (pdf, appSettings)
     }

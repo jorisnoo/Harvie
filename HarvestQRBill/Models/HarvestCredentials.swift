@@ -84,6 +84,38 @@ enum DownloadBehavior: String, Codable, CaseIterable, Sendable {
     }
 }
 
+struct PaidMarkStyle: Codable, Sendable, Equatable {
+    var enabled: Bool
+    var customText: String   // empty = use localized default
+    var showDate: Bool
+    var css: String
+
+    static let defaultCSS = """
+    .watermark {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%) rotate(-30deg);
+        text-align: center;
+    }
+    .text {
+        font-size: 72pt;
+        font-weight: bold;
+        color: rgba(51, 166, 77, 0.18);
+    }
+    .date {
+        font-size: 24pt;
+        font-weight: 500;
+        color: rgba(51, 166, 77, 0.18);
+        margin-top: 4px;
+    }
+    """
+
+    static let `default` = PaidMarkStyle(
+        enabled: true, customText: "", showDate: true, css: defaultCSS
+    )
+}
+
 struct AppSettings: Codable, Sendable, Equatable {
     var downloadBehavior: DownloadBehavior
     var defaultDownloadPath: String?
@@ -96,6 +128,9 @@ struct AppSettings: Codable, Sendable, Equatable {
     var pdfSource: InvoicePDFSource
     var selectedTemplateId: UUID?
     var templateLanguage: TemplateLanguage
+
+    // Paid mark watermark
+    var paidMarkStyle: PaidMarkStyle
 
     // Label customization: [languageRawValue: [labelKey: customValue]]
     // Template keys are bare ("invoice", "subtotal"). QR bill keys prefixed with "qr." ("qr.receipt").
@@ -121,11 +156,12 @@ struct AppSettings: Codable, Sendable, Equatable {
             isDemoMode: false,
             pdfSource: .harvestPDF,
             selectedTemplateId: nil,
-            templateLanguage: .en
+            templateLanguage: .en,
+            paidMarkStyle: .default
         )
     }
 
-    init(downloadBehavior: DownloadBehavior, defaultDownloadPath: String?, downloadBookmarkData: Data?, filenamePattern: String = defaultFilenamePattern, dateFormat: String = defaultDateFormat, isDemoMode: Bool = false, pdfSource: InvoicePDFSource = .harvestPDF, selectedTemplateId: UUID? = nil, templateLanguage: TemplateLanguage = .en, labelOverrides: [String: [String: String]]? = nil) {
+    init(downloadBehavior: DownloadBehavior, defaultDownloadPath: String?, downloadBookmarkData: Data?, filenamePattern: String = defaultFilenamePattern, dateFormat: String = defaultDateFormat, isDemoMode: Bool = false, pdfSource: InvoicePDFSource = .harvestPDF, selectedTemplateId: UUID? = nil, templateLanguage: TemplateLanguage = .en, paidMarkStyle: PaidMarkStyle = .default, labelOverrides: [String: [String: String]]? = nil) {
         self.downloadBehavior = downloadBehavior
         self.defaultDownloadPath = defaultDownloadPath
         self.downloadBookmarkData = downloadBookmarkData
@@ -135,6 +171,7 @@ struct AppSettings: Codable, Sendable, Equatable {
         self.pdfSource = pdfSource
         self.selectedTemplateId = selectedTemplateId
         self.templateLanguage = templateLanguage
+        self.paidMarkStyle = paidMarkStyle
         self.labelOverrides = labelOverrides
     }
 
@@ -149,6 +186,7 @@ struct AppSettings: Codable, Sendable, Equatable {
         pdfSource = try container.decodeIfPresent(InvoicePDFSource.self, forKey: .pdfSource) ?? .harvestPDF
         selectedTemplateId = try container.decodeIfPresent(UUID.self, forKey: .selectedTemplateId)
         templateLanguage = try container.decodeIfPresent(TemplateLanguage.self, forKey: .templateLanguage) ?? .en
+        paidMarkStyle = try container.decodeIfPresent(PaidMarkStyle.self, forKey: .paidMarkStyle) ?? .default
         lastSortOption = try container.decodeIfPresent(String.self, forKey: .lastSortOption)
         lastSortAscending = try container.decodeIfPresent(Bool.self, forKey: .lastSortAscending)
         lastFilterPeriod = try container.decodeIfPresent(String.self, forKey: .lastFilterPeriod)
