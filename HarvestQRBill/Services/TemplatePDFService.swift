@@ -55,7 +55,8 @@ final class TemplatePDFService {
         <style>
         @page { size: A4; margin: 0; }
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        html, body { width: 210mm; height: 297mm; }
+        html { zoom: 0.75; }
+        html, body { width: 210mm; height: 297mm; position: relative; overflow: hidden; }
         \(css)
         </style>
         </head>
@@ -68,7 +69,8 @@ final class TemplatePDFService {
         </html>
         """
 
-        let document = try await renderHTMLToPDF(html)
+        let a4Rect = CGRect(origin: .zero, size: CGSize(width: Self.a4Width, height: Self.a4Height))
+        let document = try await renderHTMLToPDF(html, rect: a4Rect)
         guard let page = document.page(at: 0) else {
             throw PDFNavigationDelegate.PDFError.renderingFailed
         }
@@ -130,7 +132,7 @@ final class TemplatePDFService {
         """
     }
 
-    private func renderHTMLToPDF(_ html: String) async throws -> PDFDocument {
+    private func renderHTMLToPDF(_ html: String, rect: CGRect? = nil) async throws -> PDFDocument {
         let config = WKWebViewConfiguration()
         config.websiteDataStore = .nonPersistent()
         config.suppressesIncrementalRendering = true
@@ -160,7 +162,7 @@ final class TemplatePDFService {
         return try await withThrowingTaskGroup(of: PDFDocument.self) { group in
             group.addTask { @MainActor in
                 try await withCheckedThrowingContinuation { continuation in
-                    let delegate = PDFNavigationDelegate(webView: webView) { result in
+                    let delegate = PDFNavigationDelegate(webView: webView, rect: rect) { result in
                         switch result {
                         case .success(let document):
                             continuation.resume(returning: document)
@@ -206,11 +208,13 @@ private final class PDFNavigationDelegate: NSObject, WKNavigationDelegate {
     }
 
     private let webView: WKWebView
+    private let rect: CGRect?
     private let completion: (Result<PDFDocument, Error>) -> Void
     private var hasCompleted = false
 
-    init(webView: WKWebView, completion: @escaping (Result<PDFDocument, Error>) -> Void) {
+    init(webView: WKWebView, rect: CGRect? = nil, completion: @escaping (Result<PDFDocument, Error>) -> Void) {
         self.webView = webView
+        self.rect = rect
         self.completion = completion
         super.init()
     }
@@ -248,8 +252,9 @@ private final class PDFNavigationDelegate: NSObject, WKNavigationDelegate {
         guard !hasCompleted else { return }
 
         let config = WKPDFConfiguration()
-        // Leave config.rect at default (.null) so WKWebView paginates
-        // content across multiple A4 pages automatically via @page rules.
+        if let rect {
+            config.rect = rect
+        }
 
         webView.createPDF(configuration: config) { [weak self] result in
             guard let self, !self.hasCompleted else { return }

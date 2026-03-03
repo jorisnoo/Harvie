@@ -88,7 +88,7 @@ actor PDFService {
     ) async throws {
         guard invoice.state == .paid && paidMarkStyle.enabled else { return }
 
-        let text = paidMarkStyle.customText.isEmpty ? language.paidMark : paidMarkStyle.customText
+        let text = language.paidMark
         let dateText: String?
         if paidMarkStyle.showDate, let paidDate = invoice.effectivePaidDate {
             let formatter = DateFormatter()

@@ -86,33 +86,33 @@ enum DownloadBehavior: String, Codable, CaseIterable, Sendable {
 
 struct PaidMarkStyle: Codable, Sendable, Equatable {
     var enabled: Bool
-    var customText: String   // empty = use localized default
     var showDate: Bool
     var css: String
 
     static let defaultCSS = """
     .watermark {
         position: absolute;
-        top: 50%;
+        top: 18mm;
         left: 50%;
-        transform: translate(-50%, -50%) rotate(-30deg);
+        transform: translateX(-50%) rotate(-35deg);
         text-align: center;
+        font-family: -apple-system, "Helvetica Neue", Arial, sans-serif;
     }
     .text {
-        font-size: 72pt;
-        font-weight: bold;
-        color: rgba(51, 166, 77, 0.18);
+        font-size: 28pt;
+        font-weight: 600;
+        color: rgb(51, 166, 77);
     }
     .date {
-        font-size: 24pt;
+        font-size: 12pt;
         font-weight: 500;
-        color: rgba(51, 166, 77, 0.18);
-        margin-top: 4px;
+        color: rgb(51, 166, 77);
+        margin-top: 2px;
     }
     """
 
     static let `default` = PaidMarkStyle(
-        enabled: true, customText: "", showDate: true, css: defaultCSS
+        enabled: true, showDate: true, css: defaultCSS
     )
 }
 

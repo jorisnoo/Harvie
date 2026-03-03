@@ -271,14 +271,6 @@ struct PaidMarkSettings: View {
             Toggle("Show watermark on paid invoices", isOn: $viewModel.appSettings.paidMarkStyle.enabled)
 
             if viewModel.appSettings.paidMarkStyle.enabled {
-                LabeledContent("Custom text") {
-                    TextField(
-                        viewModel.appSettings.templateLanguage.paidMark,
-                        text: $viewModel.appSettings.paidMarkStyle.customText
-                    )
-                    .multilineTextAlignment(.trailing)
-                }
-
                 Toggle("Show paid date", isOn: $viewModel.appSettings.paidMarkStyle.showDate)
 
                 DisclosureGroup("Watermark Style", isExpanded: $isStyleExpanded) {
