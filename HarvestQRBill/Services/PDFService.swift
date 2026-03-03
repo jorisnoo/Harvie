@@ -149,18 +149,8 @@ actor PDFService {
         labelOverrides: [String: [String: String]]? = nil,
         paidMarkStyle: PaidMarkStyle = .default
     ) async throws -> PDFDocument {
-        let apiService = HarvestAPIService.shared
-
-        let pdfURL = try apiService.buildPDFURL(for: invoice, subdomain: credentials.subdomain)
-        let invoicePDF = try await downloadPDF(from: pdfURL)
-
-        guard QRBillService.isCurrencySupported(invoice.currency) else {
-            try await renderAndApplyPaidMark(
-                to: invoicePDF, invoice: invoice, language: language,
-                paidMarkStyle: paidMarkStyle, excludingLastPage: false
-            )
-            return invoicePDF
-        }
+        let pdfURL = try HarvestAPIService.shared.buildPDFURL(for: invoice, subdomain: credentials.subdomain)
+        let basePDF = try await downloadPDF(from: pdfURL)
 
         let debtorAddress = await fetchDebtorAddress(
             clientId: invoice.client.id,
@@ -168,24 +158,11 @@ actor PDFService {
             credentials: credentials
         )
 
-        let qrBillPage = try await MainActor.run {
-            try generateQRBillPage(
-                invoice: invoice,
-                creditorInfo: creditorInfo,
-                debtorAddress: debtorAddress,
-                language: language,
-                labelOverrides: labelOverrides
-            )
-        }
-
-        let document = appendQRBill(to: invoicePDF, qrBillPage: qrBillPage)
-
-        try await renderAndApplyPaidMark(
-            to: document, invoice: invoice, language: language,
-            paidMarkStyle: paidMarkStyle, excludingLastPage: true
+        return try await attachQRBillAndPaidMark(
+            to: basePDF, invoice: invoice, creditorInfo: creditorInfo,
+            debtorAddress: debtorAddress, language: language,
+            labelOverrides: labelOverrides, paidMarkStyle: paidMarkStyle
         )
-
-        return document
     }
 
     func createInvoiceFromTemplate(
@@ -202,8 +179,7 @@ actor PDFService {
         var resolvedClientAddress = clientAddress
         var fetchedClient: Client?
         if let credentials {
-            let apiService = HarvestAPIService.shared
-            fetchedClient = try? await apiService.fetchClient(id: invoice.client.id, credentials: credentials)
+            fetchedClient = try? await HarvestAPIService.shared.fetchClient(id: invoice.client.id, credentials: credentials)
             if resolvedClientAddress == nil {
                 resolvedClientAddress = fetchedClient?.address
             }
@@ -219,18 +195,10 @@ actor PDFService {
         ).toDictionary()
         context["labels"] = language.resolvedLabels(overrides: labelOverrides)
 
-        let templatePDF = try await TemplatePDFService.shared.renderTemplate(
+        let basePDF = try await TemplatePDFService.shared.renderTemplate(
             template: template,
             context: context
         )
-
-        guard QRBillService.isCurrencySupported(invoice.currency) else {
-            try await renderAndApplyPaidMark(
-                to: templatePDF, invoice: invoice, language: language,
-                paidMarkStyle: paidMarkStyle, excludingLastPage: false
-            )
-            return templatePDF
-        }
 
         // Build debtor address from already-fetched client
         let debtorAddress: StructuredAddress?
@@ -247,6 +215,30 @@ actor PDFService {
             )
         }
 
+        return try await attachQRBillAndPaidMark(
+            to: basePDF, invoice: invoice, creditorInfo: creditorInfo,
+            debtorAddress: debtorAddress, language: language,
+            labelOverrides: labelOverrides, paidMarkStyle: paidMarkStyle
+        )
+    }
+
+    private func attachQRBillAndPaidMark(
+        to document: PDFDocument,
+        invoice: Invoice,
+        creditorInfo: CreditorInfo,
+        debtorAddress: StructuredAddress?,
+        language: TemplateLanguage,
+        labelOverrides: [String: [String: String]]?,
+        paidMarkStyle: PaidMarkStyle
+    ) async throws -> PDFDocument {
+        guard QRBillService.isCurrencySupported(invoice.currency) else {
+            try await renderAndApplyPaidMark(
+                to: document, invoice: invoice, language: language,
+                paidMarkStyle: paidMarkStyle, excludingLastPage: false
+            )
+            return document
+        }
+
         let qrBillPage = try await MainActor.run {
             try generateQRBillPage(
                 invoice: invoice,
@@ -257,14 +249,14 @@ actor PDFService {
             )
         }
 
-        let document = appendQRBill(to: templatePDF, qrBillPage: qrBillPage)
+        let result = appendQRBill(to: document, qrBillPage: qrBillPage)
 
         try await renderAndApplyPaidMark(
-            to: document, invoice: invoice, language: language,
+            to: result, invoice: invoice, language: language,
             paidMarkStyle: paidMarkStyle, excludingLastPage: true
         )
 
-        return document
+        return result
     }
 
     private func fetchDebtorAddress(

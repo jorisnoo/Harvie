@@ -116,23 +116,35 @@ struct TemplateContext {
     }()
 
     nonisolated func toDictionary() -> [String: Any] {
-        var dict: [String: Any] = [
-            "invoice": [
-                "number": invoice.number,
-                "amount": invoice.amount,
-                "currency": invoice.currency,
-                "subject": invoice.subject,
-                "notes": invoice.notes,
-                "issueDate": invoice.issueDate,
-                "dueDate": invoice.dueDate,
-                "tax": invoice.tax as Any,
-                "taxAmount": invoice.taxAmount as Any,
-                "tax2": invoice.tax2 as Any,
-                "tax2Amount": invoice.tax2Amount as Any,
-                "discount": invoice.discount as Any,
-                "discountAmount": invoice.discountAmount as Any,
-                "subtotal": invoice.subtotal
-            ],
+        let totalHours = lineItems.reduce(Decimal.zero) { sum, item in
+            sum + ((item["quantity"] as? Decimal) ?? 0)
+        }
+
+        let invoiceDict: [String: Any] = [
+            "number": invoice.number,
+            "amount": invoice.amount,
+            "currency": invoice.currency,
+            "subject": invoice.subject,
+            "notes": invoice.notes,
+            "issueDate": invoice.issueDate,
+            "dueDate": invoice.dueDate,
+            "tax": invoice.tax as Any,
+            "taxAmount": invoice.taxAmount as Any,
+            "tax2": invoice.tax2 as Any,
+            "tax2Amount": invoice.tax2Amount as Any,
+            "discount": invoice.discount as Any,
+            "discountAmount": invoice.discountAmount as Any,
+            "subtotal": invoice.subtotal,
+            "hasNotes": !invoice.notes.isEmpty,
+            "hasSubject": !invoice.subject.isEmpty,
+            "hasTax": invoice.tax != nil && invoice.taxAmount != nil,
+            "hasTax2": invoice.tax2 != nil && invoice.tax2Amount != nil,
+            "hasDiscount": invoice.discount != nil && invoice.discountAmount != nil,
+            "totalHours": totalHours
+        ]
+
+        return [
+            "invoice": invoiceDict,
             "client": [
                 "name": client.name,
                 "address": client.address
@@ -150,23 +162,6 @@ struct TemplateContext {
             ],
             "lineItems": lineItems
         ]
-
-        // Add convenience booleans for conditionals
-        var invoiceDict = dict["invoice"] as! [String: Any]
-        invoiceDict["hasNotes"] = !invoice.notes.isEmpty
-        invoiceDict["hasSubject"] = !invoice.subject.isEmpty
-        invoiceDict["hasTax"] = invoice.tax != nil && invoice.taxAmount != nil
-        invoiceDict["hasTax2"] = invoice.tax2 != nil && invoice.tax2Amount != nil
-        invoiceDict["hasDiscount"] = invoice.discount != nil && invoice.discountAmount != nil
-
-        let totalHours = lineItems.reduce(Decimal.zero) { sum, item in
-            sum + ((item["quantity"] as? Decimal) ?? 0)
-        }
-        invoiceDict["totalHours"] = totalHours
-
-        dict["invoice"] = invoiceDict
-
-        return dict
     }
 
     // Minimal SVG logo for template editor preview (matches "Design Studio GmbH")

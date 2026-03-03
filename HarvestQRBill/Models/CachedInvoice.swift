@@ -11,12 +11,12 @@ final class CachedInvoice {
     private static let jsonEncoder = JSONEncoder()
     private static let jsonDecoder = JSONDecoder()
 
-    @Attribute(.unique) var id: Int
-    var clientKey: String
-    var number: String
+    @Attribute(.unique) var id: Int = 0
+    var clientKey: String = ""
+    var number: String = ""
     var purchaseOrder: String?
-    var amount: Decimal
-    var dueAmount: Decimal
+    var amount: Decimal = 0
+    var dueAmount: Decimal = 0
     var tax: Decimal?
     var taxAmount: Decimal?
     var tax2: Decimal?
@@ -25,28 +25,28 @@ final class CachedInvoice {
     var discountAmount: Decimal?
     var subject: String?
     var notes: String?
-    var currency: String
-    var stateRaw: String
+    var currency: String = ""
+    var stateRaw: String = ""
     var periodStart: Date?
     var periodEnd: Date?
-    var issueDate: Date
-    var dueDate: Date
+    var issueDate: Date = Date.distantPast
+    var dueDate: Date = Date.distantPast
     var sentAt: Date?
     var paidAt: Date?
     var paidDate: Date?
     var closedAt: Date?
-    var createdAt: Date
-    var updatedAt: Date
+    var createdAt: Date = Date.distantPast
+    var updatedAt: Date = Date.distantPast
 
     // Client info (flattened)
-    var clientId: Int
-    var clientName: String
+    var clientId: Int = 0
+    var clientName: String = ""
 
     // Line items stored as JSON data
     var lineItemsData: Data?
 
     // Cache metadata
-    var lastFetched: Date
+    var lastFetched: Date = Date.distantPast
 
     var state: InvoiceState {
         InvoiceState(rawValue: stateRaw) ?? .open
@@ -54,72 +54,45 @@ final class CachedInvoice {
 
     init(from invoice: Invoice) {
         self.id = invoice.id
-        self.clientKey = invoice.clientKey
-        self.number = invoice.number
-        self.purchaseOrder = invoice.purchaseOrder
-        self.amount = invoice.amount
-        self.dueAmount = invoice.dueAmount
-        self.tax = invoice.tax
-        self.taxAmount = invoice.taxAmount
-        self.tax2 = invoice.tax2
-        self.tax2Amount = invoice.tax2Amount
-        self.discount = invoice.discount
-        self.discountAmount = invoice.discountAmount
-        self.subject = invoice.subject
-        self.notes = invoice.notes
-        self.currency = invoice.currency
-        self.stateRaw = invoice.state.rawValue
-        self.periodStart = invoice.periodStart
-        self.periodEnd = invoice.periodEnd
-        self.issueDate = invoice.issueDate
-        self.dueDate = invoice.dueDate
-        self.sentAt = invoice.sentAt
-        self.paidAt = invoice.paidAt
-        self.paidDate = invoice.paidDate
-        self.closedAt = invoice.closedAt
-        self.createdAt = invoice.createdAt
-        self.updatedAt = invoice.updatedAt
-        self.clientId = invoice.client.id
-        self.clientName = invoice.client.name
-        self.lastFetched = Date()
-
-        if let lineItems = invoice.lineItems {
-            self.lineItemsData = try? Self.jsonEncoder.encode(lineItems)
-        }
+        assign(from: invoice)
     }
 
     func update(from invoice: Invoice) {
-        self.clientKey = invoice.clientKey
-        self.number = invoice.number
-        self.purchaseOrder = invoice.purchaseOrder
-        self.amount = invoice.amount
-        self.dueAmount = invoice.dueAmount
-        self.tax = invoice.tax
-        self.taxAmount = invoice.taxAmount
-        self.tax2 = invoice.tax2
-        self.tax2Amount = invoice.tax2Amount
-        self.discount = invoice.discount
-        self.discountAmount = invoice.discountAmount
-        self.subject = invoice.subject
-        self.notes = invoice.notes
-        self.currency = invoice.currency
-        self.stateRaw = invoice.state.rawValue
-        self.periodStart = invoice.periodStart
-        self.periodEnd = invoice.periodEnd
-        self.issueDate = invoice.issueDate
-        self.dueDate = invoice.dueDate
-        self.sentAt = invoice.sentAt
-        self.paidAt = invoice.paidAt
-        self.paidDate = invoice.paidDate
-        self.closedAt = invoice.closedAt
-        self.createdAt = invoice.createdAt
-        self.updatedAt = invoice.updatedAt
-        self.clientId = invoice.client.id
-        self.clientName = invoice.client.name
-        self.lastFetched = Date()
+        assign(from: invoice)
+    }
+
+    private func assign(from invoice: Invoice) {
+        clientKey = invoice.clientKey
+        number = invoice.number
+        purchaseOrder = invoice.purchaseOrder
+        amount = invoice.amount
+        dueAmount = invoice.dueAmount
+        tax = invoice.tax
+        taxAmount = invoice.taxAmount
+        tax2 = invoice.tax2
+        tax2Amount = invoice.tax2Amount
+        discount = invoice.discount
+        discountAmount = invoice.discountAmount
+        subject = invoice.subject
+        notes = invoice.notes
+        currency = invoice.currency
+        stateRaw = invoice.state.rawValue
+        periodStart = invoice.periodStart
+        periodEnd = invoice.periodEnd
+        issueDate = invoice.issueDate
+        dueDate = invoice.dueDate
+        sentAt = invoice.sentAt
+        paidAt = invoice.paidAt
+        paidDate = invoice.paidDate
+        closedAt = invoice.closedAt
+        createdAt = invoice.createdAt
+        updatedAt = invoice.updatedAt
+        clientId = invoice.client.id
+        clientName = invoice.client.name
+        lastFetched = Date()
 
         if let lineItems = invoice.lineItems {
-            self.lineItemsData = try? Self.jsonEncoder.encode(lineItems)
+            lineItemsData = try? Self.jsonEncoder.encode(lineItems)
         }
     }
 

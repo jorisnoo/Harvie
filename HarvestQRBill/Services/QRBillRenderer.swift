@@ -117,15 +117,7 @@ struct QRBillRenderer {
         y -= 5 * mmToPoints
 
         // Account / Payable to
-        y = drawText(context: context, text: labels.accountPayableTo, x: leftMargin, y: y, fontSize: 6, bold: true, maxWidth: maxWidth)
-        y = drawText(context: context, text: IBANValidator.format(data.creditorIBAN), x: leftMargin, y: y, fontSize: 8, bold: false, maxWidth: maxWidth)
-        y = drawText(context: context, text: data.creditorAddress.name, x: leftMargin, y: y, fontSize: 8, bold: false, maxWidth: maxWidth)
-
-        if let streetLine = data.creditorAddress.streetLine {
-            y = drawText(context: context, text: streetLine, x: leftMargin, y: y, fontSize: 8, bold: false, maxWidth: maxWidth)
-        }
-        y = drawText(context: context, text: data.creditorAddress.cityLine, x: leftMargin, y: y, fontSize: 8, bold: false, maxWidth: maxWidth)
-
+        y = drawCreditorBlock(context: context, data: data, x: leftMargin, y: y, fontSize: 8, labelFontSize: 6, maxWidth: maxWidth)
         y -= 5 * mmToPoints
 
         // Reference
@@ -136,18 +128,7 @@ struct QRBillRenderer {
         }
 
         // Payable by
-        if let debtor = data.debtorAddress {
-            y = drawText(context: context, text: labels.payableBy, x: leftMargin, y: y, fontSize: 6, bold: true, maxWidth: maxWidth)
-            y = drawText(context: context, text: debtor.name, x: leftMargin, y: y, fontSize: 8, bold: false, maxWidth: maxWidth, wrap: true)
-            if let streetLine = debtor.streetLine {
-                y = drawText(context: context, text: streetLine, x: leftMargin, y: y, fontSize: 8, bold: false, maxWidth: maxWidth, wrap: true)
-            }
-            y = drawText(context: context, text: debtor.cityLine, x: leftMargin, y: y, fontSize: 8, bold: false, maxWidth: maxWidth, wrap: true)
-        } else {
-            y = drawText(context: context, text: labels.payableByPlaceholder, x: leftMargin, y: y, fontSize: 6, bold: true, maxWidth: maxWidth)
-            drawCornerMarks(context: context, xMM: marginMM, yMM: y / mmToPoints - 20, widthMM: 52, heightMM: 20)
-            y -= 20 * mmToPoints
-        }
+        y = drawDebtorBlock(context: context, data: data, x: leftMargin, y: y, fontSize: 8, labelFontSize: 6, maxWidth: maxWidth, placeholderWidthMM: 52, placeholderHeightMM: 20)
 
         // Currency and Amount - fixed position at bottom
         let bottomY: CGFloat = 10 * mmToPoints
@@ -159,7 +140,6 @@ struct QRBillRenderer {
         if let amount = data.amount {
             _ = drawText(context: context, text: formatAmount(amount), x: amountX, y: bottomY, fontSize: 8, bold: false, maxWidth: 30 * mmToPoints)
         }
-
     }
 
     // MARK: - Payment Section (Right, 148mm wide, at bottom of A4)
@@ -191,15 +171,7 @@ struct QRBillRenderer {
         var textY = titleY
 
         // Konto / Zahlbar an
-        textY = drawText(context: context, text: labels.accountPayableTo, x: textColumnX, y: textY, fontSize: 8, bold: true, maxWidth: textColumnMaxWidth)
-        textY = drawText(context: context, text: IBANValidator.format(data.creditorIBAN), x: textColumnX, y: textY, fontSize: 10, bold: false, maxWidth: textColumnMaxWidth)
-        textY = drawText(context: context, text: data.creditorAddress.name, x: textColumnX, y: textY, fontSize: 10, bold: false, maxWidth: textColumnMaxWidth)
-
-        if let streetLine = data.creditorAddress.streetLine {
-            textY = drawText(context: context, text: streetLine, x: textColumnX, y: textY, fontSize: 10, bold: false, maxWidth: textColumnMaxWidth)
-        }
-        textY = drawText(context: context, text: data.creditorAddress.cityLine, x: textColumnX, y: textY, fontSize: 10, bold: false, maxWidth: textColumnMaxWidth)
-
+        textY = drawCreditorBlock(context: context, data: data, x: textColumnX, y: textY, fontSize: 10, labelFontSize: 8, maxWidth: textColumnMaxWidth)
         textY -= 5 * mmToPoints
 
         // Referenz
@@ -210,19 +182,7 @@ struct QRBillRenderer {
         }
 
         // Zahlbar durch (must come before Additional Information per QR-bill spec)
-        if let debtor = data.debtorAddress {
-            textY = drawText(context: context, text: labels.payableBy, x: textColumnX, y: textY, fontSize: 8, bold: true, maxWidth: textColumnMaxWidth)
-            textY = drawText(context: context, text: debtor.name, x: textColumnX, y: textY, fontSize: 10, bold: false, maxWidth: textColumnMaxWidth, wrap: true)
-            if let streetLine = debtor.streetLine {
-                textY = drawText(context: context, text: streetLine, x: textColumnX, y: textY, fontSize: 10, bold: false, maxWidth: textColumnMaxWidth, wrap: true)
-            }
-            textY = drawText(context: context, text: debtor.cityLine, x: textColumnX, y: textY, fontSize: 10, bold: false, maxWidth: textColumnMaxWidth, wrap: true)
-            textY -= 5 * mmToPoints
-        } else {
-            textY = drawText(context: context, text: labels.payableByPlaceholder, x: textColumnX, y: textY, fontSize: 8, bold: true, maxWidth: textColumnMaxWidth)
-            drawCornerMarks(context: context, xMM: textColumnX / mmToPoints, yMM: textY / mmToPoints - 25, widthMM: 65, heightMM: 25)
-            textY -= 25 * mmToPoints
-        }
+        textY = drawDebtorBlock(context: context, data: data, x: textColumnX, y: textY, fontSize: 10, labelFontSize: 8, maxWidth: textColumnMaxWidth, placeholderWidthMM: 65, placeholderHeightMM: 25)
 
         // Zusätzliche Informationen
         if let message = data.unstructuredMessage, !message.isEmpty {
@@ -240,6 +200,48 @@ struct QRBillRenderer {
         if let amount = data.amount {
             _ = drawText(context: context, text: formatAmount(amount), x: amountX, y: bottomY, fontSize: 10, bold: false, maxWidth: 50 * mmToPoints)
         }
+    }
+
+    // MARK: - Shared Address Blocks
+
+    @discardableResult
+    private func drawCreditorBlock(
+        context: CGContext, data: QRBillData,
+        x: CGFloat, y: CGFloat,
+        fontSize: CGFloat, labelFontSize: CGFloat, maxWidth: CGFloat
+    ) -> CGFloat {
+        var y = y
+        y = drawText(context: context, text: labels.accountPayableTo, x: x, y: y, fontSize: labelFontSize, bold: true, maxWidth: maxWidth)
+        y = drawText(context: context, text: IBANValidator.format(data.creditorIBAN), x: x, y: y, fontSize: fontSize, bold: false, maxWidth: maxWidth)
+        y = drawText(context: context, text: data.creditorAddress.name, x: x, y: y, fontSize: fontSize, bold: false, maxWidth: maxWidth)
+        if let streetLine = data.creditorAddress.streetLine {
+            y = drawText(context: context, text: streetLine, x: x, y: y, fontSize: fontSize, bold: false, maxWidth: maxWidth)
+        }
+        y = drawText(context: context, text: data.creditorAddress.cityLine, x: x, y: y, fontSize: fontSize, bold: false, maxWidth: maxWidth)
+        return y
+    }
+
+    @discardableResult
+    private func drawDebtorBlock(
+        context: CGContext, data: QRBillData,
+        x: CGFloat, y: CGFloat,
+        fontSize: CGFloat, labelFontSize: CGFloat, maxWidth: CGFloat,
+        placeholderWidthMM: CGFloat, placeholderHeightMM: CGFloat
+    ) -> CGFloat {
+        var y = y
+        if let debtor = data.debtorAddress {
+            y = drawText(context: context, text: labels.payableBy, x: x, y: y, fontSize: labelFontSize, bold: true, maxWidth: maxWidth)
+            y = drawText(context: context, text: debtor.name, x: x, y: y, fontSize: fontSize, bold: false, maxWidth: maxWidth, wrap: true)
+            if let streetLine = debtor.streetLine {
+                y = drawText(context: context, text: streetLine, x: x, y: y, fontSize: fontSize, bold: false, maxWidth: maxWidth, wrap: true)
+            }
+            y = drawText(context: context, text: debtor.cityLine, x: x, y: y, fontSize: fontSize, bold: false, maxWidth: maxWidth, wrap: true)
+        } else {
+            y = drawText(context: context, text: labels.payableByPlaceholder, x: x, y: y, fontSize: labelFontSize, bold: true, maxWidth: maxWidth)
+            drawCornerMarks(context: context, xMM: x / mmToPoints, yMM: y / mmToPoints - placeholderHeightMM, widthMM: placeholderWidthMM, heightMM: placeholderHeightMM)
+            y -= placeholderHeightMM * mmToPoints
+        }
+        return y
     }
 
     // MARK: - Drawing Helpers

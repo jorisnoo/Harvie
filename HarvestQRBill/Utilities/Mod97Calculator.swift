@@ -23,8 +23,8 @@ struct Mod97Calculator {
         for char in string {
             if char.isNumber {
                 numericString.append(char)
-            } else if char.isLetter {
-                let value = Int(char.asciiValue!) - Int(Character("A").asciiValue!) + 10
+            } else if char.isLetter, let ascii = char.asciiValue {
+                let value = Int(ascii) - Int(Character("A").asciiValue!) + 10
                 numericString.append(String(value))
             }
         }

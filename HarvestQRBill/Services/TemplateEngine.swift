@@ -18,8 +18,8 @@ struct TemplateEngine {
         return f
     }()
 
-    private static let boldRegex = try! NSRegularExpression(pattern: "\\*\\*(.+?)\\*\\*")
-    private static let italicRegex = try! NSRegularExpression(pattern: "(?<!\\\\)\\*(.+?)(?<!\\\\)\\*")
+    private static let boldRegex = /\*\*(.+?)\*\*/
+    private static let italicRegex = /\*(.+?)\*/
 
     private static func cachedDateFormatter(format: String) -> DateFormatter {
         let key = format as NSString
@@ -353,14 +353,17 @@ struct TemplateEngine {
             .replacingOccurrences(of: "<", with: "&lt;")
             .replacingOccurrences(of: ">", with: "&gt;")
 
-        // Bold: **text**
-        let nsResult = NSMutableString(string: result)
-        boldRegex.replaceMatches(in: nsResult, range: NSRange(location: 0, length: nsResult.length), withTemplate: "<strong>$1</strong>")
+        // Protect escaped asterisks from bold/italic matching
+        result = result.replacingOccurrences(of: "\\*", with: "\u{FFFD}")
 
-        // Bold: *text*
-        italicRegex.replaceMatches(in: nsResult, range: NSRange(location: 0, length: nsResult.length), withTemplate: "<strong>$1</strong>")
+        // Bold: **text** (must run before italic)
+        result = result.replacing(boldRegex) { "<strong>\($0.1)</strong>" }
 
-        result = nsResult as String
+        // Italic: *text*
+        result = result.replacing(italicRegex) { "<em>\($0.1)</em>" }
+
+        // Restore escaped asterisks
+        result = result.replacingOccurrences(of: "\u{FFFD}", with: "*")
 
         // List items and line breaks
         let lines = result.split(separator: "\n", omittingEmptySubsequences: false)
