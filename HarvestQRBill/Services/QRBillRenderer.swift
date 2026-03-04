@@ -186,6 +186,7 @@ struct QRBillRenderer {
 
         // Zusätzliche Informationen
         if let message = data.unstructuredMessage, !message.isEmpty {
+            textY -= 5 * mmToPoints
             textY = drawText(context: context, text: labels.additionalInfo, x: textColumnX, y: textY, fontSize: 8, bold: true, maxWidth: textColumnMaxWidth)
             _ = drawText(context: context, text: message, x: textColumnX, y: textY, fontSize: 10, bold: false, maxWidth: textColumnMaxWidth)
         }
