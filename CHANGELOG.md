@@ -2,6 +2,45 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.4.0](https://github.com/jorisnoo/HarvestQRBill/releases/tag/v0.4.0) (2026-03-04)
+
+### Features
+
+- enable text selection on download path caption in settings ([1565d31](https://github.com/jorisnoo/HarvestQRBill/commit/1565d31fa3f92f4e3f3a9433c70050bad2fa3539))
+- make paid watermark customizable with HTML/CSS styling and settings UI ([b751c3c](https://github.com/jorisnoo/HarvestQRBill/commit/b751c3c1ea4de5b077f0014b7f8bbff1d426a7c4))
+- add localized "PAID" watermark overlay to invoice PDFs for paid invoices ([7daec86](https://github.com/jorisnoo/HarvestQRBill/commit/7daec864636ae03e4957057e6c62c3c8d917d15e))
+- add focus state tracking and visual focus rings to editable fields in invoice detail ([9a5deb8](https://github.com/jorisnoo/HarvestQRBill/commit/9a5deb828ae810e745b26ca94ae76229006f1c6d))
+- add label editor for customizing template and QR bill labels per language ([2b30132](https://github.com/jorisnoo/HarvestQRBill/commit/2b301322da3e5a26c2d5211749d8a5a7c4c887de))
+- add helper text for company logo setting in templates ([16e4573](https://github.com/jorisnoo/HarvestQRBill/commit/16e45737ac0a588fd2e02fe9a082fcf32e16103a))
+- add template variables reference page and insert variables at cursor position ([7bd1f96](https://github.com/jorisnoo/HarvestQRBill/commit/7bd1f969f34fe0661ec6b79c173b9bfde236bb12))
+- localize QR bill labels based on selected template language ([37bd01a](https://github.com/jorisnoo/HarvestQRBill/commit/37bd01a5b3449885889a8108f0311b7678d49be0))
+- add markdown list support to template engine with em-dash styled list rendering ([5da3c45](https://github.com/jorisnoo/HarvestQRBill/commit/5da3c4534f5b066755affd7174e6c75557c46eab))
+- store user templates on disk with file watching and external editor support ([d092dce](https://github.com/jorisnoo/HarvestQRBill/commit/d092dcef0690a2e839bd34b3b5add53ebd8b44de))
+
+### Bug Fixes
+
+- normalize toolbar button heights for consistent alignment in template list ([cf3b6ce](https://github.com/jorisnoo/HarvestQRBill/commit/cf3b6ce3baaaec9b5e0de77896d329248d3b6c05))
+- add spacing before additional info section in QR bill renderer ([c11a2f7](https://github.com/jorisnoo/HarvestQRBill/commit/c11a2f701582124762fe469928a58b76bc554865))
+- treat single-asterisk markdown as bold instead of italic in template engine ([c244bc7](https://github.com/jorisnoo/HarvestQRBill/commit/c244bc782d4bbc84640ab0185707b852c9e903c5))
+- auto-clear saved indicator after 2s and show default values in label editor fields ([b23ea79](https://github.com/jorisnoo/HarvestQRBill/commit/b23ea79aa7fc73bddb62511783d3c8793998d4c3))
+- allow multiline line item descriptions and adjust text field padding ([c0ce14b](https://github.com/jorisnoo/HarvestQRBill/commit/c0ce14ba8bc87e83ba54576eacbfb95816ee61b4))
+- preserve scroll position in HTML editor and extract PreviewPanel to reduce SwiftUI re-evaluation ([a3b25a7](https://github.com/jorisnoo/HarvestQRBill/commit/a3b25a78e7b9a5fc3334b1c854ba86a4c8061fb0))
+
+### Code Refactoring
+
+- deduplicate PDF/QR-bill logic, extract filtering models and export into separate files ([0fc1bad](https://github.com/jorisnoo/HarvestQRBill/commit/0fc1bad65d869cee01697e4842a4087212dc3186))
+- simplify paid watermark styling, fix overlay alignment, and remove custom text option ([532b5f0](https://github.com/jorisnoo/HarvestQRBill/commit/532b5f0ded5583998d8b314d5a0f80eec9437f0e))
+- consolidate paid date logic into effectivePaidDate and deduplicate preview HTML builder ([08130ba](https://github.com/jorisnoo/HarvestQRBill/commit/08130ba19faa5d61d22eddfbd138e6556eab0d96))
+- move app settings from Keychain to UserDefaults and improve template selection error handling ([1e7783f](https://github.com/jorisnoo/HarvestQRBill/commit/1e7783fe683a8a7a986b702a4970517701c98e90))
+- extract EditableField utility and consolidate sheet state in InvoiceDetailView ([c97b4f2](https://github.com/jorisnoo/HarvestQRBill/commit/c97b4f296aedcc06906e39f9ff9630bdee86acc0))
+
+### Continuous Integration
+
+- add automatic Homebrew cask update step to release workflow ([55ee136](https://github.com/jorisnoo/HarvestQRBill/commit/55ee1361d6b8652c4696162041ff7af784afe2a7))
+
+### Chores
+
+- add .worktrees directory to .gitignore ([859cce5](https://github.com/jorisnoo/HarvestQRBill/commit/859cce55bb88e75c7331db5c6e67ac7336be0557))
 ## [0.3.0](https://github.com/jorisnoo/HarvestQRBill/releases/tag/v0.3.0) (2026-02-16)
 
 ### Features
