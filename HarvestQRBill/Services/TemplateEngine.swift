@@ -353,14 +353,14 @@ struct TemplateEngine {
             .replacingOccurrences(of: "<", with: "&lt;")
             .replacingOccurrences(of: ">", with: "&gt;")
 
-        // Protect escaped asterisks from bold/italic matching
+        // Protect escaped asterisks from bold matching
         result = result.replacingOccurrences(of: "\\*", with: "\u{FFFD}")
 
-        // Bold: **text** (must run before italic)
+        // Bold: **text** (must run before single-asterisk bold)
         result = result.replacing(boldRegex) { "<strong>\($0.1)</strong>" }
 
-        // Italic: *text*
-        result = result.replacing(italicRegex) { "<em>\($0.1)</em>" }
+        // Bold: *text* (single asterisk also treated as bold in this project)
+        result = result.replacing(italicRegex) { "<strong>\($0.1)</strong>" }
 
         // Restore escaped asterisks
         result = result.replacingOccurrences(of: "\u{FFFD}", with: "*")
