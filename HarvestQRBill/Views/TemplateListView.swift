@@ -49,6 +49,7 @@ struct TemplateListView: View {
                     createTemplate()
                 } label: {
                     Image(systemName: "plus")
+                        .frame(height: 16)
                 }
                 .help("New template")
 
@@ -57,7 +58,7 @@ struct TemplateListView: View {
                     duplicateTemplate(selected)
                 } label: {
                     Image(systemName: "doc.on.doc")
-                        .imageScale(.small)
+                        .frame(height: 16)
                 }
                 .disabled(selectedTemplate == nil)
                 .help("Duplicate template")
@@ -73,6 +74,7 @@ struct TemplateListView: View {
                     showDeleteConfirmation = true
                 } label: {
                     Image(systemName: "minus")
+                        .frame(height: 16)
                 }
                 .disabled(selectedTemplate == nil || selectedTemplate?.isBuiltIn == true)
                 .help("Delete template")
@@ -83,18 +85,23 @@ struct TemplateListView: View {
                     TemplateFileManager.revealTemplatesFolder()
                 } label: {
                     Image(systemName: "folder")
+                        .frame(height: 16)
                 }
                 .help("Reveal templates folder")
 
-                Button("Preview") {
+                Button {
                     guard let selected = selectedTemplate else { return }
                     Task { await openPreview(for: selected) }
+                } label: {
+                    Text("Preview").frame(height: 16)
                 }
                 .disabled(selectedTemplate == nil)
 
-                Button("Edit") {
+                Button {
                     guard let selected = selectedTemplate else { return }
                     openEditor(for: selected)
+                } label: {
+                    Text("Edit").frame(height: 16)
                 }
                 .disabled(selectedTemplate == nil)
             }
