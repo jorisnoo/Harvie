@@ -30,7 +30,7 @@
 
 ## Requirements
 
-- macOS 15.0 (Sequoia) or later
+- macOS 14.0 (Sonoma) or later
 - Harvest account with API access
 
 ## Installation
