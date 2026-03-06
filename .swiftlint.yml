@@ -1,0 +1,38 @@
+excluded:
+  - DerivedData
+  - .build
+  - .worktrees
+  - HarvestQRBill/Services/DemoDataProvider.swift
+
+line_length:
+  warning: 150
+  error: 250
+
+type_body_length:
+  warning: 700
+  error: 1000
+
+file_length:
+  warning: 900
+  error: 1200
+
+function_body_length:
+  warning: 80
+  error: 150
+
+function_parameter_count:
+  warning: 10
+  error: 14
+
+cyclomatic_complexity:
+  warning: 15
+  error: 25
+
+disabled_rules:
+  - identifier_name
+  - trailing_comma
+  - todo
+  - multiple_closures_with_trailing_closure
+  - nesting
+  - force_cast
+  - force_try

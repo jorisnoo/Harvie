@@ -161,6 +161,7 @@ struct AppSettings: Codable, Sendable, Equatable {
         )
     }
 
+    // swiftlint:disable:next line_length
     init(downloadBehavior: DownloadBehavior, defaultDownloadPath: String?, downloadBookmarkData: Data?, filenamePattern: String = defaultFilenamePattern, dateFormat: String = defaultDateFormat, isDemoMode: Bool = false, pdfSource: InvoicePDFSource = .harvestPDF, selectedTemplateId: UUID? = nil, templateLanguage: TemplateLanguage = .en, paidMarkStyle: PaidMarkStyle = .default, labelOverrides: [String: [String: String]]? = nil) {
         self.downloadBehavior = downloadBehavior
         self.defaultDownloadPath = defaultDownloadPath

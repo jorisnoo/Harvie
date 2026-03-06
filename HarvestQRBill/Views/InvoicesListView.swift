@@ -423,7 +423,6 @@ struct StateIndicator: View {
     }
 }
 
-
 #Preview {
     NavigationStack {
         InvoicesListView(viewModel: InvoicesViewModel())
