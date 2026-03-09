@@ -51,9 +51,9 @@ struct MultiSelectionView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .sheet(isPresented: $showChangeDateSheet) {
             ConfirmationSheet(
-                title: "Change Issue Date",
-                message: "Set issue date for \(selectedInvoices.count) invoice(s)",
-                confirmLabel: "Apply",
+                title: Strings.InvoiceDetail.changeIssueDate,
+                message: Strings.MultiSelection.setIssueDateMessage(selectedInvoices.count),
+                confirmLabel: Strings.Common.apply,
                 isProcessing: viewModel.isUpdating,
                 onConfirm: {
                     Task {
@@ -66,13 +66,13 @@ struct MultiSelectionView: View {
             ) {
                 HStack {
                     Spacer()
-                    Button("Today") { batchIssueDate = Date() }
+                    Button(Strings.Common.today) { batchIssueDate = Date() }
                         .buttonStyle(.bordered)
                         .controlSize(.small)
                         .disabled(Calendar.current.isDateInToday(batchIssueDate))
                 }
 
-                DatePicker("Issue Date", selection: $batchIssueDate, displayedComponents: .date)
+                DatePicker(Strings.InvoiceDetail.issueDate, selection: $batchIssueDate, displayedComponents: .date)
                     .datePickerStyle(.graphical)
                     .labelsHidden()
 
@@ -83,10 +83,10 @@ struct MultiSelectionView: View {
         }
         .sheet(isPresented: $showMarkAsSentSheet) {
             ConfirmationSheet(
-                title: "Mark as Sent",
-                message: "Mark \(selectedInvoices.count) invoice(s) as sent?",
-                detail: "The sent date will be set to the current time.",
-                confirmLabel: "Mark as Sent",
+                title: Strings.InvoiceDetail.markAsSent,
+                message: Strings.MultiSelection.markAsSentMessage(selectedInvoices.count),
+                detail: Strings.MultiSelection.sentDateDetail,
+                confirmLabel: Strings.InvoiceDetail.markAsSent,
                 isProcessing: viewModel.isUpdating,
                 onConfirm: {
                     Task {
@@ -104,9 +104,9 @@ struct MultiSelectionView: View {
         }
         .sheet(isPresented: $showMarkAsDraftSheet) {
             ConfirmationSheet(
-                title: "Mark as Draft",
-                message: "Revert \(selectedInvoices.count) invoice(s) to draft?",
-                confirmLabel: "Mark as Draft",
+                title: Strings.InvoiceDetail.markAsDraft,
+                message: Strings.MultiSelection.markAsDraftMessage(selectedInvoices.count),
+                confirmLabel: Strings.InvoiceDetail.markAsDraft,
                 isProcessing: viewModel.isUpdating,
                 onConfirm: {
                     Task {
@@ -129,7 +129,7 @@ struct MultiSelectionView: View {
                 batchIssueDate = Date()
                 showChangeDateSheet = true
             } label: {
-                Label("Change Date", systemImage: "calendar")
+                Label(Strings.InvoiceDetail.changeDate, systemImage: "calendar")
                     .frame(maxWidth: 150)
             }
             .buttonStyle(.bordered)
@@ -138,7 +138,7 @@ struct MultiSelectionView: View {
             Button {
                 showMarkAsSentSheet = true
             } label: {
-                Label("Mark as Sent", systemImage: "paperplane")
+                Label(Strings.InvoiceDetail.markAsSent, systemImage: "paperplane")
                     .frame(maxWidth: 150)
             }
             .buttonStyle(.bordered)
@@ -150,7 +150,7 @@ struct MultiSelectionView: View {
         Button {
             showMarkAsDraftSheet = true
         } label: {
-            Label("Mark as Draft", systemImage: "pencil")
+            Label(Strings.InvoiceDetail.markAsDraft, systemImage: "pencil")
                 .frame(maxWidth: 150)
         }
         .buttonStyle(.bordered)
@@ -163,7 +163,7 @@ struct MultiSelectionView: View {
                 .font(.system(size: 48))
                 .foregroundStyle(.secondary)
 
-            Text("\(selectedInvoices.count) Invoices Selected")
+            Text(Strings.MultiSelection.invoicesSelected(selectedInvoices.count))
                 .font(.title2)
                 .fontWeight(.semibold)
         }
@@ -172,7 +172,7 @@ struct MultiSelectionView: View {
     private var summaryStats: some View {
         HStack(spacing: 24) {
             VStack {
-                Text("Total")
+                Text(Strings.MultiSelection.total)
                     .font(.caption)
                     .foregroundStyle(.secondary)
                 Text(CurrencyFormatter.format(totalAmount, currency: primaryCurrency))
@@ -183,7 +183,7 @@ struct MultiSelectionView: View {
             Divider().frame(height: 32)
 
             VStack {
-                Text("Clients")
+                Text(Strings.MultiSelection.clients)
                     .font(.caption)
                     .foregroundStyle(.secondary)
                 Text("\(uniqueClients)")
@@ -200,7 +200,7 @@ struct MultiSelectionView: View {
                     await viewModel.exportSelectedInvoices(withQRBill: true)
                 }
             } label: {
-                Label("Export with QR Bill", systemImage: "qrcode")
+                Label(Strings.InvoicesList.exportWithQRBill, systemImage: "qrcode")
                     .frame(maxWidth: 220)
             }
             .buttonStyle(.borderedProminent)
@@ -212,7 +212,7 @@ struct MultiSelectionView: View {
                     await viewModel.exportSelectedInvoices(withQRBill: false)
                 }
             } label: {
-                Label("Export without QR Bill", systemImage: "doc.text")
+                Label(Strings.InvoicesList.exportWithoutQRBill, systemImage: "doc.text")
                     .frame(maxWidth: 220)
             }
             .buttonStyle(.bordered)
@@ -239,7 +239,7 @@ struct MultiSelectionView: View {
                     HStack {
                         Text(invoice.number)
                             .fontWeight(.medium)
-                        Text("•")
+                        Text(Strings.MultiSelection.bullet)
                             .foregroundStyle(.tertiary)
                         Text(invoice.client.name)
                             .foregroundStyle(.secondary)

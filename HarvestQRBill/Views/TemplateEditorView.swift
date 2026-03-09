@@ -27,7 +27,7 @@ struct TemplateEditorView: View {
 
     private var toolbar: some View {
         HStack(spacing: 12) {
-            TextField("Template Name", text: $viewModel.name)
+            TextField(Strings.Templates.templateName, text: $viewModel.name)
                 .textFieldStyle(.roundedBorder)
                 .frame(width: 200)
                 .disabled(viewModel.isBuiltIn)
@@ -35,7 +35,7 @@ struct TemplateEditorView: View {
             Spacer()
 
             if viewModel.isBuiltIn {
-                Label("Read Only", systemImage: "lock")
+                Label(Strings.Templates.readOnly, systemImage: "lock")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -44,19 +44,19 @@ struct TemplateEditorView: View {
                 Button {
                     viewModel.openInExternalEditor()
                 } label: {
-                    Label("Open in Editor", systemImage: "rectangle.portrait.and.arrow.right")
+                    Label(Strings.Templates.openInEditor, systemImage: "rectangle.portrait.and.arrow.right")
                 }
                 .controlSize(.small)
             }
 
             Toggle(isOn: $showVariablesPanel) {
-                Label("Variables", systemImage: "chevron.left.forwardslash.chevron.right")
+                Label(Strings.Templates.variables, systemImage: "chevron.left.forwardslash.chevron.right")
             }
             .toggleStyle(.button)
             .controlSize(.small)
 
             if viewModel.isDirty {
-                Button("Save") {
+                Button(Strings.Common.save) {
                     viewModel.save()
                 }
                 .keyboardShortcut("s", modifiers: .command)
@@ -117,7 +117,7 @@ private struct PreviewPanel: View {
     var body: some View {
         VStack(spacing: 0) {
             HStack {
-                Text("Preview")
+                Text(Strings.Common.preview)
                     .font(.caption)
                     .foregroundStyle(.secondary)
 
@@ -130,7 +130,7 @@ private struct PreviewPanel: View {
                 }
                 .buttonStyle(.borderless)
                 .controlSize(.small)
-                .help("Refresh preview")
+                .help(Strings.Templates.refreshPreview)
             }
             .padding(.horizontal, 12)
             .padding(.vertical, 8)

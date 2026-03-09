@@ -72,21 +72,21 @@ actor HarvestAPIService {
         var errorDescription: String? {
             switch self {
             case .invalidCredentials:
-                return "Invalid API credentials. Please check your settings."
+                return Strings.Errors.invalidCredentials
             case .invalidURL:
-                return "Failed to construct API request."
+                return Strings.Errors.invalidURL
             case .invalidSubdomain:
-                return "Invalid Harvest subdomain."
+                return Strings.Errors.invalidSubdomain
             case .unauthorized:
-                return "Unauthorized. Please check your API token."
+                return Strings.Errors.unauthorized
             case .notFound:
-                return "Resource not found."
+                return Strings.Errors.notFound
             case .serverError(let code):
-                return "Server error (code: \(code))"
+                return Strings.Errors.serverError(code)
             case .networkError:
-                return "Network connection failed."
+                return Strings.Errors.networkFailed
             case .decodingError:
-                return "Failed to parse server response."
+                return Strings.Errors.decodingFailed
             }
         }
     }

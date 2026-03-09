@@ -12,21 +12,21 @@ struct SettingsView: View {
     var body: some View {
         TabView {
             HarvestSettings(viewModel: viewModel)
-                .tabItem { Label("Harvest", systemImage: "cloud") }
+                .tabItem { Label(Strings.Settings.harvest, systemImage: "cloud") }
 
             QRBillSettings(viewModel: viewModel)
-                .tabItem { Label("QR Bill", systemImage: "qrcode") }
+                .tabItem { Label(Strings.Settings.qrBill, systemImage: "qrcode") }
 
             DownloadsSettings(viewModel: viewModel)
-                .tabItem { Label("Downloads", systemImage: "folder") }
+                .tabItem { Label(Strings.Settings.downloads, systemImage: "folder") }
 
             if FeatureFlags.customPDFTemplates {
                 TemplatesSettings(viewModel: viewModel)
-                    .tabItem { Label("Templates (Beta)", systemImage: "doc.richtext") }
+                    .tabItem { Label(Strings.Settings.templatesBeta, systemImage: "doc.richtext") }
             }
 
             FeedbackSettings()
-                .tabItem { Label("Feedback", systemImage: "bubble.left.and.text.bubble.right") }
+                .tabItem { Label(Strings.Settings.feedback, systemImage: "bubble.left.and.text.bubble.right") }
         }
         .frame(minWidth: 500, minHeight: 550)
         .task {
@@ -46,14 +46,14 @@ struct HarvestSettings: View {
 
     var body: some View {
         Form {
-            Section("API Credentials") {
-                LabeledContent("Access Token") {
+            Section(Strings.Settings.apiCredentials) {
+                LabeledContent(Strings.Settings.accessToken) {
                     SecureField("", text: $viewModel.harvestCredentials.accessToken)
                         .textContentType(.password)
                         .multilineTextAlignment(.trailing)
                 }
 
-                LabeledContent("Account ID") {
+                LabeledContent(Strings.Settings.accountID) {
                     TextField("", text: $viewModel.harvestCredentials.accountId)
                         .multilineTextAlignment(.trailing)
                 }
@@ -61,7 +61,7 @@ struct HarvestSettings: View {
 
             Section {
                 HStack {
-                    Button("Test Connection") {
+                    Button(Strings.Settings.testConnection) {
                         Task {
                             await viewModel.testConnection()
                         }
@@ -76,10 +76,10 @@ struct HarvestSettings: View {
                     if let result = viewModel.connectionTestResult {
                         switch result {
                         case .success:
-                            Label("Connected", systemImage: "checkmark.circle.fill")
+                            Label(Strings.Settings.connected, systemImage: "checkmark.circle.fill")
                                 .foregroundStyle(.green)
                         case .failure(let message):
-                            Label("Failed", systemImage: "xmark.circle.fill")
+                            Label(Strings.Settings.failed, systemImage: "xmark.circle.fill")
                                 .foregroundStyle(.red)
                                 .help(message)
                         }
@@ -87,7 +87,7 @@ struct HarvestSettings: View {
                 }
 
                 if !viewModel.harvestCredentials.subdomain.isEmpty {
-                    LabeledContent("Subdomain") {
+                    LabeledContent(Strings.Settings.subdomain) {
                         Text(viewModel.harvestCredentials.subdomain)
                             .foregroundStyle(.secondary)
                     }
@@ -95,7 +95,7 @@ struct HarvestSettings: View {
             }
 
             Section {
-                Text("Get your API credentials from Harvest Developer Tools.")
+                Text(Strings.Settings.apiCredentialsHint)
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -111,43 +111,43 @@ struct QRBillSettings: View {
 
     var body: some View {
         Form {
-            Section("Creditor Information") {
-                LabeledContent("IBAN") {
+            Section(Strings.Settings.creditorInformation) {
+                LabeledContent(Strings.Settings.iban) {
                     TextField("", text: $viewModel.creditorInfo.iban)
                         .textContentType(.creditCardNumber)
                         .multilineTextAlignment(.trailing)
                 }
 
-                LabeledContent("Name") {
+                LabeledContent(Strings.Settings.name) {
                     TextField("", text: $viewModel.creditorInfo.name)
                         .multilineTextAlignment(.trailing)
                 }
             }
 
-            Section("Address") {
-                LabeledContent("Street") {
+            Section(Strings.Settings.address) {
+                LabeledContent(Strings.Settings.street) {
                     TextField("", text: $viewModel.creditorInfo.streetName)
                         .multilineTextAlignment(.trailing)
                 }
 
-                LabeledContent("Number") {
+                LabeledContent(Strings.Settings.number) {
                     TextField("", text: $viewModel.creditorInfo.buildingNumber)
                         .frame(width: 80)
                         .multilineTextAlignment(.trailing)
                 }
 
-                LabeledContent("ZIP") {
+                LabeledContent(Strings.Settings.zip) {
                     TextField("", text: $viewModel.creditorInfo.postalCode)
                         .frame(width: 80)
                         .multilineTextAlignment(.trailing)
                 }
 
-                LabeledContent("City") {
+                LabeledContent(Strings.Settings.city) {
                     TextField("", text: $viewModel.creditorInfo.town)
                         .multilineTextAlignment(.trailing)
                 }
 
-                LabeledContent("Country") {
+                LabeledContent(Strings.Settings.country) {
                     TextField("", text: $viewModel.creditorInfo.country)
                         .frame(width: 80)
                         .multilineTextAlignment(.trailing)
@@ -155,7 +155,7 @@ struct QRBillSettings: View {
             }
 
             Section {
-                Text("This information appears on the QR bill as the payment recipient.")
+                Text(Strings.Settings.creditorHint)
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -183,8 +183,8 @@ struct DownloadsSettings: View {
 
     var body: some View {
         Form {
-            Section("Save Location") {
-                Picker("Save behavior", selection: $viewModel.appSettings.downloadBehavior) {
+            Section(Strings.Settings.saveLocation) {
+                Picker(Strings.Settings.saveBehavior, selection: $viewModel.appSettings.downloadBehavior) {
                     ForEach(DownloadBehavior.allCases, id: \.self) { behavior in
                         Text(behavior.displayName).tag(behavior)
                     }
@@ -192,13 +192,13 @@ struct DownloadsSettings: View {
                 .pickerStyle(.radioGroup)
 
                 if viewModel.appSettings.downloadBehavior == .useDefaultFolder {
-                    LabeledContent("Folder") {
+                    LabeledContent(Strings.Settings.folder) {
                         HStack {
-                            Text(viewModel.appSettings.defaultDownloadPath ?? "Not set")
+                            Text(viewModel.appSettings.defaultDownloadPath ?? Strings.Settings.notSet)
                                 .foregroundStyle(.secondary)
                                 .lineLimit(1)
                                 .truncationMode(.middle)
-                            Button("Choose...") {
+                            Button(Strings.Settings.chooseFolder) {
                                 viewModel.selectDownloadFolder()
                             }
                         }
@@ -206,21 +206,21 @@ struct DownloadsSettings: View {
                 }
             }
 
-            Section("Filename") {
-                LabeledContent("Pattern") {
+            Section(Strings.Settings.filename) {
+                LabeledContent(Strings.Settings.pattern) {
                     TextField("", text: $viewModel.appSettings.filenamePattern)
                         .font(.system(.body, design: .monospaced))
                         .multilineTextAlignment(.trailing)
                 }
 
-                LabeledContent("Date format") {
+                LabeledContent(Strings.Settings.dateFormat) {
                     TextField("", text: $viewModel.appSettings.dateFormat)
                         .font(.system(.body, design: .monospaced))
                         .multilineTextAlignment(.trailing)
                         .frame(width: 100)
                 }
 
-                LabeledContent("Preview") {
+                LabeledContent(Strings.Common.preview) {
                     Text(filenamePreview)
                         .foregroundStyle(.secondary)
                         .font(.system(.body, design: .monospaced))
@@ -229,20 +229,20 @@ struct DownloadsSettings: View {
 
             Section {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("Available placeholders:")
+                    Text(Strings.Settings.availablePlaceholders)
                         .fontWeight(.medium)
-                    Text("{number} - Invoice number")
-                    Text("{creditor} - Your company name")
-                    Text("{client} - Client name")
-                    Text("{date} - Date based on sort")
-                    Text("{issueDate} - Issue date")
-                    Text("{dueDate} - Due date")
-                    Text("{paidDate} - Paid date")
+                    Text(Strings.Settings.placeholderNumber)
+                    Text(Strings.Settings.placeholderCreditor)
+                    Text(Strings.Settings.placeholderClient)
+                    Text(Strings.Settings.placeholderDate)
+                    Text(Strings.Settings.placeholderIssueDate)
+                    Text(Strings.Settings.placeholderDueDate)
+                    Text(Strings.Settings.placeholderPaidDate)
 
-                    Text("Date format components:")
+                    Text(Strings.Settings.dateFormatComponents)
                         .fontWeight(.medium)
                         .padding(.top, 4)
-                    Text("YYYY (4-digit year), YY (2-digit year), MM (month), DD (day)")
+                    Text(Strings.Settings.dateFormatHelp)
                 }
                 .font(.caption)
                 .foregroundStyle(.secondary)
@@ -252,8 +252,8 @@ struct DownloadsSettings: View {
             PaidMarkSettings(viewModel: viewModel)
 
             #if DEBUG
-            Section("Demo") {
-                Toggle("Demo Mode", isOn: $viewModel.appSettings.isDemoMode)
+            Section(Strings.Settings.demo) {
+                Toggle(Strings.Settings.demoMode, isOn: $viewModel.appSettings.isDemoMode)
             }
             #endif
         }
@@ -268,13 +268,13 @@ struct PaidMarkSettings: View {
     @State private var isStyleExpanded = false
 
     var body: some View {
-        Section("Paid Mark") {
-            Toggle("Show watermark on paid invoices", isOn: $viewModel.appSettings.paidMarkStyle.enabled)
+        Section(Strings.Settings.paidMark) {
+            Toggle(Strings.Settings.showWatermark, isOn: $viewModel.appSettings.paidMarkStyle.enabled)
 
             if viewModel.appSettings.paidMarkStyle.enabled {
-                Toggle("Show paid date", isOn: $viewModel.appSettings.paidMarkStyle.showDate)
+                Toggle(Strings.Settings.showPaidDate, isOn: $viewModel.appSettings.paidMarkStyle.showDate)
 
-                DisclosureGroup("Watermark Style", isExpanded: $isStyleExpanded) {
+                DisclosureGroup(Strings.Settings.watermarkStyle, isExpanded: $isStyleExpanded) {
                     TextEditor(text: $viewModel.appSettings.paidMarkStyle.css)
                         .font(.system(.body, design: .monospaced))
                         .frame(minHeight: 160)
@@ -287,13 +287,13 @@ struct PaidMarkSettings: View {
                         )
 
                     HStack {
-                        Text("HTML: .watermark > .text + .date")
+                        Text(Strings.Settings.watermarkHtmlHint)
                             .font(.caption)
                             .foregroundStyle(.secondary)
 
                         Spacer()
 
-                        Button("Reset to Default") {
+                        Button(Strings.Settings.resetToDefault) {
                             viewModel.appSettings.paidMarkStyle.css = PaidMarkStyle.defaultCSS
                         }
                         .controlSize(.small)
@@ -315,7 +315,7 @@ struct TemplatesSettings: View {
     var body: some View {
         ScrollView {
             Form {
-                Section("Company Logo") {
+                Section(Strings.Settings.companyLogo) {
                     HStack {
                         if let logo = viewModel.logoImage {
                             Image(nsImage: logo)
@@ -323,31 +323,31 @@ struct TemplatesSettings: View {
                                 .aspectRatio(contentMode: .fit)
                                 .frame(maxHeight: 48)
                         } else {
-                            Text("No logo set")
+                            Text(Strings.Settings.noLogoSet)
                                 .foregroundStyle(.secondary)
                         }
 
                         Spacer()
 
                         HStack(spacing: 6) {
-                            Button("Choose Image...") {
+                            Button(Strings.Settings.chooseImage) {
                                 viewModel.selectLogo()
                             }
 
                             if viewModel.logoImage != nil {
-                                Button("Remove", role: .destructive) {
+                                Button(Strings.Settings.remove, role: .destructive) {
                                     viewModel.removeLogo()
                                 }
                             }
                         }
                     }
-                    Text("Used only in custom templates. Harvest PDFs use the logo configured in Harvest.")
+                    Text(Strings.Settings.logoHint)
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
 
-                Section("Invoice PDF Source") {
-                    Picker("PDF source", selection: $viewModel.appSettings.pdfSource) {
+                Section(Strings.Settings.invoicePDFSource) {
+                    Picker(Strings.Settings.pdfSource, selection: $viewModel.appSettings.pdfSource) {
                         ForEach(InvoicePDFSource.allCases, id: \.self) { source in
                             Text(source.displayName).tag(source)
                         }
@@ -355,7 +355,7 @@ struct TemplatesSettings: View {
                     .pickerStyle(.radioGroup)
 
                     HStack {
-                        Picker("Language", selection: $viewModel.appSettings.templateLanguage) {
+                        Picker(Strings.Settings.language, selection: $viewModel.appSettings.templateLanguage) {
                             ForEach(TemplateLanguage.allCases, id: \.self) { lang in
                                 Text(lang.displayName).tag(lang)
                             }
@@ -366,26 +366,24 @@ struct TemplatesSettings: View {
                         } label: {
                             Image(systemName: "character.textbox")
                         }
-                        .help("Customize labels")
+                        .help(Strings.Settings.customizeLabels)
                     }
 
                     if viewModel.appSettings.pdfSource == .template {
-                        Toggle("Hide Quantity column", isOn: Binding(
+                        Toggle(Strings.Settings.hideQuantityColumn, isOn: Binding(
                             get: { !viewModel.appSettings.columnVisibility.showQuantity },
                             set: { viewModel.appSettings.columnVisibility.showQuantity = !$0 }
                         ))
-                        Toggle("Hide Unit Price column", isOn: Binding(
+                        Toggle(Strings.Settings.hideUnitPriceColumn, isOn: Binding(
                             get: { !viewModel.appSettings.columnVisibility.showUnitPrice },
                             set: { viewModel.appSettings.columnVisibility.showUnitPrice = !$0 }
                         ))
-                        Toggle("Show Total Hours", isOn: $viewModel.appSettings.columnVisibility.showTotalHours)
+                        Toggle(Strings.Settings.showTotalHours, isOn: $viewModel.appSettings.columnVisibility.showTotalHours)
                     }
 
-                    // swiftlint:disable line_length
                     Text(viewModel.appSettings.pdfSource == .template
-                         ? "To hide columns on Harvest PDFs, change this in the Harvest web UI."
-                         : "Column visibility can be configured when using a custom template. For Harvest PDFs, change this in the Harvest web UI under Invoices → Configure → Hide columns.")
-                    // swiftlint:enable line_length
+                         ? Strings.Settings.templateColumnHint
+                         : Strings.Settings.harvestColumnHint)
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
@@ -427,22 +425,22 @@ struct TemplatesSettings: View {
 struct FeedbackSettings: View {
     var body: some View {
         Form {
-            Section("Contact") {
+            Section(Strings.Settings.contact) {
                 Link(destination: URL(string: "mailto:contact@noordermeer.ch")!) {
-                    Label("contact@noordermeer.ch", systemImage: "envelope")
+                    Label(Strings.Settings.contactEmail, systemImage: "envelope")
                 }
 
-                Text("Send us an email with questions, suggestions, or feedback.")
+                Text(Strings.Settings.contactHint)
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
 
-            Section("Report an Issue") {
+            Section(Strings.Settings.reportAnIssue) {
                 Link(destination: URL(string: "https://github.com/jorisnoo/HarvestQRBill/issues")!) {
-                    Label("Open GitHub Issues", systemImage: "exclamationmark.bubble")
+                    Label(Strings.Settings.openGitHubIssues, systemImage: "exclamationmark.bubble")
                 }
 
-                Text("Report bugs or request features on GitHub.")
+                Text(Strings.Settings.reportHint)
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }

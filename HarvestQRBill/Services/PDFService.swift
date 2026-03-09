@@ -22,13 +22,13 @@ actor PDFService {
         var errorDescription: String? {
             switch self {
             case .downloadFailed:
-                return "Failed to download the PDF from Harvest."
+                return Strings.Errors.downloadFailed
             case .invalidPDF:
-                return "The downloaded file is not a valid PDF."
+                return Strings.Errors.invalidPDF
             case .saveFailed:
-                return "Failed to save the PDF file."
+                return Strings.Errors.saveFailed
             case .qrBillGenerationFailed:
-                return "Failed to generate the QR bill."
+                return Strings.Errors.qrBillGenerationFailed
             }
         }
     }

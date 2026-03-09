@@ -1,0 +1,417 @@
+//
+//  Strings.swift
+//  HarvestQRBill
+//
+
+// swiftlint:disable file_length type_body_length
+
+import Foundation
+
+enum Strings {
+
+    // MARK: - Common
+
+    enum Common {
+        static let ok = "OK"
+        static let cancel = "Cancel"
+        static let save = "Save"
+        static let delete = "Delete"
+        static let apply = "Apply"
+        static let retry = "Retry"
+        static let done = "Done"
+        static let today = "Today"
+        static let preview = "Preview"
+        static let edit = "Edit"
+        static let error = "Error"
+        static let success = "Success"
+        static let select = "Select"
+        static let settings = "Settings"
+        static let refresh = "Refresh"
+        static let find = "Find"
+    }
+
+    // MARK: - App
+
+    enum App {
+        static let title = "HarvestQRBill"
+        static let checkForUpdates = "Check for Updates..."
+        static let restartAndUpdate = "Restart and Update"
+    }
+
+    // MARK: - Invoices List
+
+    enum InvoicesList {
+        static let title = "Invoices"
+        static let updating = "Updating..."
+        static let loading = "Loading invoices..."
+        static let noInvoices = "No Invoices"
+        static let setupRequired = "Setup Required"
+        static let openSettings = "Open Settings"
+        static let filterPrompt = "Filter invoices"
+        static let exportWithQRBill = "Export with QR Bill"
+        static let exportWithoutQRBill = "Export without QR Bill"
+        static let sortAndFilter = "Sort & Filter"
+        static let sortBy = "Sort By"
+        static let filterPeriod = "Filter Period"
+        static let all = "All"
+        static let stateOpen = "Open"
+        static let statePaid = "Paid"
+        static let stateDraft = "Draft"
+        static let stateClosed = "Closed"
+        static let exportingInvoices = "Exporting Invoices"
+        static let creditorWarning = "Configure creditor info in Settings to enable QR bill export."
+
+        static func filterByPeriod(_ period: String) -> String {
+            "Filter by \(period)"
+        }
+
+        static func invoiceCount(_ count: Int) -> String {
+            "\(count) invoice\(count == 1 ? "" : "s")"
+        }
+
+        static func noInvoicesForState(_ state: String) -> String {
+            "No \(state) invoices found."
+        }
+    }
+
+    // MARK: - Invoice Detail
+
+    enum InvoiceDetail {
+        static let previewButton = "Preview"
+        static let exportQRBill = "Export QR Bill"
+        static let changeDate = "Change Date"
+        static let sendViaEmail = "Send via Email\u{2026}"
+        static let markAsSentNoEmail = "Mark as Sent (no email)"
+        static let send = "Send"
+        static let markAsSent = "Mark as Sent"
+        static let markAsDraft = "Mark as Draft"
+        static let showInFinder = "Show in Finder"
+        static let invoiceTitle = "Invoice title"
+        static let saveTitle = "Save title"
+        static let notes = "Notes"
+        static let description = "Description"
+        static let price = "Price"
+        static let changeIssueDate = "Change Issue Date"
+        static let issueDate = "Issue Date"
+        static let invoiceSent = "Invoice Sent"
+        static let invoiceReverted = "Invoice Reverted"
+        static let selectAnInvoice = "Select an Invoice"
+        static let selectAnInvoiceDescription = "Choose an invoice from the list to view details and generate a QR bill."
+
+        static let previewTooltip = "Preview invoice PDF with Swiss QR bill (Space)"
+        static let exportTooltip = "Download invoice PDF with Swiss QR bill"
+        static let creditorRequiredTooltip = "Configure creditor info in Settings first"
+        static let sendTooltip = "Send invoice via email or mark as sent"
+
+        static func ofTotal(_ amount: String) -> String {
+            "of \(amount) total"
+        }
+
+        static func issuedAndSent(_ issueDate: String, _ sentTime: String) -> String {
+            "Issued \(issueDate), sent at \(sentTime)"
+        }
+
+        static func issued(_ date: String) -> String {
+            "Issued \(date)"
+        }
+
+        static func sent(_ date: String) -> String {
+            "Sent \(date)"
+        }
+
+        static func due(_ date: String) -> String {
+            "Due \(date)"
+        }
+
+        static func inclTax(_ rate: String, _ amount: String) -> String {
+            "Incl. \(rate)% tax (\(amount))"
+        }
+
+        static func discount(_ rate: String, _ amount: String) -> String {
+            "Discount \(rate)%: -\(amount)"
+        }
+
+        static func paid(_ date: String) -> String {
+            "Paid \(date)"
+        }
+
+        static func markAsSentMessage(_ number: String) -> String {
+            "Mark invoice \(number) as sent?"
+        }
+
+        static let sentDateDetail = "The sent date will be set to now."
+
+        static func markAsDraftMessage(_ number: String) -> String {
+            "Revert invoice \(number) to draft?"
+        }
+
+        static func invoiceSentMessage(_ number: String) -> String {
+            "Invoice \(number) has been marked as sent."
+        }
+
+        static func invoiceRevertedMessage(_ number: String) -> String {
+            "Invoice \(number) has been reverted to draft."
+        }
+
+        static func savedToPath(_ path: String) -> String {
+            "Invoice saved to:\n\(path)"
+        }
+
+        static let savedSuccessfully = "Invoice with QR bill saved successfully."
+
+        static func failedAction(_ label: String, _ error: String) -> String {
+            "Failed to \(label): \(error)"
+        }
+
+        static func failedActionGeneric(_ label: String) -> String {
+            "Failed to \(label). Please try again."
+        }
+
+        static func emailSubject(_ number: String) -> String {
+            "Invoice \(number)"
+        }
+
+        static let emailNotConfigured = "Email is not configured on this Mac."
+    }
+
+    // MARK: - Multi Selection
+
+    enum MultiSelection {
+        static let total = "Total"
+        static let clients = "Clients"
+        static let bullet = "\u{2022}"
+
+        static func invoicesSelected(_ count: Int) -> String {
+            "\(count) Invoices Selected"
+        }
+
+        static func setIssueDateMessage(_ count: Int) -> String {
+            "Set issue date for \(count) invoice(s)"
+        }
+
+        static func markAsSentMessage(_ count: Int) -> String {
+            "Mark \(count) invoice(s) as sent?"
+        }
+
+        static let sentDateDetail = "The sent date will be set to the current time."
+
+        static func markAsDraftMessage(_ count: Int) -> String {
+            "Revert \(count) invoice(s) to draft?"
+        }
+    }
+
+    // MARK: - Settings
+
+    enum Settings {
+        static let harvest = "Harvest"
+        static let qrBill = "QR Bill"
+        static let downloads = "Downloads"
+        static let templatesBeta = "Templates (Beta)"
+        static let feedback = "Feedback"
+
+        // Harvest
+        static let apiCredentials = "API Credentials"
+        static let accessToken = "Access Token"
+        static let accountID = "Account ID"
+        static let testConnection = "Test Connection"
+        static let connected = "Connected"
+        static let failed = "Failed"
+        static let subdomain = "Subdomain"
+        static let apiCredentialsHint = "Get your API credentials from Harvest Developer Tools."
+
+        // QR Bill
+        static let creditorInformation = "Creditor Information"
+        static let iban = "IBAN"
+        static let name = "Name"
+        static let address = "Address"
+        static let street = "Street"
+        static let number = "Number"
+        static let zip = "ZIP"
+        static let city = "City"
+        static let country = "Country"
+        static let creditorHint = "This information appears on the QR bill as the payment recipient."
+
+        // Downloads
+        static let saveLocation = "Save Location"
+        static let saveBehavior = "Save behavior"
+        static let folder = "Folder"
+        static let notSet = "Not set"
+        static let chooseFolder = "Choose..."
+        static let filename = "Filename"
+        static let pattern = "Pattern"
+        static let dateFormat = "Date format"
+        static let availablePlaceholders = "Available placeholders:"
+        static let placeholderNumber = "{number} - Invoice number"
+        static let placeholderCreditor = "{creditor} - Your company name"
+        static let placeholderClient = "{client} - Client name"
+        static let placeholderDate = "{date} - Date based on sort"
+        static let placeholderIssueDate = "{issueDate} - Issue date"
+        static let placeholderDueDate = "{dueDate} - Due date"
+        static let placeholderPaidDate = "{paidDate} - Paid date"
+        static let dateFormatComponents = "Date format components:"
+        static let dateFormatHelp = "YYYY (4-digit year), YY (2-digit year), MM (month), DD (day)"
+
+        // Paid Mark
+        static let paidMark = "Paid Mark"
+        static let showWatermark = "Show watermark on paid invoices"
+        static let showPaidDate = "Show paid date"
+        static let watermarkStyle = "Watermark Style"
+        static let watermarkHtmlHint = "HTML: .watermark > .text + .date"
+        static let resetToDefault = "Reset to Default"
+
+        // Company Logo
+        static let companyLogo = "Company Logo"
+        static let noLogoSet = "No logo set"
+        static let chooseImage = "Choose Image..."
+        static let remove = "Remove"
+        static let logoHint = "Used only in custom templates. Harvest PDFs use the logo configured in Harvest."
+
+        // Templates
+        static let invoicePDFSource = "Invoice PDF Source"
+        static let pdfSource = "PDF source"
+        static let language = "Language"
+        static let customizeLabels = "Customize labels"
+        static let hideQuantityColumn = "Hide Quantity column"
+        static let hideUnitPriceColumn = "Hide Unit Price column"
+        static let showTotalHours = "Show Total Hours"
+        static let templateColumnHint = "To hide columns on Harvest PDFs, change this in the Harvest web UI."
+        // swiftlint:disable:next line_length
+        static let harvestColumnHint = "Column visibility can be configured when using a custom template. For Harvest PDFs, change this in the Harvest web UI under Invoices \u{2192} Configure \u{2192} Hide columns."
+
+        // Feedback
+        static let contact = "Contact"
+        static let contactEmail = "contact@noordermeer.ch"
+        static let contactHint = "Send us an email with questions, suggestions, or feedback."
+        static let reportAnIssue = "Report an Issue"
+        static let openGitHubIssues = "Open GitHub Issues"
+        static let reportHint = "Report bugs or request features on GitHub."
+
+        // Debug
+        static let demo = "Demo"
+        static let demoMode = "Demo Mode"
+    }
+
+    // MARK: - Templates
+
+    enum Templates {
+        static let templateName = "Template Name"
+        static let readOnly = "Read Only"
+        static let openInEditor = "Open in Editor"
+        static let variables = "Variables"
+        static let refreshPreview = "Refresh preview"
+        static let newTemplate = "New template"
+        static let duplicateTemplate = "Duplicate template"
+        static let deleteTemplate = "Delete template"
+        static let revealTemplatesFolder = "Reveal templates folder"
+        static let deleteTemplateTitle = "Delete Template"
+        static let duplicate = "Duplicate"
+        static let openInExternalEditor = "Open in External Editor"
+        static let revealInFinder = "Reveal in Finder"
+        static let untitledTemplate = "Untitled Template"
+        static let builtIn = "Built-in"
+
+        static func deleteConfirmation(_ name: String) -> String {
+            "Are you sure you want to delete \"\(name)\"? This cannot be undone."
+        }
+
+        static func builtInWindowTitle(_ name: String) -> String {
+            "\(name) (Built-in \u{2014} Read Only)"
+        }
+
+        static func previewWindowTitle(_ name: String) -> String {
+            "Preview \u{2014} \(name)"
+        }
+
+        static func updatedAt(_ date: String) -> String {
+            "Updated \(date)"
+        }
+    }
+
+    // MARK: - Label Editor
+
+    enum LabelEditor {
+        static let title = "Customize Labels"
+        static let templateLabels = "Template Labels"
+        static let qrBillLabels = "QR Bill Labels"
+        static let resetLanguage = "Reset Language"
+        static let resetToDefault = "Reset to default"
+    }
+
+    // MARK: - Alerts
+
+    enum Alerts {
+        static let exportError = "Export Error"
+        static let exportComplete = "Export Complete"
+        static let updateError = "Update Error"
+        static let updateComplete = "Update Complete"
+
+        static func exportedCount(_ count: Int) -> String {
+            "Successfully exported \(count) invoice(s)."
+        }
+
+        static func updatedCount(_ count: Int) -> String {
+            "Successfully updated \(count) invoice(s)."
+        }
+    }
+
+    // MARK: - Errors
+
+    enum Errors {
+        // Credentials
+        static let configureCredentials = "Please configure your Harvest API credentials in Settings."
+        static let configureCreditor = "Please configure your creditor information in Settings."
+        static let noTemplateSelected = "No template selected. Please select a template in Settings > Templates."
+
+        // Connection
+        static let fillCredentials = "Please fill in Access Token and Account ID."
+        static let connectionFailed = "Connection failed."
+        static let connectionFailedNetwork = "Connection failed. Please check your network."
+
+        // API
+        static let invalidCredentials = "Invalid API credentials. Please check your settings."
+        static let invalidURL = "Failed to construct API request."
+        static let invalidSubdomain = "Invalid Harvest subdomain."
+        static let unauthorized = "Unauthorized. Please check your API token."
+        static let notFound = "Resource not found."
+        static let networkFailed = "Network connection failed."
+        static let decodingFailed = "Failed to parse server response."
+
+        static func serverError(_ code: Int) -> String {
+            "Server error (code: \(code))"
+        }
+
+        // PDF
+        static let downloadFailed = "Failed to download the PDF from Harvest."
+        static let invalidPDF = "The downloaded file is not a valid PDF."
+        static let saveFailed = "Failed to save the PDF file."
+        static let qrBillGenerationFailed = "Failed to generate the QR bill."
+        static let renderingFailed = "Failed to render the template to PDF."
+        static let processTerminated = "The web rendering process terminated unexpectedly."
+        static let renderingTimeout = "PDF rendering timed out."
+
+        // QR Bill
+        static let invalidIBAN = "Invalid IBAN format."
+        static let qrIBANNotSupported = "QR-IBAN is not supported. Please use a regular Swiss IBAN."
+        static let invalidCreditorAddress = "Creditor address is incomplete."
+        static let invalidAmount = "Amount must be between 0.01 and 999,999,999.99."
+        static let invalidCurrency = "Currency must be CHF or EUR."
+        static let invalidReference = "Invalid creditor reference format."
+        static let messageTooLong = "Combined message and billing info must not exceed 140 characters."
+    }
+
+    // MARK: - Export
+
+    enum Export {
+        static let selectFolderMessage = "Select folder to save invoices"
+        static let exportComplete = "Export complete!"
+        static let selectLogoMessage = "Select a company logo image"
+        static let choosePrompt = "Choose"
+        static let selectFolderForDownloads = "Select default download folder for invoices"
+
+        static func exportingProgress(_ index: Int, _ total: Int, _ number: String) -> String {
+            "Exporting \(index) of \(total): \(number)"
+        }
+    }
+}
+
+// swiftlint:enable file_length type_body_length

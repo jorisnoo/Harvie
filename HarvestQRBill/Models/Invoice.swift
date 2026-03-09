@@ -83,6 +83,51 @@ struct Invoice: Codable, Identifiable, Hashable, Sendable {
         paidAt ?? paidDate
     }
 
+    init(
+        id: Int, clientKey: String, number: String, purchaseOrder: String? = nil,
+        amount: Decimal, dueAmount: Decimal,
+        tax: Decimal? = nil, taxAmount: Decimal? = nil,
+        tax2: Decimal? = nil, tax2Amount: Decimal? = nil,
+        discount: Decimal? = nil, discountAmount: Decimal? = nil,
+        subject: String? = nil, notes: String? = nil,
+        currency: String, state: InvoiceState,
+        periodStart: Date? = nil, periodEnd: Date? = nil,
+        issueDate: Date, dueDate: Date,
+        sentAt: Date? = nil, paidAt: Date? = nil,
+        paidDate: Date? = nil, closedAt: Date? = nil,
+        createdAt: Date, updatedAt: Date,
+        client: ClientReference, lineItems: [LineItem]? = nil
+    ) {
+        self.id = id
+        self.clientKey = clientKey
+        self.number = number
+        self.purchaseOrder = purchaseOrder
+        self.amount = amount
+        self.dueAmount = dueAmount
+        self.tax = tax
+        self.taxAmount = taxAmount
+        self.tax2 = tax2
+        self.tax2Amount = tax2Amount
+        self.discount = discount
+        self.discountAmount = discountAmount
+        self.subject = subject
+        self.notes = notes
+        self.currency = currency
+        self.state = state
+        self.periodStart = periodStart
+        self.periodEnd = periodEnd
+        self.issueDate = issueDate
+        self.dueDate = dueDate
+        self.sentAt = sentAt
+        self.paidAt = paidAt
+        self.paidDate = paidDate
+        self.closedAt = closedAt
+        self.createdAt = createdAt
+        self.updatedAt = updatedAt
+        self.client = client
+        self.lineItems = lineItems
+    }
+
     private enum CodingKeys: String, CodingKey {
         case id, number, amount, tax, discount, subject, notes, currency, state
         case clientKey = "client_key"

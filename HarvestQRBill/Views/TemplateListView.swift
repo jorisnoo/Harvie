@@ -52,7 +52,7 @@ struct TemplateListView: View {
                     Image(systemName: "plus")
                         .frame(height: 16)
                 }
-                .help("New template")
+                .help(Strings.Templates.newTemplate)
 
                 Button {
                     guard let selected = selectedTemplate else { return }
@@ -62,7 +62,7 @@ struct TemplateListView: View {
                         .frame(height: 16)
                 }
                 .disabled(selectedTemplate == nil)
-                .help("Duplicate template")
+                .help(Strings.Templates.duplicateTemplate)
 
                 Button {
                     guard let selected = selectedTemplate else { return }
@@ -78,7 +78,7 @@ struct TemplateListView: View {
                         .frame(height: 16)
                 }
                 .disabled(selectedTemplate == nil || selectedTemplate?.isBuiltIn == true)
-                .help("Delete template")
+                .help(Strings.Templates.deleteTemplate)
 
                 Spacer()
 
@@ -88,13 +88,13 @@ struct TemplateListView: View {
                     Image(systemName: "folder")
                         .frame(height: 16)
                 }
-                .help("Reveal templates folder")
+                .help(Strings.Templates.revealTemplatesFolder)
 
                 Button {
                     guard let selected = selectedTemplate else { return }
                     Task { await openPreview(for: selected) }
                 } label: {
-                    Text("Preview").frame(height: 16)
+                    Text(Strings.Common.preview).frame(height: 16)
                 }
                 .disabled(selectedTemplate == nil)
 
@@ -102,7 +102,7 @@ struct TemplateListView: View {
                     guard let selected = selectedTemplate else { return }
                     openEditor(for: selected)
                 } label: {
-                    Text("Edit").frame(height: 16)
+                    Text(Strings.Common.edit).frame(height: 16)
                 }
                 .disabled(selectedTemplate == nil)
             }

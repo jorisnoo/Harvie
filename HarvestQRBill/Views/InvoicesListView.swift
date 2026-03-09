@@ -14,11 +14,11 @@ struct InvoicesListView: View {
         HStack(spacing: 8) {
             Image(systemName: "exclamationmark.triangle.fill")
                 .foregroundStyle(.orange)
-            Text("Configure creditor info in Settings to enable QR bill export.")
+            Text(Strings.InvoicesList.creditorWarning)
                 .font(.callout)
                 .lineLimit(1)
             Spacer()
-            Button("Settings") {
+            Button(Strings.Common.settings) {
                 openSettings()
             }
             .buttonStyle(.bordered)
@@ -54,7 +54,7 @@ struct InvoicesListView: View {
                         await viewModel.exportSelectedInvoices(withQRBill: true)
                     }
                 } label: {
-                    Label("Export with QR Bill", systemImage: "square.and.arrow.down")
+                    Label(Strings.InvoicesList.exportWithQRBill, systemImage: "square.and.arrow.down")
                 }
                 .disabled(!viewModel.canExportWithQRBill)
 
@@ -63,7 +63,7 @@ struct InvoicesListView: View {
                         await viewModel.exportSelectedInvoices(withQRBill: false)
                     }
                 } label: {
-                    Label("Export without QR Bill", systemImage: "doc.text")
+                    Label(Strings.InvoicesList.exportWithoutQRBill, systemImage: "doc.text")
                 }
             }
         } primaryAction: { selectedIDs in
@@ -84,41 +84,41 @@ struct InvoicesListView: View {
     var body: some View {
         Group {
             if viewModel.isLoading && viewModel.invoices.isEmpty {
-                ProgressView("Loading invoices...")
+                ProgressView(Strings.InvoicesList.loading)
             } else if let error = viewModel.error {
                 if !viewModel.hasValidCredentials {
                     ContentUnavailableView {
-                        Label("Setup Required", systemImage: "gear")
+                        Label(Strings.InvoicesList.setupRequired, systemImage: "gear")
                     } description: {
                         Text(error)
                     } actions: {
-                        Button("Open Settings") {
+                        Button(Strings.InvoicesList.openSettings) {
                             openSettings()
                         }
                         .buttonStyle(.borderedProminent)
 
-                        Button("Retry") {
+                        Button(Strings.Common.retry) {
                             viewModel.loadInvoices()
                         }
                     }
                 } else {
                     ContentUnavailableView {
-                        Label("Error", systemImage: "exclamationmark.triangle")
+                        Label(Strings.Common.error, systemImage: "exclamationmark.triangle")
                     } description: {
                         Text(error)
                     } actions: {
-                        Button("Retry") {
+                        Button(Strings.Common.retry) {
                             viewModel.loadInvoices()
                         }
                     }
                 }
             } else if viewModel.invoices.isEmpty {
                 ContentUnavailableView {
-                    Label("No Invoices", systemImage: "doc.text")
+                    Label(Strings.InvoicesList.noInvoices, systemImage: "doc.text")
                 } description: {
-                    Text("No \(viewModel.stateFilter?.rawValue ?? "") invoices found.")
+                    Text(Strings.InvoicesList.noInvoicesForState(viewModel.stateFilter?.rawValue ?? ""))
                 } actions: {
-                    Button("Refresh") {
+                    Button(Strings.Common.refresh) {
                         viewModel.refresh()
                     }
                 }
@@ -126,8 +126,8 @@ struct InvoicesListView: View {
                 invoicesList
             }
         }
-        .navigationTitle("Invoices")
-        .navigationSubtitle(viewModel.isRefreshing ? "Updating..." : "")
+        .navigationTitle(Strings.InvoicesList.title)
+        .navigationSubtitle(viewModel.isRefreshing ? Strings.InvoicesList.updating : "")
         .modifier(InvoicesAlertsModifier(viewModel: viewModel))
         .toolbar {
             InvoicesToolbarContent(viewModel: viewModel, columnVisibility: columnVisibility)
@@ -146,14 +146,14 @@ private struct InvoicesToolbarContent: ToolbarContent {
         if let period = viewModel.selectedPeriod {
             return viewModel.formatPeriod(period)
         }
-        return "Sort & Filter"
+        return Strings.InvoicesList.sortAndFilter
     }
 
     var body: some ToolbarContent {
         ToolbarItemGroup(placement: .automatic) {
             if columnVisibility != .detailOnly {
                 Menu {
-                    Section("Sort By") {
+                    Section(Strings.InvoicesList.sortBy) {
                         ForEach(InvoiceSortOption.allCases, id: \.self) { option in
                             Button {
                                 if viewModel.sortOption == option {
@@ -176,7 +176,7 @@ private struct InvoicesToolbarContent: ToolbarContent {
 
                     Divider()
 
-                    Section("Filter Period") {
+                    Section(Strings.InvoicesList.filterPeriod) {
                         ForEach(DateFilterPeriod.allCases, id: \.self) { period in
                             Button {
                                 if viewModel.filterPeriod != period {
@@ -196,12 +196,12 @@ private struct InvoicesToolbarContent: ToolbarContent {
 
                     Divider()
 
-                    Section("Filter by \(viewModel.filterPeriod.rawValue)") {
+                    Section(Strings.InvoicesList.filterByPeriod(viewModel.filterPeriod.rawValue)) {
                         Button {
                             viewModel.selectedPeriod = nil
                         } label: {
                             HStack {
-                                Text("All")
+                                Text(Strings.InvoicesList.all)
                                 if viewModel.selectedPeriod == nil {
                                     Image(systemName: "checkmark")
                                 }
@@ -227,12 +227,12 @@ private struct InvoicesToolbarContent: ToolbarContent {
                 .focusable(false)
 
                 Picker("Filter", selection: $viewModel.stateFilter) {
-                    Text("Open").tag(InvoiceState?.some(.open))
-                    Text("Paid").tag(InvoiceState?.some(.paid))
-                    Text("Draft").tag(InvoiceState?.some(.draft))
-                    Text("Closed").tag(InvoiceState?.some(.closed))
+                    Text(Strings.InvoicesList.stateOpen).tag(InvoiceState?.some(.open))
+                    Text(Strings.InvoicesList.statePaid).tag(InvoiceState?.some(.paid))
+                    Text(Strings.InvoicesList.stateDraft).tag(InvoiceState?.some(.draft))
+                    Text(Strings.InvoicesList.stateClosed).tag(InvoiceState?.some(.closed))
                     Divider()
-                    Text("All").tag(InvoiceState?.none)
+                    Text(Strings.InvoicesList.all).tag(InvoiceState?.none)
                 }
                 .pickerStyle(.menu)
             }
@@ -247,31 +247,31 @@ private struct InvoicesAlertsModifier: ViewModifier {
 
     func body(content: Content) -> some View {
         content
-            .alert("Export Error", isPresented: .init(
+            .alert(Strings.Alerts.exportError, isPresented: .init(
                 get: { viewModel.exportError != nil },
                 set: { if !$0 { viewModel.exportError = nil } }
             )) {
-                Button("OK") { viewModel.exportError = nil }
+                Button(Strings.Common.ok) { viewModel.exportError = nil }
             } message: {
                 Text(viewModel.exportError ?? "")
             }
-            .alert("Export Complete", isPresented: $viewModel.showExportSuccess) {
-                Button("OK") { }
+            .alert(Strings.Alerts.exportComplete, isPresented: $viewModel.showExportSuccess) {
+                Button(Strings.Common.ok) { }
             } message: {
-                Text("Successfully exported \(viewModel.exportedCount) invoice(s).")
+                Text(Strings.Alerts.exportedCount(viewModel.exportedCount))
             }
-            .alert("Update Error", isPresented: .init(
+            .alert(Strings.Alerts.updateError, isPresented: .init(
                 get: { viewModel.updateError != nil },
                 set: { if !$0 { viewModel.updateError = nil } }
             )) {
-                Button("OK") { viewModel.updateError = nil }
+                Button(Strings.Common.ok) { viewModel.updateError = nil }
             } message: {
                 Text(viewModel.updateError ?? "")
             }
-            .alert("Update Complete", isPresented: $viewModel.showUpdateSuccess) {
-                Button("OK") { }
+            .alert(Strings.Alerts.updateComplete, isPresented: $viewModel.showUpdateSuccess) {
+                Button(Strings.Common.ok) { }
             } message: {
-                Text("Successfully updated \(viewModel.updatedCount) invoice(s).")
+                Text(Strings.Alerts.updatedCount(viewModel.updatedCount))
             }
     }
 }
@@ -336,7 +336,7 @@ struct ExportProgressOverlay: View {
 
             VStack(spacing: 16) {
                 ProgressView(value: progress) {
-                    Text("Exporting Invoices")
+                    Text(Strings.InvoicesList.exportingInvoices)
                         .font(.headline)
                 } currentValueLabel: {
                     Text(message)
@@ -365,7 +365,7 @@ private struct SidebarStatusBar: View {
     var body: some View {
         if !invoices.isEmpty {
             HStack {
-                Text("\(invoices.count) invoice\(invoices.count == 1 ? "" : "s")")
+                Text(Strings.InvoicesList.invoiceCount(invoices.count))
                 Spacer()
                 Text(totalByCurrency.map { CurrencyFormatter.format($0.total, currency: $0.currency) }.joined(separator: " · "))
             }

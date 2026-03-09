@@ -9,6 +9,11 @@ struct ClientReference: Codable, Identifiable, Sendable {
     let id: Int
     let name: String
 
+    init(id: Int, name: String) {
+        self.id = id
+        self.name = name
+    }
+
     nonisolated init(from decoder: any Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         id = try container.decode(Int.self, forKey: .id)

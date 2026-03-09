@@ -99,12 +99,12 @@ struct InvoiceDetailView: View {
                         ProgressView()
                             .scaleEffect(0.7)
                     } else {
-                        Label("Preview", systemImage: "eye")
+                        Label(Strings.InvoiceDetail.previewButton, systemImage: "eye")
                     }
                 }
                 .keyboardShortcut(.space, modifiers: [])
                 .disabled(isPreviewing || isProcessing || !canExportWithQRBill)
-                .help(canExportWithQRBill ? "Preview invoice PDF with Swiss QR bill (Space)" : "Configure creditor info in Settings first")
+                .help(canExportWithQRBill ? Strings.InvoiceDetail.previewTooltip : Strings.InvoiceDetail.creditorRequiredTooltip)
             }
 
             ToolbarItem(placement: .primaryAction) {
@@ -115,12 +115,29 @@ struct InvoiceDetailView: View {
                         ProgressView()
                             .scaleEffect(0.7)
                     } else {
-                        Label("Export QR Bill", systemImage: "square.and.arrow.down")
+                        Label(Strings.InvoiceDetail.exportQRBill, systemImage: "square.and.arrow.down")
                     }
                 }
                 .buttonStyle(.borderedProminent)
                 .disabled(isProcessing || isPreviewing || !canExportWithQRBill)
-                .help(canExportWithQRBill ? "Download invoice PDF with Swiss QR bill" : "Configure creditor info in Settings first")
+                .help(canExportWithQRBill ? Strings.InvoiceDetail.exportTooltip : Strings.InvoiceDetail.creditorRequiredTooltip)
+            }
+
+            if invoice.state == .draft || invoice.state == .open {
+                ToolbarItem(placement: .primaryAction) {
+                    Button {
+                        Task { await sendViaEmail() }
+                    } label: {
+                        if isSendingEmail {
+                            ProgressView()
+                                .scaleEffect(0.7)
+                        } else {
+                            Label(Strings.InvoiceDetail.sendViaEmail, systemImage: "envelope")
+                        }
+                    }
+                    .disabled(isProcessing || isPreviewing || isSendingEmail || !canExportWithQRBill)
+                    .help(Strings.InvoiceDetail.sendViaEmail)
+                }
             }
 
             if invoice.state == .draft {
@@ -129,37 +146,23 @@ struct InvoiceDetailView: View {
                         issueDate.current = invoice.issueDate
                         activeSheet = .changeDate
                     } label: {
-                        Label("Change Date", systemImage: "calendar")
+                        Label(Strings.InvoiceDetail.changeDate, systemImage: "calendar")
                     }
-                    .help("Change Date")
+                    .help(Strings.InvoiceDetail.changeDate)
                 }
 
                 ToolbarItem(placement: .primaryAction) {
                     Menu {
                         Button {
-                            Task { await sendViaEmail() }
-                        } label: {
-                            Label("Send via Email…", systemImage: "envelope")
-                        }
-                        .disabled(isProcessing || isPreviewing || !canExportWithQRBill)
-
-                        Divider()
-
-                        Button {
                             activeSheet = .markAsSent
                         } label: {
-                            Label("Mark as Sent (no email)", systemImage: "checkmark")
+                            Label(Strings.InvoiceDetail.markAsSentNoEmail, systemImage: "checkmark")
                         }
                     } label: {
-                        if isSendingEmail {
-                            ProgressView()
-                                .scaleEffect(0.7)
-                        } else {
-                            Label("Send", systemImage: "paperplane")
-                        }
+                        Label(Strings.InvoiceDetail.send, systemImage: "paperplane")
                     }
-                    .disabled(isPerformingSheetAction || isSendingEmail)
-                    .help("Send invoice via email or mark as sent")
+                    .disabled(isPerformingSheetAction)
+                    .help(Strings.InvoiceDetail.sendTooltip)
                 }
             }
 
@@ -168,41 +171,41 @@ struct InvoiceDetailView: View {
                     Button {
                         activeSheet = .markAsDraft
                     } label: {
-                        Label("Mark as Draft", systemImage: "pencil")
+                        Label(Strings.InvoiceDetail.markAsDraft, systemImage: "pencil")
                     }
                     .disabled(isPerformingSheetAction)
-                    .help("Mark as Draft")
+                    .help(Strings.InvoiceDetail.markAsDraft)
                 }
             }
         }
-        .alert("Error", isPresented: .init(
+        .alert(Strings.Common.error, isPresented: .init(
             get: { error != nil },
             set: { if !$0 { error = nil } }
         )) {
-            Button("OK") { error = nil }
+            Button(Strings.Common.ok) { error = nil }
         } message: {
             Text(error ?? "")
         }
-        .alert("Success", isPresented: $showingSuccess) {
+        .alert(Strings.Common.success, isPresented: $showingSuccess) {
             if let path = savedFilePath {
-                Button("Show in Finder") {
+                Button(Strings.InvoiceDetail.showInFinder) {
                     NSWorkspace.shared.selectFile(path, inFileViewerRootedAtPath: "")
                 }
             }
-            Button("OK", role: .cancel) { }
+            Button(Strings.Common.ok, role: .cancel) { }
         } message: {
             if let path = savedFilePath {
-                Text("Invoice saved to:\n\(path)")
+                Text(Strings.InvoiceDetail.savedToPath(path))
             } else {
-                Text("Invoice with QR bill saved successfully.")
+                Text(Strings.InvoiceDetail.savedSuccessfully)
             }
         }
         .sheet(item: $activeSheet) { sheet in
             switch sheet {
             case .changeDate:
                 ConfirmationSheet(
-                    title: "Change Issue Date",
-                    confirmLabel: "Save",
+                    title: Strings.InvoiceDetail.changeIssueDate,
+                    confirmLabel: Strings.Common.save,
                     isProcessing: issueDate.isSaving,
                     onConfirm: {
                         Task {
@@ -215,22 +218,22 @@ struct InvoiceDetailView: View {
                 ) {
                     HStack {
                         Spacer()
-                        Button("Today") { issueDate.current = Date() }
+                        Button(Strings.Common.today) { issueDate.current = Date() }
                             .buttonStyle(.bordered)
                             .controlSize(.small)
                             .disabled(Calendar.current.isDateInToday(issueDate.current))
                     }
 
-                    DatePicker("Issue Date", selection: issueDate.binding, displayedComponents: .date)
+                    DatePicker(Strings.InvoiceDetail.issueDate, selection: issueDate.binding, displayedComponents: .date)
                         .datePickerStyle(.graphical)
                         .labelsHidden()
                 }
             case .markAsSent:
                 ConfirmationSheet(
-                    title: "Mark as Sent",
-                    message: "Mark invoice \(invoice.number) as sent?",
-                    detail: "The sent date will be set to now.",
-                    confirmLabel: "Mark as Sent",
+                    title: Strings.InvoiceDetail.markAsSent,
+                    message: Strings.InvoiceDetail.markAsSentMessage(invoice.number),
+                    detail: Strings.InvoiceDetail.sentDateDetail,
+                    confirmLabel: Strings.InvoiceDetail.markAsSent,
                     isProcessing: isPerformingSheetAction,
                     onConfirm: {
                         Task {
@@ -242,9 +245,9 @@ struct InvoiceDetailView: View {
                 )
             case .markAsDraft:
                 ConfirmationSheet(
-                    title: "Mark as Draft",
-                    message: "Revert invoice \(invoice.number) to draft?",
-                    confirmLabel: "Mark as Draft",
+                    title: Strings.InvoiceDetail.markAsDraft,
+                    message: Strings.InvoiceDetail.markAsDraftMessage(invoice.number),
+                    confirmLabel: Strings.InvoiceDetail.markAsDraft,
                     isProcessing: isPerformingSheetAction,
                     onConfirm: {
                         Task {
@@ -260,13 +263,13 @@ struct InvoiceDetailView: View {
             switch action {
             case .markedAsSent:
                 Alert(
-                    title: Text("Invoice Sent"),
-                    message: Text("Invoice \(invoice.number) has been marked as sent.")
+                    title: Text(Strings.InvoiceDetail.invoiceSent),
+                    message: Text(Strings.InvoiceDetail.invoiceSentMessage(invoice.number))
                 )
             case .markedAsDraft:
                 Alert(
-                    title: Text("Invoice Reverted"),
-                    message: Text("Invoice \(invoice.number) has been reverted to draft.")
+                    title: Text(Strings.InvoiceDetail.invoiceReverted),
+                    message: Text(Strings.InvoiceDetail.invoiceRevertedMessage(invoice.number))
                 )
             }
         }
@@ -277,7 +280,7 @@ struct InvoiceDetailView: View {
     private var headerSection: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
-                TextField("Invoice title", text: subject.binding)
+                TextField(Strings.InvoiceDetail.invoiceTitle, text: subject.binding)
                     .font(.title2)
                     .fontWeight(.semibold)
                     .textFieldStyle(.plain)
@@ -307,7 +310,7 @@ struct InvoiceDetailView: View {
                     }
                     .buttonStyle(.borderless)
                     .disabled(subject.isSaving)
-                    .help("Save title")
+                    .help(Strings.InvoiceDetail.saveTitle)
                 }
 
                 Spacer()
@@ -334,41 +337,40 @@ struct InvoiceDetailView: View {
                 .fontWeight(.bold)
 
             if invoice.state != .paid, invoice.dueAmount != invoice.amount {
-                Text("of \(formattedAmount) total")
+                Text(Strings.InvoiceDetail.ofTotal(formattedAmount))
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
             }
 
             if let sentAt = invoice.sentAt,
                Calendar.current.isDate(sentAt, inSameDayAs: invoice.issueDate) {
-                // swiftlint:disable:next line_length
-                Text("Issued \(invoice.issueDate.formatted(date: .long, time: .omitted)), sent at \(sentAt.formatted(date: .omitted, time: .shortened))")
+                Text(Strings.InvoiceDetail.issuedAndSent(invoice.issueDate.formatted(date: .long, time: .omitted), sentAt.formatted(date: .omitted, time: .shortened)))
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
             } else {
-                Text("Issued \(invoice.issueDate.formatted(date: .long, time: .omitted))")
+                Text(Strings.InvoiceDetail.issued(invoice.issueDate.formatted(date: .long, time: .omitted)))
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
 
                 if let sentAt = invoice.sentAt {
-                    Text("Sent \(sentAt.formatted(date: .long, time: .shortened))")
+                    Text(Strings.InvoiceDetail.sent(sentAt.formatted(date: .long, time: .shortened)))
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                 }
             }
 
-            Text("Due \(invoice.dueDate.formatted(date: .long, time: .omitted))")
+            Text(Strings.InvoiceDetail.due(invoice.dueDate.formatted(date: .long, time: .omitted)))
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
 
             if let tax = invoice.tax, let taxAmount = invoice.taxAmount {
-                Text("Incl. \(tax.formatted())% tax (\(CurrencyFormatter.format(taxAmount, currency: invoice.currency)))")
+                Text(Strings.InvoiceDetail.inclTax(tax.formatted(), CurrencyFormatter.format(taxAmount, currency: invoice.currency)))
                     .font(.caption)
                     .foregroundStyle(.tertiary)
             }
 
             if let discount = invoice.discount, let discountAmount = invoice.discountAmount {
-                Text("Discount \(discount.formatted())%: -\(CurrencyFormatter.format(discountAmount, currency: invoice.currency))")
+                Text(Strings.InvoiceDetail.discount(discount.formatted(), CurrencyFormatter.format(discountAmount, currency: invoice.currency)))
                     .font(.caption)
             }
         }
@@ -377,7 +379,7 @@ struct InvoiceDetailView: View {
     private var datesSection: some View {
         VStack(alignment: .leading, spacing: 4) {
             if let paidAt = invoice.paidAt {
-                Text("Paid \(paidAt.formatted(date: .long, time: .shortened))")
+                Text(Strings.InvoiceDetail.paid(paidAt.formatted(date: .long, time: .shortened)))
                     .font(.subheadline)
                     .foregroundStyle(.green)
             }
@@ -395,10 +397,21 @@ struct InvoiceDetailView: View {
                 HStack(alignment: .top) {
                     VStack(alignment: .leading, spacing: 2) {
                         HStack {
-                            TextField("Description", text: descriptionBinding(for: item), axis: .vertical)
-                                .font(.body)
-                                .textFieldStyle(.plain)
-                                .focused($focusedField, equals: .lineItem(item.id))
+                            MultilineTextField(
+                                text: descriptionBinding(for: item),
+                                font: .systemFont(ofSize: NSFont.systemFontSize),
+                                isFocused: focusedField == .lineItem(item.id),
+                                onFocusChange: { focused in
+                                    if focused {
+                                        focusedField = .lineItem(item.id)
+                                    } else if focusedField == .lineItem(item.id) {
+                                        focusedField = nil
+                                        if isLineItemModified(item) {
+                                            Task { await saveLineItem(item) }
+                                        }
+                                    }
+                                }
+                            )
                                 .padding(.horizontal, 6)
                                 .padding(.vertical, 4)
                                 .background(
@@ -406,11 +419,6 @@ struct InvoiceDetailView: View {
                                         .strokeBorder(focusedField == .lineItem(item.id) ? Color.accentColor.opacity(0.5) : .clear, lineWidth: 1.5)
                                 )
                                 .padding(.leading, -6)
-                                .onSubmit {
-                                    // Insert newline instead of submitting
-                                    let binding = descriptionBinding(for: item)
-                                    binding.wrappedValue += "\n"
-                                }
                                 .overlay {
                                     if focusedField != .lineItem(item.id) {
                                         Text(descriptionBinding(for: item).wrappedValue.harvestMarkdown)
@@ -419,11 +427,6 @@ struct InvoiceDetailView: View {
                                             .padding(.vertical, 4)
                                             .background(.background)
                                             .allowsHitTesting(false)
-                                    }
-                                }
-                                .onChange(of: focusedField) {
-                                    if focusedField != .lineItem(item.id), isLineItemModified(item) {
-                                        Task { await saveLineItem(item) }
                                     }
                                 }
 
@@ -442,7 +445,7 @@ struct InvoiceDetailView: View {
                                 .foregroundStyle(.tertiary)
 
                             TextField(
-                                "Price",
+                                Strings.InvoiceDetail.price,
                                 text: unitPriceBinding(for: item)
                             )
                             .font(.caption)
@@ -481,7 +484,7 @@ struct InvoiceDetailView: View {
 
     private var notesSection: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("Notes")
+            Text(Strings.InvoiceDetail.notes)
                 .font(.headline)
 
             TextEditor(text: notes.binding)
@@ -540,12 +543,12 @@ struct InvoiceDetailView: View {
             try await action(credentials)
             return true
         } catch let apiError as HarvestAPIService.APIError {
-            self.error = "Failed to \(label): \(apiError.localizedDescription)"
+            self.error = Strings.InvoiceDetail.failedAction(label, apiError.localizedDescription)
         } catch {
             #if DEBUG
             logger.error("Failed to \(label): \(error.localizedDescription)")
             #endif
-            self.error = "Failed to \(label). Please try again."
+            self.error = Strings.InvoiceDetail.failedActionGeneric(label)
         }
         return false
     }
@@ -704,17 +707,19 @@ struct InvoiceDetailView: View {
 
             // Compose email via NSSharingService
             guard let emailService = NSSharingService(named: .composeEmail) else {
-                self.error = "Email is not configured on this Mac."
+                self.error = Strings.InvoiceDetail.emailNotConfigured
                 isSendingEmail = false
                 return
             }
 
             emailService.recipients = recipientEmails
-            emailService.subject = "Invoice \(invoice.number)"
+            emailService.subject = Strings.InvoiceDetail.emailSubject(invoice.number)
             emailService.perform(withItems: [tempURL])
 
-            // Mark as sent in Harvest
-            await markAsSent()
+            // Mark as sent in Harvest (only for drafts)
+            if invoice.state == .draft {
+                await markAsSent()
+            }
         } catch {
             handlePDFError(error, context: "Send via email")
         }
@@ -857,9 +862,9 @@ struct InvoiceDetailView: View {
         var errorDescription: String? {
             switch self {
             case .invalidCreditor:
-                "Please configure your creditor information in Settings."
+                Strings.Errors.configureCreditor
             case .templateNotFound:
-                "No template selected. Please select a template in Settings > Templates."
+                Strings.Errors.noTemplateSelected
             }
         }
     }

@@ -23,19 +23,19 @@ struct QRBillService {
         var errorDescription: String? {
             switch self {
             case .invalidIBAN:
-                return "Invalid IBAN format."
+                return Strings.Errors.invalidIBAN
             case .qrIBANNotSupported:
-                return "QR-IBAN is not supported. Please use a regular Swiss IBAN."
+                return Strings.Errors.qrIBANNotSupported
             case .invalidCreditorAddress:
-                return "Creditor address is incomplete."
+                return Strings.Errors.invalidCreditorAddress
             case .invalidAmount:
-                return "Amount must be between 0.01 and 999,999,999.99."
+                return Strings.Errors.invalidAmount
             case .invalidCurrency:
-                return "Currency must be CHF or EUR."
+                return Strings.Errors.invalidCurrency
             case .invalidReference:
-                return "Invalid creditor reference format."
+                return Strings.Errors.invalidReference
             case .messageTooLong:
-                return "Combined message and billing info must not exceed 140 characters."
+                return Strings.Errors.messageTooLong
             }
         }
     }
