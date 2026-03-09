@@ -76,6 +76,7 @@ struct InvoiceDetailView: View {
             .padding()
         }
         .onExitCommand { focusedField = nil }
+        .onClickOutsideTextFields { [self] in focusedField = nil }
         .navigationTitle("Invoice \(invoice.number)")
         .onChange(of: invoice.id, initial: true) {
             subject.reset(to: invoice.subject ?? "")
@@ -418,15 +419,10 @@ struct InvoiceDetailView: View {
                             )
                             .font(.caption)
                             .foregroundStyle(.tertiary)
-                            .textFieldStyle(.plain)
+                            .textFieldStyle(.roundedBorder)
                             .focused($focusedField, equals: .unitPrice(item.id))
                             .fixedSize()
-                            .padding(.horizontal, 4)
-                            .padding(.vertical, 2)
-                            .background(
-                                RoundedRectangle(cornerRadius: 4)
-                                    .strokeBorder(focusedField == .unitPrice(item.id) ? Color.accentColor.opacity(0.5) : .clear, lineWidth: 1)
-                            )
+                            .onSubmit { focusedField = nil }
                             .onChange(of: focusedField) {
                                 if focusedField != .unitPrice(item.id), isUnitPriceModified(item) {
                                     Task { await saveLineItem(item) }
@@ -543,7 +539,7 @@ struct InvoiceDetailView: View {
                 invoiceId: invoice.id, notes: notes.current, credentials: credentials
             )
         }
-        if success { notes.markSaved() } else { notes.markFailed() }
+        if success { notes.markSaved(); onRefresh?() } else { notes.markFailed() }
     }
 
     // MARK: - Line Item Editing
@@ -567,9 +563,11 @@ struct InvoiceDetailView: View {
 
     private func unitPriceBinding(for item: LineItem) -> Binding<String> {
         Binding(
-            get: { editedUnitPrices[item.id] ?? CurrencyFormatter.format(item.unitPrice, currency: invoice.currency) },
+            get: { editedUnitPrices[item.id] ?? item.unitPrice.formatted() },
             set: { newValue in
-                editedUnitPrices[item.id] = newValue
+                // Allow only digits, dots, and commas
+                let filtered = newValue.filter { $0.isNumber || $0 == "." || $0 == "," }
+                editedUnitPrices[item.id] = filtered
                 savedLineItems.remove(item.id)
             }
         )
@@ -577,7 +575,7 @@ struct InvoiceDetailView: View {
 
     private func isUnitPriceModified(_ item: LineItem) -> Bool {
         guard let edited = editedUnitPrices[item.id] else { return false }
-        return edited != CurrencyFormatter.format(item.unitPrice, currency: invoice.currency)
+        return edited != item.unitPrice.formatted()
     }
 
     private func parsePrice(_ string: String) -> Decimal? {
@@ -603,6 +601,8 @@ struct InvoiceDetailView: View {
         }
         savingLineItems.remove(item.id)
         if success {
+            editedDescriptions.removeValue(forKey: item.id)
+            editedUnitPrices.removeValue(forKey: item.id)
             savedLineItems.insert(item.id)
             savedTimers[item.id]?.cancel()
             savedTimers[item.id] = Task {
@@ -610,6 +610,7 @@ struct InvoiceDetailView: View {
                 guard !Task.isCancelled else { return }
                 savedLineItems.remove(item.id)
             }
+            onRefresh?()
         }
     }
 
@@ -842,6 +843,37 @@ private extension String {
         }
 
         return result
+    }
+}
+
+private struct ClickOutsideTextFieldsModifier: ViewModifier {
+    let action: () -> Void
+
+    @State private var monitor: Any?
+
+    func body(content: Content) -> some View {
+        content
+            .onAppear {
+                monitor = NSEvent.addLocalMonitorForEvents(matching: .leftMouseDown) { event in
+                    guard let contentView = event.window?.contentView else { return event }
+                    let location = contentView.convert(event.locationInWindow, from: nil)
+                    let hitView = contentView.hitTest(location)
+                    if !(hitView is NSTextField || hitView is NSTextView) {
+                        action()
+                    }
+                    return event
+                }
+            }
+            .onDisappear {
+                if let monitor { NSEvent.removeMonitor(monitor) }
+                monitor = nil
+            }
+    }
+}
+
+extension View {
+    func onClickOutsideTextFields(perform action: @escaping () -> Void) -> some View {
+        modifier(ClickOutsideTextFieldsModifier(action: action))
     }
 }
 
