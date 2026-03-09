@@ -23,8 +23,8 @@ extension InvoicesViewModel {
         panel.canChooseFiles = false
         panel.canChooseDirectories = true
         panel.allowsMultipleSelection = false
-        panel.message = "Select folder to save invoices"
-        panel.prompt = "Select"
+        panel.message = Strings.Export.selectFolderMessage
+        panel.prompt = Strings.Common.select
 
         let response = await MainActor.run {
             panel.runModal()
@@ -42,7 +42,7 @@ extension InvoicesViewModel {
             let creditorInfo = try await KeychainService.shared.loadCreditorInfo()
 
             if withQRBill, !creditorInfo.isValid {
-                exportError = "Please configure your creditor information in Settings."
+                exportError = Strings.Errors.configureCreditor
                 isExporting = false
                 return
             }
@@ -54,7 +54,7 @@ extension InvoicesViewModel {
             if withQRBill && appSettings.effectivePDFSource == .template {
                 guard let templateId = appSettings.selectedTemplateId,
                       let loaded = await loadTemplate(id: templateId) else {
-                    exportError = "No template selected. Please select a template in Settings > Templates."
+                    exportError = Strings.Errors.noTemplateSelected
                     isExporting = false
                     return
                 }
@@ -62,7 +62,7 @@ extension InvoicesViewModel {
             }
 
             for (index, invoice) in invoicesToExport.enumerated() {
-                exportProgressMessage = "Exporting \(index + 1) of \(total): \(invoice.number)"
+                exportProgressMessage = Strings.Export.exportingProgress(index + 1, total, invoice.number)
                 exportProgress = Double(index) / Double(total)
 
                 let document = try await generatePDF(
@@ -97,7 +97,7 @@ extension InvoicesViewModel {
             }
 
             exportProgress = 1.0
-            exportProgressMessage = "Export complete!"
+            exportProgressMessage = Strings.Export.exportComplete
             showExportSuccess = true
             Analytics.batchExportCompleted(count: exportedCount, withQRBill: withQRBill)
         } catch {
@@ -168,7 +168,7 @@ extension InvoicesViewModel {
                         template = await self.loadTemplate(id: templateId)
                         guard template != nil else {
                             throw NSError(domain: "HarvestQRBill", code: 1, userInfo: [
-                                NSLocalizedDescriptionKey: "No template selected. Please select a template in Settings > Templates."
+                                NSLocalizedDescriptionKey: Strings.Errors.noTemplateSelected
                             ])
                         }
                     } else {

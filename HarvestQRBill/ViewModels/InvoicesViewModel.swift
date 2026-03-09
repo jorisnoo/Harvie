@@ -280,7 +280,7 @@ final class InvoicesViewModel {
 
             guard credentials.isValid else {
                 hasValidCredentials = false
-                error = "Please configure your Harvest API credentials in Settings."
+                error = Strings.Errors.configureCredentials
                 isLoading = false
                 isRefreshing = false
                 return
@@ -313,7 +313,7 @@ final class InvoicesViewModel {
             return
         } catch KeychainService.KeychainError.notFound {
             hasValidCredentials = false
-            error = "Please configure your Harvest API credentials in Settings."
+            error = Strings.Errors.configureCredentials
         } catch {
             // Only show error if we don't have cached data
             if invoices.isEmpty {

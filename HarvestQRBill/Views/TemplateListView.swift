@@ -109,36 +109,36 @@ struct TemplateListView: View {
             .controlSize(.small)
             .padding(8)
         }
-        .alert("Delete Template", isPresented: $showDeleteConfirmation) {
-            Button("Cancel", role: .cancel) { }
-            Button("Delete", role: .destructive) {
+        .alert(Strings.Templates.deleteTemplateTitle, isPresented: $showDeleteConfirmation) {
+            Button(Strings.Common.cancel, role: .cancel) { }
+            Button(Strings.Common.delete, role: .destructive) {
                 if let template = templateToDelete {
                     deleteTemplate(template)
                 }
             }
         } message: {
-            Text("Are you sure you want to delete \"\(templateToDelete?.name ?? "")\"? This cannot be undone.")
+            Text(Strings.Templates.deleteConfirmation(templateToDelete?.name ?? ""))
         }
     }
 
     @ViewBuilder
     private func templateContextMenu(for template: InvoiceTemplate) -> some View {
-        Button("Preview") {
+        Button(Strings.Common.preview) {
             Task { await openPreview(for: template) }
         }
 
-        Button("Edit") {
+        Button(Strings.Common.edit) {
             openEditor(for: template)
         }
 
-        Button("Duplicate") {
+        Button(Strings.Templates.duplicate) {
             duplicateTemplate(template)
         }
 
         if !template.isBuiltIn {
             Divider()
 
-            Button("Open in External Editor") {
+            Button(Strings.Templates.openInExternalEditor) {
                 if !TemplateFileManager.filesExist(for: template.id) {
                     TemplateFileManager.save(
                         html: template.resolvedHTMLContent(),
@@ -150,7 +150,7 @@ struct TemplateListView: View {
                 TemplateFileManager.openInEditor(for: template.id)
             }
 
-            Button("Reveal in Finder") {
+            Button(Strings.Templates.revealInFinder) {
                 if !TemplateFileManager.filesExist(for: template.id) {
                     TemplateFileManager.save(
                         html: template.resolvedHTMLContent(),
@@ -164,7 +164,7 @@ struct TemplateListView: View {
 
             Divider()
 
-            Button("Delete", role: .destructive) {
+            Button(Strings.Common.delete, role: .destructive) {
                 templateToDelete = template
                 showDeleteConfirmation = true
             }
@@ -176,7 +176,7 @@ struct TemplateListView: View {
         let css = ".invoice {\n    padding: 40px;\n    font-family: sans-serif;\n}"
 
         let template = InvoiceTemplate(
-            name: "Untitled Template",
+            name: Strings.Templates.untitledTemplate,
             htmlContent: "",
             cssContent: ""
         )
@@ -233,7 +233,7 @@ struct TemplateListView: View {
             backing: .buffered,
             defer: false
         )
-        window.title = template.isBuiltIn ? "\(template.name) (Built-in — Read Only)" : template.name
+        window.title = template.isBuiltIn ? Strings.Templates.builtInWindowTitle(template.name) : template.name
         window.contentView = NSHostingView(rootView: editorView)
 
         let controller = NSWindowController(window: window)
@@ -278,7 +278,7 @@ struct TemplateListView: View {
             backing: .buffered,
             defer: false
         )
-        window.title = "Preview — \(template.name)"
+        window.title = Strings.Templates.previewWindowTitle(template.name)
         window.contentView = NSHostingView(rootView: previewView)
 
         let controller = NSWindowController(window: window)
@@ -300,7 +300,7 @@ private struct TemplateRow: View {
                         .fontWeight(.medium)
 
                     if template.isBuiltIn {
-                        Text("Built-in")
+                        Text(Strings.Templates.builtIn)
                             .font(.caption2)
                             .padding(.horizontal, 5)
                             .padding(.vertical, 1)
@@ -309,7 +309,7 @@ private struct TemplateRow: View {
                     }
                 }
 
-                Text("Updated \(template.updatedAt.formatted(date: .abbreviated, time: .shortened))")
+                Text(Strings.Templates.updatedAt(template.updatedAt.formatted(date: .abbreviated, time: .shortened)))
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }

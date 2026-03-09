@@ -89,7 +89,7 @@ final class SettingsViewModel {
 
     func testConnection() async {
         guard harvestCredentials.canTestConnection else {
-            connectionTestResult = .failure("Please fill in Access Token and Account ID.")
+            connectionTestResult = .failure(Strings.Errors.fillCredentials)
             return
         }
 
@@ -104,7 +104,7 @@ final class SettingsViewModel {
                 connectionTestResult = .success
                 Analytics.harvestConnected()
             } else {
-                connectionTestResult = .failure("Connection failed.")
+                connectionTestResult = .failure(Strings.Errors.connectionFailed)
             }
         } catch let apiError as HarvestAPIService.APIError {
             // Use the sanitized error descriptions from APIError
@@ -113,7 +113,7 @@ final class SettingsViewModel {
             #if DEBUG
             logger.error("Connection test failed: \(error.localizedDescription)")
             #endif
-            connectionTestResult = .failure("Connection failed. Please check your network.")
+            connectionTestResult = .failure(Strings.Errors.connectionFailedNetwork)
         }
 
         isTestingConnection = false
@@ -125,8 +125,8 @@ final class SettingsViewModel {
         panel.canChooseDirectories = false
         panel.allowsMultipleSelection = false
         panel.allowedContentTypes = [.png, .jpeg, .gif, .tiff]
-        panel.message = "Select a company logo image"
-        panel.prompt = "Choose"
+        panel.message = Strings.Export.selectLogoMessage
+        panel.prompt = Strings.Export.choosePrompt
 
         guard panel.runModal() == .OK, let url = panel.url,
               let image = NSImage(contentsOf: url) else { return }
@@ -149,8 +149,8 @@ final class SettingsViewModel {
         panel.canChooseFiles = false
         panel.canChooseDirectories = true
         panel.allowsMultipleSelection = false
-        panel.message = "Select default download folder for invoices"
-        panel.prompt = "Select"
+        panel.message = Strings.Export.selectFolderForDownloads
+        panel.prompt = Strings.Common.select
 
         if panel.runModal() == .OK, let url = panel.url {
             appSettings.defaultDownloadPath = url.path

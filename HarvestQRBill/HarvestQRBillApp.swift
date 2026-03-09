@@ -23,7 +23,7 @@ struct HarvestQRBillApp: App {
     }
 
     var body: some Scene {
-        Window("HarvestQRBill", id: "main") {
+        Window(Strings.App.title, id: "main") {
             ContentView()
                 .onAppear {
                     Analytics.initialize()
@@ -43,12 +43,12 @@ struct HarvestQRBillApp: App {
             CommandGroup(replacing: .newItem) { }
 
             CommandGroup(after: .toolbar) {
-                Button("Refresh") {
+                Button(Strings.Common.refresh) {
                     NotificationCenter.default.post(name: .refreshInvoices, object: nil)
                 }
                 .keyboardShortcut("r", modifiers: .command)
 
-                Button("Find") {
+                Button(Strings.Common.find) {
                     NotificationCenter.default.post(name: .searchInvoices, object: nil)
                 }
                 .keyboardShortcut("f", modifiers: .command)
@@ -75,12 +75,12 @@ struct UpdateMenuCommands: View {
     var checkForUpdates: () -> Void
 
     var body: some View {
-        Button("Check for Updates...") {
+        Button(Strings.App.checkForUpdates) {
             checkForUpdates()
         }
 
         if case .downloaded(_, _, let bundle) = updater.state {
-            Button("Restart and Update") {
+            Button(Strings.App.restartAndUpdate) {
                 Task {
                     try await updater.installThrowing(bundle)
                 }

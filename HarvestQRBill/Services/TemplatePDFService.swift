@@ -199,11 +199,11 @@ private final class PDFNavigationDelegate: NSObject, WKNavigationDelegate {
         var errorDescription: String? {
             switch self {
             case .renderingFailed:
-                return "Failed to render the template to PDF."
+                return Strings.Errors.renderingFailed
             case .processTerminated:
-                return "The web rendering process terminated unexpectedly."
+                return Strings.Errors.processTerminated
             case .timeout:
-                return "PDF rendering timed out."
+                return Strings.Errors.renderingTimeout
             }
         }
     }

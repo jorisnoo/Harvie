@@ -56,7 +56,7 @@ struct ConfirmationSheet<Content: View>: View {
             content
 
             HStack {
-                Button("Cancel", role: .cancel) {
+                Button(Strings.Common.cancel, role: .cancel) {
                     onCancel()
                 }
                 .keyboardShortcut(.escape)

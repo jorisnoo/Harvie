@@ -23,7 +23,7 @@ struct LabelEditorSheet: View {
 
     private var header: some View {
         HStack {
-            Text("Customize Labels")
+            Text(Strings.LabelEditor.title)
                 .font(.headline)
             Spacer()
             Picker("", selection: $selectedLanguage) {
@@ -39,7 +39,7 @@ struct LabelEditorSheet: View {
 
     private var form: some View {
         Form {
-            Section("Template Labels") {
+            Section(Strings.LabelEditor.templateLabels) {
                 ForEach(TemplateLanguage.templateLabelKeys, id: \.self) { key in
                     LabelRow(
                         key: key,
@@ -49,7 +49,7 @@ struct LabelEditorSheet: View {
                 }
             }
 
-            Section("QR Bill Labels") {
+            Section(Strings.LabelEditor.qrBillLabels) {
                 ForEach(TemplateLanguage.qrBillLabelKeys, id: \.self) { key in
                     LabelRow(
                         key: key,
@@ -64,7 +64,7 @@ struct LabelEditorSheet: View {
 
     private var footer: some View {
         HStack {
-            Button("Reset Language") {
+            Button(Strings.LabelEditor.resetLanguage) {
                 labelOverrides?[selectedLanguage.rawValue] = nil
                 if labelOverrides?.isEmpty == true {
                     labelOverrides = nil
@@ -74,7 +74,7 @@ struct LabelEditorSheet: View {
 
             Spacer()
 
-            Button("Done") {
+            Button(Strings.Common.done) {
                 dismiss()
             }
             .keyboardShortcut(.defaultAction)
@@ -118,7 +118,7 @@ private struct LabelRow: View {
                             .foregroundStyle(.secondary)
                     }
                     .buttonStyle(.borderless)
-                    .help("Reset to default")
+                    .help(Strings.LabelEditor.resetToDefault)
                 }
             }
         }

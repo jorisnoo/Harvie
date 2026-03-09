@@ -344,7 +344,10 @@ struct InvoiceDetailView: View {
 
             if let sentAt = invoice.sentAt,
                Calendar.current.isDate(sentAt, inSameDayAs: invoice.issueDate) {
-                Text(Strings.InvoiceDetail.issuedAndSent(invoice.issueDate.formatted(date: .long, time: .omitted), sentAt.formatted(date: .omitted, time: .shortened)))
+                Text(Strings.InvoiceDetail.issuedAndSent(
+                    invoice.issueDate.formatted(date: .long, time: .omitted),
+                    sentAt.formatted(date: .omitted, time: .shortened)
+                ))
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
             } else {

@@ -24,7 +24,7 @@ struct ContentView: View {
         } detail: {
             DetailContentView(viewModel: viewModel)
         }
-        .searchable(text: $viewModel.searchText, isPresented: $isSearching, placement: .sidebar, prompt: "Filter invoices")
+        .searchable(text: $viewModel.searchText, isPresented: $isSearching, placement: .sidebar, prompt: Strings.InvoicesList.filterPrompt)
         .onReceive(NotificationCenter.default.publisher(for: .searchInvoices)) { _ in
             isSearching = true
         }
@@ -66,9 +66,9 @@ private struct DetailContentView: View {
             .id(invoice.id)
         } else {
             ContentUnavailableView(
-                "Select an Invoice",
+                Strings.InvoiceDetail.selectAnInvoice,
                 systemImage: "doc.text",
-                description: Text("Choose an invoice from the list to view details and generate a QR bill.")
+                description: Text(Strings.InvoiceDetail.selectAnInvoiceDescription)
             )
         }
     }
