@@ -269,8 +269,8 @@ enum Strings {
         static let pdfSource = "PDF source"
         static let language = "Language"
         static let customizeLabels = "Customize labels"
-        static let hideQuantityColumn = "Hide Quantity column"
-        static let hideUnitPriceColumn = "Hide Unit Price column"
+        static let showQuantityColumn = "Show Quantity column"
+        static let showUnitPriceColumn = "Show Unit Price column"
         static let showTotalHours = "Show Total Hours"
         static let templateColumnHint = "To hide columns on Harvest PDFs, change this in the Harvest web UI."
         // swiftlint:disable:next line_length

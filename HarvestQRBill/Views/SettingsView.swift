@@ -370,14 +370,8 @@ struct TemplatesSettings: View {
                     }
 
                     if viewModel.appSettings.pdfSource == .template {
-                        Toggle(Strings.Settings.hideQuantityColumn, isOn: Binding(
-                            get: { !viewModel.appSettings.columnVisibility.showQuantity },
-                            set: { viewModel.appSettings.columnVisibility.showQuantity = !$0 }
-                        ))
-                        Toggle(Strings.Settings.hideUnitPriceColumn, isOn: Binding(
-                            get: { !viewModel.appSettings.columnVisibility.showUnitPrice },
-                            set: { viewModel.appSettings.columnVisibility.showUnitPrice = !$0 }
-                        ))
+                        Toggle(Strings.Settings.showQuantityColumn, isOn: $viewModel.appSettings.columnVisibility.showQuantity)
+                        Toggle(Strings.Settings.showUnitPriceColumn, isOn: $viewModel.appSettings.columnVisibility.showUnitPrice)
                         Toggle(Strings.Settings.showTotalHours, isOn: $viewModel.appSettings.columnVisibility.showTotalHours)
                     }
 
