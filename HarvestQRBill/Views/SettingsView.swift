@@ -368,24 +368,25 @@ struct TemplatesSettings: View {
                         }
                         .help("Customize labels")
                     }
-                }
 
-                Section("Hide Columns") {
-                    Toggle("Hide Quantity column", isOn: Binding(
-                        get: { !viewModel.appSettings.columnVisibility.showQuantity },
-                        set: { viewModel.appSettings.columnVisibility.showQuantity = !$0 }
-                    ))
-                    Toggle("Hide Unit Price column", isOn: Binding(
-                        get: { !viewModel.appSettings.columnVisibility.showUnitPrice },
-                        set: { viewModel.appSettings.columnVisibility.showUnitPrice = !$0 }
-                    ))
-                    Toggle("Show Total Hours", isOn: $viewModel.appSettings.columnVisibility.showTotalHours)
+                    if viewModel.appSettings.pdfSource == .template {
+                        Toggle("Hide Quantity column", isOn: Binding(
+                            get: { !viewModel.appSettings.columnVisibility.showQuantity },
+                            set: { viewModel.appSettings.columnVisibility.showQuantity = !$0 }
+                        ))
+                        Toggle("Hide Unit Price column", isOn: Binding(
+                            get: { !viewModel.appSettings.columnVisibility.showUnitPrice },
+                            set: { viewModel.appSettings.columnVisibility.showUnitPrice = !$0 }
+                        ))
+                        Toggle("Show Total Hours", isOn: $viewModel.appSettings.columnVisibility.showTotalHours)
+                    }
 
-                    Text("Applies to custom templates only. To hide columns on Harvest PDFs, change this setting in the Harvest web UI under Invoices → Configure → Hide columns.")
+                    Text(viewModel.appSettings.pdfSource == .template
+                         ? "To hide columns on Harvest PDFs, change this in the Harvest web UI."
+                         : "Column visibility can be configured when using a custom template. For Harvest PDFs, change this in the Harvest web UI under Invoices → Configure → Hide columns.")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
-                .disabled(viewModel.appSettings.pdfSource != .template)
             }
             .sheet(isPresented: $showLabelEditor) {
                 LabelEditorSheet(labelOverrides: $viewModel.appSettings.labelOverrides)
