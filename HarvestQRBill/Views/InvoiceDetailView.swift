@@ -77,6 +77,11 @@ struct InvoiceDetailView: View {
             .padding()
         }
         .onExitCommand { focusedField = nil }
+        .onKeyPress(phases: .down) { keyPress in
+            guard keyPress.key == .return, keyPress.modifiers.contains(.command) else { return .ignored }
+            focusedField = nil
+            return .handled
+        }
         .onClickOutsideTextFields { [self] in focusedField = nil }
         .navigationTitle("Invoice \(invoice.number)")
         .onChange(of: invoice.id, initial: true) {
