@@ -23,8 +23,8 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
-		CF076F052F23AAB000DCF8D8 /* HarvestQRBillTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = HarvestQRBillTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		CFC06FAE2F12C02400DBAFCB /* HarvestQRBill.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = HarvestQRBill.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		CF076F052F23AAB000DCF8D8 /* HarvieTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = HarvieTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		CFC06FAE2F12C02400DBAFCB /* Harvie.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Harvie.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		CFC071392F130E6000DBAFCB /* AppIcon.icon */ = {isa = PBXFileReference; lastKnownFileType = folder.iconcomposer.icon; path = AppIcon.icon; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -34,13 +34,13 @@
 			membershipExceptions = (
 				Info.plist,
 			);
-			target = CFC06FAD2F12C02400DBAFCB /* HarvestQRBill */;
+			target = CFC06FAD2F12C02400DBAFCB /* Harvie */;
 		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		CF076F062F23AAB000DCF8D8 /* HarvestQRBillTests */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = HarvestQRBillTests; sourceTree = "<group>"; };
-		CFC06FB02F12C02400DBAFCB /* HarvestQRBill */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (CF076F002F23A65F00DCF8D8 /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = HarvestQRBill; sourceTree = "<group>"; };
+		CF076F062F23AAB000DCF8D8 /* HarvieTests */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = HarvieTests; sourceTree = "<group>"; };
+		CFC06FB02F12C02400DBAFCB /* Harvie */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (CF076F002F23A65F00DCF8D8 /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = Harvie; sourceTree = "<group>"; };
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -74,8 +74,8 @@
 			isa = PBXGroup;
 			children = (
 				CFC071392F130E6000DBAFCB /* AppIcon.icon */,
-				CFC06FB02F12C02400DBAFCB /* HarvestQRBill */,
-				CF076F062F23AAB000DCF8D8 /* HarvestQRBillTests */,
+				CFC06FB02F12C02400DBAFCB /* Harvie */,
+				CF076F062F23AAB000DCF8D8 /* HarvieTests */,
 				CF05BDFF2F3C4061008D50C5 /* Frameworks */,
 				CFC06FAF2F12C02400DBAFCB /* Products */,
 			);
@@ -84,8 +84,8 @@
 		CFC06FAF2F12C02400DBAFCB /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				CFC06FAE2F12C02400DBAFCB /* HarvestQRBill.app */,
-				CF076F052F23AAB000DCF8D8 /* HarvestQRBillTests.xctest */,
+				CFC06FAE2F12C02400DBAFCB /* Harvie.app */,
+				CF076F052F23AAB000DCF8D8 /* HarvieTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -93,9 +93,9 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		CF076F042F23AAB000DCF8D8 /* HarvestQRBillTests */ = {
+		CF076F042F23AAB000DCF8D8 /* HarvieTests */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = CF076F0B2F23AAB000DCF8D8 /* Build configuration list for PBXNativeTarget "HarvestQRBillTests" */;
+			buildConfigurationList = CF076F0B2F23AAB000DCF8D8 /* Build configuration list for PBXNativeTarget "HarvieTests" */;
 			buildPhases = (
 				CF076F012F23AAB000DCF8D8 /* Sources */,
 				CF076F022F23AAB000DCF8D8 /* Frameworks */,
@@ -107,18 +107,18 @@
 				CF076F0A2F23AAB000DCF8D8 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
-				CF076F062F23AAB000DCF8D8 /* HarvestQRBillTests */,
+				CF076F062F23AAB000DCF8D8 /* HarvieTests */,
 			);
-			name = HarvestQRBillTests;
+			name = HarvieTests;
 			packageProductDependencies = (
 			);
 			productName = HarvestQRBillTests;
-			productReference = CF076F052F23AAB000DCF8D8 /* HarvestQRBillTests.xctest */;
+			productReference = CF076F052F23AAB000DCF8D8 /* HarvieTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
-		CFC06FAD2F12C02400DBAFCB /* HarvestQRBill */ = {
+		CFC06FAD2F12C02400DBAFCB /* Harvie */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = CFC06FB92F12C02500DBAFCB /* Build configuration list for PBXNativeTarget "HarvestQRBill" */;
+			buildConfigurationList = CFC06FB92F12C02500DBAFCB /* Build configuration list for PBXNativeTarget "Harvie" */;
 			buildPhases = (
 				CF0000012F4A000000000001 /* SwiftLint */,
 				CFC06FAA2F12C02400DBAFCB /* Sources */,
@@ -130,15 +130,15 @@
 			dependencies = (
 			);
 			fileSystemSynchronizedGroups = (
-				CFC06FB02F12C02400DBAFCB /* HarvestQRBill */,
+				CFC06FB02F12C02400DBAFCB /* Harvie */,
 			);
-			name = HarvestQRBill;
+			name = Harvie;
 			packageProductDependencies = (
 				CF02441D2F1F7D2A004AD884 /* AppUpdater */,
 				CF05BE002F3C4061008D50C5 /* Aptabase */,
 			);
 			productName = Harvester;
-			productReference = CFC06FAE2F12C02400DBAFCB /* HarvestQRBill.app */;
+			productReference = CFC06FAE2F12C02400DBAFCB /* Harvie.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -160,7 +160,7 @@
 					};
 				};
 			};
-			buildConfigurationList = CFC06FA92F12C02400DBAFCB /* Build configuration list for PBXProject "HarvestQRBill" */;
+			buildConfigurationList = CFC06FA92F12C02400DBAFCB /* Build configuration list for PBXProject "Harvie" */;
 			compatibilityVersion = "Xcode 15.3";
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
@@ -178,8 +178,8 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				CFC06FAD2F12C02400DBAFCB /* HarvestQRBill */,
-				CF076F042F23AAB000DCF8D8 /* HarvestQRBillTests */,
+				CFC06FAD2F12C02400DBAFCB /* Harvie */,
+				CF076F042F23AAB000DCF8D8 /* HarvieTests */,
 			);
 		};
 /* End PBXProject section */
@@ -244,7 +244,7 @@
 /* Begin PBXTargetDependency section */
 		CF076F0A2F23AAB000DCF8D8 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = CFC06FAD2F12C02400DBAFCB /* HarvestQRBill */;
+			target = CFC06FAD2F12C02400DBAFCB /* Harvie */;
 			targetProxy = CF076F092F23AAB000DCF8D8 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
@@ -259,14 +259,14 @@
 				DEVELOPMENT_TEAM = T84UJ8Z67C;
 				GENERATE_INFOPLIST_FILE = YES;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = ch.noordermeer.HarvestQRBillTests;
+				PRODUCT_BUNDLE_IDENTIFIER = app.harvie.tests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = NO;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/HarvestQRBill.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/HarvestQRBill";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Harvie.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Harvie";
 			};
 			name = Debug;
 		};
@@ -279,14 +279,14 @@
 				DEVELOPMENT_TEAM = T84UJ8Z67C;
 				GENERATE_INFOPLIST_FILE = YES;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = ch.noordermeer.HarvestQRBillTests;
+				PRODUCT_BUNDLE_IDENTIFIER = app.harvie.tests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = NO;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/HarvestQRBill.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/HarvestQRBill";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Harvie.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Harvie";
 			};
 			name = Release;
 		};
@@ -299,14 +299,14 @@
 				DEVELOPMENT_TEAM = T84UJ8Z67C;
 				GENERATE_INFOPLIST_FILE = YES;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = ch.noordermeer.HarvestQRBillTests;
+				PRODUCT_BUNDLE_IDENTIFIER = app.harvie.tests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = NO;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/HarvestQRBill.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/HarvestQRBill";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Harvie.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Harvie";
 			};
 			name = "Release-AppStore";
 		};
@@ -455,7 +455,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MARKETING_VERSION = 0.2.5;
-				PRODUCT_BUNDLE_IDENTIFIER = ch.noordermeer.HarvestQRBill;
+				PRODUCT_BUNDLE_IDENTIFIER = app.harvie;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
@@ -492,7 +492,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MARKETING_VERSION = 0.2.5;
-				PRODUCT_BUNDLE_IDENTIFIER = ch.noordermeer.HarvestQRBill;
+				PRODUCT_BUNDLE_IDENTIFIER = app.harvie;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
@@ -585,7 +585,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MARKETING_VERSION = 0.2.5;
-				PRODUCT_BUNDLE_IDENTIFIER = ch.noordermeer.HarvestQRBill;
+				PRODUCT_BUNDLE_IDENTIFIER = app.harvie;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
@@ -601,7 +601,7 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		CF076F0B2F23AAB000DCF8D8 /* Build configuration list for PBXNativeTarget "HarvestQRBillTests" */ = {
+		CF076F0B2F23AAB000DCF8D8 /* Build configuration list for PBXNativeTarget "HarvieTests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				CF076F0C2F23AAB000DCF8D8 /* Debug */,
@@ -611,7 +611,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		CFC06FA92F12C02400DBAFCB /* Build configuration list for PBXProject "HarvestQRBill" */ = {
+		CFC06FA92F12C02400DBAFCB /* Build configuration list for PBXProject "Harvie" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				CFC06FB72F12C02500DBAFCB /* Debug */,
@@ -621,7 +621,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		CFC06FB92F12C02500DBAFCB /* Build configuration list for PBXNativeTarget "HarvestQRBill" */ = {
+		CFC06FB92F12C02500DBAFCB /* Build configuration list for PBXNativeTarget "Harvie" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				CFC06FBA2F12C02500DBAFCB /* Debug */,

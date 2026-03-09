@@ -16,9 +16,9 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "CFC06FAD2F12C02400DBAFCB"
-               BuildableName = "HarvestQRBill.app"
-               BlueprintName = "HarvestQRBill"
-               ReferencedContainer = "container:HarvestQRBill.xcodeproj">
+               BuildableName = "Harvie.app"
+               BlueprintName = "Harvie"
+               ReferencedContainer = "container:Harvie.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
       </BuildActionEntries>
@@ -36,9 +36,9 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "CF076F042F23AAB000DCF8D8"
-               BuildableName = "HarvestQRBillTests.xctest"
-               BlueprintName = "HarvestQRBillTests"
-               ReferencedContainer = "container:HarvestQRBill.xcodeproj">
+               BuildableName = "HarvieTests.xctest"
+               BlueprintName = "HarvieTests"
+               ReferencedContainer = "container:Harvie.xcodeproj">
             </BuildableReference>
          </TestableReference>
       </Testables>
@@ -58,9 +58,9 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "CFC06FAD2F12C02400DBAFCB"
-            BuildableName = "HarvestQRBill.app"
-            BlueprintName = "HarvestQRBill"
-            ReferencedContainer = "container:HarvestQRBill.xcodeproj">
+            BuildableName = "Harvie.app"
+            BlueprintName = "Harvie"
+            ReferencedContainer = "container:Harvie.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </LaunchAction>
@@ -75,9 +75,9 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "CFC06FAD2F12C02400DBAFCB"
-            BuildableName = "HarvestQRBill.app"
-            BlueprintName = "HarvestQRBill"
-            ReferencedContainer = "container:HarvestQRBill.xcodeproj">
+            BuildableName = "Harvie.app"
+            BlueprintName = "Harvie"
+            ReferencedContainer = "container:Harvie.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </ProfileAction>
