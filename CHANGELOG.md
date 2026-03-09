@@ -2,6 +2,31 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.4.2](https://github.com/jorisnoo/HarvestQRBill/releases/tag/v0.4.2) (2026-03-09)
+
+### Features
+
+- move send-via-email into draft send menu and restrict standalone email button to open invoices ([6e54234](https://github.com/jorisnoo/HarvestQRBill/commit/6e54234dd692fe22b2b6a964a8a3a259cc9a2bd6))
+- add memberwise inits, multiline line item editing, and email for open invoices ([adbcd4d](https://github.com/jorisnoo/HarvestQRBill/commit/adbcd4d46d22f31bba1edea04fb5e10b9029b490))
+- add Send via Email option with QR Bill PDF attachment ([0aa08bf](https://github.com/jorisnoo/HarvestQRBill/commit/0aa08bf5d50c91be9b9deb6565a598f7a25eef0b))
+- add sidebar status bar showing filtered invoice count and total ([ae671a3](https://github.com/jorisnoo/HarvestQRBill/commit/ae671a3c2a9d92dacd90e64a72cb43479e1b534c))
+- add progress indicator for batch invoice update operations ([103c248](https://github.com/jorisnoo/HarvestQRBill/commit/103c248a8e7073f8be09f791d2b73cd227726c64))
+
+### Bug Fixes
+
+- dim saving line items and remove redundant edited state cleanup on save ([9d6ce90](https://github.com/jorisnoo/HarvestQRBill/commit/9d6ce906c2ac803049a2392e69f5e68d60719f88))
+- replace inverted hide-column toggles with direct show-column bindings ([a72d27a](https://github.com/jorisnoo/HarvestQRBill/commit/a72d27a8f9fe2260ac7f8860d5598f8c94d11de7))
+- update mark-as-sent button icon to text.badge.checkmark ([445eb2e](https://github.com/jorisnoo/HarvestQRBill/commit/445eb2e771817ca71492019f5ad2dec656ca6f1f))
+- use template language label in email subject and improve line item text field focus behavior ([ee128e7](https://github.com/jorisnoo/HarvestQRBill/commit/ee128e7a352787fd3ad957166a84f38f4c6e4a5f))
+- add nonisolated annotations and explicit Codable conformances for Swift 6 strict concurrency ([23c8b3f](https://github.com/jorisnoo/HarvestQRBill/commit/23c8b3fe985d2af6bcda42365c995b2e078d53a2))
+- make template settings scrollable to prevent content overflow ([508047b](https://github.com/jorisnoo/HarvestQRBill/commit/508047b7541e301d407b9ab0b710dc015d543a48))
+- merge column visibility toggles into PDF source section to reduce overflow ([14e4cb5](https://github.com/jorisnoo/HarvestQRBill/commit/14e4cb5b44ad17959278a3354717736a1176e4df))
+
+### Code Refactoring
+
+- replace custom MultilineTextField with native TextEditor for line item editing ([c713f10](https://github.com/jorisnoo/HarvestQRBill/commit/c713f100ddd918a1f0272153551e17845ad21805))
+- replace hardcoded strings with Strings constants for localization ([59862d9](https://github.com/jorisnoo/HarvestQRBill/commit/59862d94d845b6bd716286edc1d6217f7b3ae096))
+- move column visibility from per-template to global app settings ([5ba89b8](https://github.com/jorisnoo/HarvestQRBill/commit/5ba89b827eaa6d516b31d08ffcef9caa6334fea9))
 ## [0.4.1](https://github.com/jorisnoo/HarvestQRBill/releases/tag/v0.4.1) (2026-03-09)
 
 ### Features
