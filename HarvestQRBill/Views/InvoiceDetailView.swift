@@ -400,37 +400,38 @@ struct InvoiceDetailView: View {
                 HStack(alignment: .top) {
                     VStack(alignment: .leading, spacing: 2) {
                         HStack {
-                            MultilineTextField(
-                                text: descriptionBinding(for: item),
-                                font: .systemFont(ofSize: NSFont.systemFontSize),
-                                isFocused: focusedField == .lineItem(item.id),
-                                onFocusChange: { focused in
-                                    if focused {
-                                        focusedField = .lineItem(item.id)
-                                    } else if focusedField == .lineItem(item.id) {
-                                        focusedField = nil
-                                        if isLineItemModified(item) {
-                                            Task { await saveLineItem(item) }
-                                        }
-                                    }
-                                }
-                            )
+                            Text(descriptionBinding(for: item).wrappedValue.harvestMarkdown)
+                                .font(.body)
+                                .frame(maxWidth: .infinity, alignment: .leading)
                                 .padding(.horizontal, 6)
                                 .padding(.vertical, 4)
+                                .opacity(focusedField == .lineItem(item.id) ? 0 : 1)
+                                .overlay {
+                                    if focusedField == .lineItem(item.id) {
+                                        MultilineTextField(
+                                            text: descriptionBinding(for: item),
+                                            font: .systemFont(ofSize: NSFont.systemFontSize),
+                                            isFocused: true,
+                                            onFocusChange: { focused in
+                                                if focused {
+                                                    focusedField = .lineItem(item.id)
+                                                } else if focusedField == .lineItem(item.id) {
+                                                    focusedField = nil
+                                                    if isLineItemModified(item) {
+                                                        Task { await saveLineItem(item) }
+                                                    }
+                                                }
+                                            }
+                                        )
+                                    }
+                                }
                                 .background(
                                     RoundedRectangle(cornerRadius: 6)
                                         .strokeBorder(focusedField == .lineItem(item.id) ? Color.accentColor.opacity(0.5) : .clear, lineWidth: 1.5)
                                 )
                                 .padding(.leading, -6)
-                                .overlay {
-                                    if focusedField != .lineItem(item.id) {
-                                        Text(descriptionBinding(for: item).wrappedValue.harvestMarkdown)
-                                            .font(.body)
-                                            .frame(maxWidth: .infinity, alignment: .leading)
-                                            .padding(.vertical, 4)
-                                            .background(.background)
-                                            .allowsHitTesting(false)
-                                    }
+                                .onTapGesture {
+                                    focusedField = .lineItem(item.id)
                                 }
 
                             if savingLineItems.contains(item.id) {
@@ -716,7 +717,8 @@ struct InvoiceDetailView: View {
             }
 
             emailService.recipients = recipientEmails
-            emailService.subject = Strings.InvoiceDetail.emailSubject(invoice.number)
+            let invoiceLabel = appSettings.templateLanguage.labels["invoice"]!
+            emailService.subject = Strings.InvoiceDetail.emailSubject(label: invoiceLabel, number: invoice.number)
             emailService.perform(withItems: [tempURL])
 
             // Mark as sent in Harvest (only for drafts)
