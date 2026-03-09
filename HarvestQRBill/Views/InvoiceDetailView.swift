@@ -156,7 +156,7 @@ struct InvoiceDetailView: View {
                         Button {
                             activeSheet = .markAsSent
                         } label: {
-                            Label(Strings.InvoiceDetail.markAsSentNoEmail, systemImage: "checkmark")
+                            Label(Strings.InvoiceDetail.markAsSentNoEmail, systemImage: "text.badge.checkmark")
                         }
                     } label: {
                         Label(Strings.InvoiceDetail.send, systemImage: "paperplane")
