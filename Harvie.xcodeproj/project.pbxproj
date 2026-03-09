@@ -18,7 +18,7 @@
 			containerPortal = CFC06FA62F12C02400DBAFCB /* Project object */;
 			proxyType = 1;
 			remoteGlobalIDString = CFC06FAD2F12C02400DBAFCB;
-			remoteInfo = HarvestQRBill;
+			remoteInfo = Harvie;
 		};
 /* End PBXContainerItemProxy section */
 
@@ -112,7 +112,7 @@
 			name = HarvieTests;
 			packageProductDependencies = (
 			);
-			productName = HarvestQRBillTests;
+			productName = HarvieTests;
 			productReference = CF076F052F23AAB000DCF8D8 /* HarvieTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
@@ -436,7 +436,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = NO;
-				CODE_SIGN_ENTITLEMENTS = HarvestQRBill/HarvestQRBillDirect.entitlements;
+				CODE_SIGN_ENTITLEMENTS = Harvie/HarvieDirect.entitlements;
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
@@ -447,7 +447,7 @@
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SELECTED_FILES = readwrite;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = HarvestQRBill/Info.plist;
+				INFOPLIST_FILE = Harvie/Info.plist;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.business";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -473,7 +473,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = NO;
-				CODE_SIGN_ENTITLEMENTS = HarvestQRBill/HarvestQRBillDirect.entitlements;
+				CODE_SIGN_ENTITLEMENTS = Harvie/HarvieDirect.entitlements;
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
@@ -484,7 +484,7 @@
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SELECTED_FILES = readwrite;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = HarvestQRBill/Info.plist;
+				INFOPLIST_FILE = Harvie/Info.plist;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.business";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -566,7 +566,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = NO;
-				CODE_SIGN_ENTITLEMENTS = HarvestQRBill/HarvestQRBill.entitlements;
+				CODE_SIGN_ENTITLEMENTS = Harvie/Harvie.entitlements;
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
@@ -577,7 +577,7 @@
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SELECTED_FILES = readwrite;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = HarvestQRBill/Info.plist;
+				INFOPLIST_FILE = Harvie/Info.plist;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.business";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				LD_RUNPATH_SEARCH_PATHS = (

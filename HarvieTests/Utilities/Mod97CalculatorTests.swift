@@ -1,10 +1,10 @@
 //
 //  Mod97CalculatorTests.swift
-//  HarvestQRBillTests
+//  HarvieTests
 //
 
 import Testing
-@testable import HarvestQRBill
+@testable import Harvie
 
 @Suite("Mod97 Calculator")
 struct Mod97CalculatorTests {

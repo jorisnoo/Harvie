@@ -1,6 +1,6 @@
 //
 //  QRBillService.swift
-//  HarvestQRBill
+//  Harvie
 //
 
 import Foundation

@@ -1,6 +1,6 @@
 //
 //  DemoDataProvider.swift
-//  HarvestQRBill
+//  Harvie
 //
 
 import Foundation

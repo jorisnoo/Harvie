@@ -1,6 +1,6 @@
 //
 //  WatermarkedPDFPage.swift
-//  HarvestQRBill
+//  Harvie
 //
 
 import PDFKit

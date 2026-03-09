@@ -1,10 +1,10 @@
 //
 //  IBANValidatorTests.swift
-//  HarvestQRBillTests
+//  HarvieTests
 //
 
 import Testing
-@testable import HarvestQRBill
+@testable import Harvie
 
 @Suite("IBAN Validator")
 struct IBANValidatorTests {

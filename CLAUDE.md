@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-HarvestQRBill is a native macOS app that generates Swiss QR Bills for Harvest invoices. Built with SwiftUI and SwiftData, targeting macOS 15+.
+Harvie is a native macOS app that generates Swiss QR Bills for Harvest invoices. Built with SwiftUI and SwiftData, targeting macOS 15+.
 
 Since this is a macos app, do not use xcodebuild mcp, but build directly instead.
 

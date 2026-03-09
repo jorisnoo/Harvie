@@ -1,12 +1,12 @@
 //
 //  TemplateFileWatcher.swift
-//  HarvestQRBill
+//  Harvie
 //
 
 import Foundation
 import os.log
 
-private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "HarvestQRBill", category: "TemplateFileWatcher")
+private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "app.harvie", category: "TemplateFileWatcher")
 
 @MainActor
 final class TemplateFileWatcher {

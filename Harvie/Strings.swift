@@ -1,6 +1,6 @@
 //
 //  Strings.swift
-//  HarvestQRBill
+//  Harvie
 //
 
 import Foundation
@@ -31,7 +31,7 @@ enum Strings {
     // MARK: - App
 
     enum App {
-        static let title = "HarvestQRBill"
+        static let title = "Harvie"
         static let checkForUpdates = "Check for Updates..."
         static let restartAndUpdate = "Restart and Update"
     }

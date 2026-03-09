@@ -29,8 +29,8 @@ jobs:
       - name: Build and test
         run: >
           xcodebuild test
-          -project HarvestQRBill.xcodeproj
-          -scheme HarvestQRBill
+          -project Harvie.xcodeproj
+          -scheme Harvie
           -destination 'platform=macOS'
           CODE_SIGN_IDENTITY=-
           CODE_SIGNING_REQUIRED=NO

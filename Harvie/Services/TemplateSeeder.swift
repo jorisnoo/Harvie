@@ -1,13 +1,13 @@
 //
 //  TemplateSeeder.swift
-//  HarvestQRBill
+//  Harvie
 //
 
 import Foundation
 import SwiftData
 import os.log
 
-private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "HarvestQRBill", category: "TemplateSeeder")
+private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "app.harvie", category: "TemplateSeeder")
 
 struct TemplateSeeder {
     struct BuiltInTemplate {

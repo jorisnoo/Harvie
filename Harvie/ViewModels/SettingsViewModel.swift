@@ -1,6 +1,6 @@
 //
 //  SettingsViewModel.swift
-//  HarvestQRBill
+//  Harvie
 //
 
 import Foundation
@@ -8,7 +8,7 @@ import os.log
 import SwiftUI
 import UniformTypeIdentifiers
 
-private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "HarvestQRBill", category: "Settings")
+private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "app.harvie", category: "Settings")
 
 @Observable
 @MainActor

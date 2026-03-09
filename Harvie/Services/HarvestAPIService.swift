@@ -1,12 +1,12 @@
 //
 //  HarvestAPIService.swift
-//  HarvestQRBill
+//  Harvie
 //
 
 import Foundation
 import os.log
 
-nonisolated private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "HarvestQRBill", category: "API")
+nonisolated private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "app.harvie", category: "API")
 
 actor HarvestAPIService {
     static let shared = HarvestAPIService()

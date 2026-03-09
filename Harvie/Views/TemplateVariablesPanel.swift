@@ -1,6 +1,6 @@
 //
 //  TemplateVariablesPanel.swift
-//  HarvestQRBill
+//  Harvie
 //
 
 import SwiftUI

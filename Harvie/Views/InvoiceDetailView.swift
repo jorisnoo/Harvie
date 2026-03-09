@@ -1,6 +1,6 @@
 //
 //  InvoiceDetailView.swift
-//  HarvestQRBill
+//  Harvie
 //
 
 import AppKit
@@ -10,7 +10,7 @@ import SwiftData
 import SwiftUI
 import UniformTypeIdentifiers
 
-private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "HarvestQRBill", category: "InvoiceDetail")
+private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "app.harvie", category: "InvoiceDetail")
 
 struct InvoiceDetailView: View {
     let invoice: Invoice

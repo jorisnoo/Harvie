@@ -1,10 +1,10 @@
 //
 //  InvoicesViewModelTests.swift
-//  HarvestQRBillTests
+//  HarvieTests
 //
 
 import Testing
-@testable import HarvestQRBill
+@testable import Harvie
 
 @Suite("Invoices ViewModel")
 struct InvoicesViewModelTests {

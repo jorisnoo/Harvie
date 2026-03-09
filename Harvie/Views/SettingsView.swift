@@ -1,6 +1,6 @@
 //
 //  SettingsView.swift
-//  HarvestQRBill
+//  Harvie
 //
 
 import SwiftData
@@ -429,7 +429,7 @@ struct FeedbackSettings: View {
             }
 
             Section(Strings.Settings.reportAnIssue) {
-                Link(destination: URL(string: "https://github.com/jorisnoo/HarvestQRBill/issues")!) {
+                Link(destination: URL(string: "https://github.com/jorisnoo/Harvie/issues")!) {
                     Label(Strings.Settings.openGitHubIssues, systemImage: "exclamationmark.bubble")
                 }
 

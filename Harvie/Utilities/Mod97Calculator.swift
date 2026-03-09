@@ -1,6 +1,6 @@
 //
 //  Mod97Calculator.swift
-//  HarvestQRBill
+//  Harvie
 //
 
 import Foundation

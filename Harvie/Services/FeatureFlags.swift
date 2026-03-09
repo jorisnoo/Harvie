@@ -1,6 +1,6 @@
 //
 //  FeatureFlags.swift
-//  HarvestQRBill
+//  Harvie
 //
 
 import Foundation

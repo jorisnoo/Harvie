@@ -1,6 +1,6 @@
 //
 //  HarvestCredentials.swift
-//  HarvestQRBill
+//  Harvie
 //
 
 import Foundation

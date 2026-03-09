@@ -1,6 +1,6 @@
 //
 //  CreditorReferenceGenerator.swift
-//  HarvestQRBill
+//  Harvie
 //
 
 import Foundation

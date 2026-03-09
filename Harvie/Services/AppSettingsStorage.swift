@@ -1,12 +1,12 @@
 //
 //  AppSettingsStorage.swift
-//  HarvestQRBill
+//  Harvie
 //
 
 import Foundation
 import os.log
 
-private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "HarvestQRBill", category: "AppSettingsStorage")
+private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "app.harvie", category: "AppSettingsStorage")
 
 enum AppSettingsStorage {
     private static let key = "appSettings"
@@ -32,7 +32,7 @@ enum AppSettingsStorage {
     }
 
     private static func migrateFromKeychain() -> AppSettings? {
-        let service = "ch.noordermeer.HarvestQRBill"
+        let service = "ch.noordermeer.HarvestQRBill"  // Keep old service name for migration
         let account = "app_settings"
 
         let query: [String: Any] = [

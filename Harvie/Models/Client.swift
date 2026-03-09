@@ -1,6 +1,6 @@
 //
 //  Client.swift
-//  HarvestQRBill
+//  Harvie
 //
 
 import Foundation

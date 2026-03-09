@@ -1,6 +1,6 @@
 //
 //  HTMLEditorView.swift
-//  HarvestQRBill
+//  Harvie
 //
 
 import AppKit

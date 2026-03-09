@@ -1,6 +1,6 @@
 //
 //  ContentView.swift
-//  HarvestQRBill
+//  Harvie
 //
 
 import SwiftUI

@@ -1,6 +1,6 @@
 //
 //  PDFService.swift
-//  HarvestQRBill
+//  Harvie
 //
 
 import AppKit
@@ -8,7 +8,7 @@ import Foundation
 import os.log
 import PDFKit
 
-nonisolated private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "HarvestQRBill", category: "PDF")
+nonisolated private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "app.harvie", category: "PDF")
 
 actor PDFService {
     static let shared = PDFService()

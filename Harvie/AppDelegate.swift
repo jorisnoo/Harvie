@@ -1,6 +1,6 @@
 //
 //  AppDelegate.swift
-//  HarvestQRBill
+//  Harvie
 //
 
 import AppKit
@@ -79,7 +79,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                     if let updateError = error as? AppUpdater.Error, case .noValidUpdate = updateError {
                         let alert = NSAlert()
                         alert.messageText = "No Updates Available"
-                        alert.informativeText = "You're running the latest version of HarvestQRBill."
+                        alert.informativeText = "You're running the latest version of Harvie."
                         alert.alertStyle = .informational
                         alert.addButton(withTitle: "OK")
                         alert.runModal()

@@ -1,6 +1,6 @@
 //
 //  CurrencyFormatter.swift
-//  HarvestQRBill
+//  Harvie
 //
 
 import Foundation

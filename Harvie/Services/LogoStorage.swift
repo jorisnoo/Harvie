@@ -1,6 +1,6 @@
 //
 //  LogoStorage.swift
-//  HarvestQRBill
+//  Harvie
 //
 
 import AppKit
@@ -12,7 +12,7 @@ enum LogoStorage {
 
     private static var fileURL: URL {
         let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
-        let appDir = appSupport.appendingPathComponent("HarvestQRBill")
+        let appDir = appSupport.appendingPathComponent("Harvie")
         return appDir.appendingPathComponent(fileName)
     }
 

@@ -1,6 +1,6 @@
 //
 //  CertificatePinningDelegate.swift
-//  HarvestQRBill
+//  Harvie
 //
 
 import Foundation
@@ -9,7 +9,7 @@ import os.log
 final class CertificatePinningDelegate: NSObject, URLSessionDelegate {
     private let pinnedDomains: [String]
     private nonisolated let pinningLogger = Logger(
-        subsystem: Bundle.main.bundleIdentifier ?? "HarvestQRBill",
+        subsystem: Bundle.main.bundleIdentifier ?? "app.harvie",
         category: "CertPinning"
     )
 

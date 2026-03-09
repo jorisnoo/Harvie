@@ -1,11 +1,11 @@
 //
 //  TemplateEngineTests.swift
-//  HarvestQRBillTests
+//  HarvieTests
 //
 
 import Foundation
 import Testing
-@testable import HarvestQRBill
+@testable import Harvie
 
 struct TemplateEngineTests {
 

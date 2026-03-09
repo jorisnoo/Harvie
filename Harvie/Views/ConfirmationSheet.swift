@@ -1,6 +1,6 @@
 //
 //  ConfirmationSheet.swift
-//  HarvestQRBill
+//  Harvie
 //
 
 import SwiftUI

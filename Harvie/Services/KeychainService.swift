@@ -1,6 +1,6 @@
 //
 //  KeychainService.swift
-//  HarvestQRBill
+//  Harvie
 //
 
 import Foundation
@@ -9,7 +9,7 @@ import Security
 actor KeychainService {
     static let shared = KeychainService()
 
-    private let service = "ch.noordermeer.HarvestQRBill"
+    private let service = "app.harvie"
     private var cache: [KeychainKey: Data] = [:]
     private let encoder = JSONEncoder()
     private let decoder = JSONDecoder()

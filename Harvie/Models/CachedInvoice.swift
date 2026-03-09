@@ -1,6 +1,6 @@
 //
 //  CachedInvoice.swift
-//  HarvestQRBill
+//  Harvie
 //
 
 import Foundation

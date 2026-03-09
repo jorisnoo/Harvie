@@ -1,6 +1,6 @@
 //
-//  HarvestQRBillApp.swift
-//  HarvestQRBill
+//  HarvieApp.swift
+//  Harvie
 //
 
 import SwiftUI
@@ -10,11 +10,13 @@ import AppUpdater
 #endif
 
 @main
-struct HarvestQRBillApp: App {
+struct HarvieApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
     let modelContainer: ModelContainer
 
     init() {
+        LegacyMigration.migrateIfNeeded()
+
         do {
             modelContainer = try ModelContainer(for: CachedInvoice.self, InvoiceTemplate.self)
         } catch {

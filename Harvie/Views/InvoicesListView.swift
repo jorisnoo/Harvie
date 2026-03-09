@@ -1,6 +1,6 @@
 //
 //  InvoicesListView.swift
-//  HarvestQRBill
+//  Harvie
 //
 
 import SwiftUI

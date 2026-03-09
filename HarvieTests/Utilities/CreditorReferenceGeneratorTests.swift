@@ -1,10 +1,10 @@
 //
 //  CreditorReferenceGeneratorTests.swift
-//  HarvestQRBillTests
+//  HarvieTests
 //
 
 import Testing
-@testable import HarvestQRBill
+@testable import Harvie
 
 @Suite("Creditor Reference Generator")
 struct CreditorReferenceGeneratorTests {

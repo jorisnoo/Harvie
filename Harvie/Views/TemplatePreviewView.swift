@@ -1,13 +1,13 @@
 //
 //  TemplatePreviewView.swift
-//  HarvestQRBill
+//  Harvie
 //
 
 import OSLog
 import SwiftUI
 import WebKit
 
-private let logger = Logger(subsystem: "com.junipero.HarvestQRBill", category: "TemplatePreview")
+private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "app.harvie", category: "TemplatePreview")
 
 struct TemplatePreviewView: NSViewRepresentable {
     let html: String

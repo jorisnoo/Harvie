@@ -1,6 +1,6 @@
 //
 //  TemplateEditorView.swift
-//  HarvestQRBill
+//  Harvie
 //
 
 import SwiftUI

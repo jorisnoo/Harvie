@@ -1,6 +1,6 @@
 //
 //  TemplateLanguage.swift
-//  HarvestQRBill
+//  Harvie
 //
 
 import Foundation

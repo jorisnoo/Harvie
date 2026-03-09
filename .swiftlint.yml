@@ -2,7 +2,7 @@ excluded:
   - DerivedData
   - .build
   - .worktrees
-  - HarvestQRBill/Services/DemoDataProvider.swift
+  - Harvie/Services/DemoDataProvider.swift
 
 line_length:
   warning: 150

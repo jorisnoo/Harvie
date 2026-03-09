@@ -1,6 +1,6 @@
 //
 //  LabelEditorSheet.swift
-//  HarvestQRBill
+//  Harvie
 //
 
 import SwiftUI

@@ -1,6 +1,6 @@
 //
 //  InvoicesViewModel.swift
-//  HarvestQRBill
+//  Harvie
 //
 
 import Foundation
@@ -8,7 +8,7 @@ import os.log
 import SwiftData
 import SwiftUI
 
-private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "HarvestQRBill", category: "InvoicesVM")
+private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "app.harvie", category: "InvoicesVM")
 
 @Observable
 @MainActor

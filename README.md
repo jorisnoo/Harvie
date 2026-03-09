@@ -1,16 +1,16 @@
 <p align="center">
   <!-- TODO: Add logo -->
-  <img src="assets/logo.png" alt="HarvestQRBill" width="128" height="128">
+  <img src="assets/logo.png" alt="Harvie" width="128" height="128">
 </p>
 
-<h1 align="center">HarvestQRBill</h1>
+<h1 align="center">Harvie</h1>
 
 <p align="center">
   A macOS app that generates Swiss QR Bills for <a href="https://www.getharvest.com/">Harvest</a> invoices.
 </p>
 
 <p align="center">
-  ✨<a href="https://github.com/jorisnoo/HarvestQRBill/releases/latest">Download</a>✨
+  ✨<a href="https://github.com/jorisnoo/Harvie/releases/latest">Download</a>✨
 </p>
 
 ---
@@ -37,21 +37,21 @@
 
 ### Download
 
-Download the latest release from the [Releases](https://github.com/jorisnoo/HarvestQRBill/releases/latest) page.
+Download the latest release from the [Releases](https://github.com/jorisnoo/Harvie/releases/latest) page.
 
 ### Build from Source
 
 ```bash
-git clone https://github.com/jorisnoo/HarvestQRBill.git
-cd HarvestQRBill
-open HarvestQRBill.xcodeproj
+git clone https://github.com/jorisnoo/Harvie.git
+cd Harvie
+open Harvie.xcodeproj
 ```
 
 Build and run with Xcode 15+.
 
 ## Setup
 
-1. Open HarvestQRBill
+1. Open Harvie
 2. Go to **Settings**
 3. Enter your Harvest credentials:
    - **Account ID**: Found in Harvest under Settings → Account

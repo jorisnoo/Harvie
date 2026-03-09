@@ -1,6 +1,6 @@
 //
 //  TemplatePDFService.swift
-//  HarvestQRBill
+//  Harvie
 //
 
 import AppKit
@@ -10,7 +10,7 @@ import PDFKit
 import WebKit
 import os.log
 
-private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "HarvestQRBill", category: "TemplatePDF")
+private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "app.harvie", category: "TemplatePDF")
 
 @MainActor
 final class TemplatePDFService {

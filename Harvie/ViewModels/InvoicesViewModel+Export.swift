@@ -1,6 +1,6 @@
 //
 //  InvoicesViewModel+Export.swift
-//  HarvestQRBill
+//  Harvie
 //
 
 import AppKit
@@ -10,7 +10,7 @@ import PDFKit
 import SwiftData
 import UniformTypeIdentifiers
 
-private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "HarvestQRBill", category: "InvoicesVM+Export")
+private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "app.harvie", category: "InvoicesVM+Export")
 
 extension InvoicesViewModel {
 
@@ -167,7 +167,7 @@ extension InvoicesViewModel {
                        let templateId = settings.selectedTemplateId {
                         template = await self.loadTemplate(id: templateId)
                         guard template != nil else {
-                            throw NSError(domain: "HarvestQRBill", code: 1, userInfo: [
+                            throw NSError(domain: "Harvie", code: 1, userInfo: [
                                 NSLocalizedDescriptionKey: Strings.Errors.noTemplateSelected
                             ])
                         }

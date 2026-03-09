@@ -1,6 +1,6 @@
 //
 //  TemplateEditorViewModel.swift
-//  HarvestQRBill
+//  Harvie
 //
 
 import Combine

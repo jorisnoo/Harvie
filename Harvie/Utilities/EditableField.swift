@@ -1,6 +1,6 @@
 //
 //  EditableField.swift
-//  HarvestQRBill
+//  Harvie
 //
 
 import SwiftUI

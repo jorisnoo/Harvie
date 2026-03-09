@@ -1,6 +1,6 @@
 //
 //  InvoiceTemplate.swift
-//  HarvestQRBill
+//  Harvie
 //
 
 import Foundation

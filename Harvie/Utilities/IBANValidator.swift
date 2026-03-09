@@ -1,6 +1,6 @@
 //
 //  IBANValidator.swift
-//  HarvestQRBill
+//  Harvie
 //
 
 import Foundation

@@ -1,6 +1,6 @@
 //
 //  InvoiceFileSaver.swift
-//  HarvestQRBill
+//  Harvie
 //
 
 import AppKit
@@ -8,7 +8,7 @@ import os.log
 import PDFKit
 import UniformTypeIdentifiers
 
-private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "HarvestQRBill", category: "FileSaver")
+private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "app.harvie", category: "FileSaver")
 
 @MainActor
 enum InvoiceFileSaver {
