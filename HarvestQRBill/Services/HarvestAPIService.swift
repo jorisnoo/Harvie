@@ -304,6 +304,19 @@ actor HarvestAPIService {
         try await sendInvoiceEvent(invoiceId: invoiceId, eventType: "draft", credentials: credentials)
     }
 
+    func fetchClientContacts(
+        clientId: Int,
+        credentials: HarvestCredentials
+    ) async throws -> [ClientContact] {
+        let request = try makeRequest(
+            path: "contacts",
+            credentials: credentials,
+            queryItems: [URLQueryItem(name: "client_id", value: String(clientId))]
+        )
+        let response: ClientContactsResponse = try await perform(request)
+        return response.contacts
+    }
+
     private func sendInvoiceEvent(
         invoiceId: Int,
         eventType: String,

@@ -24,6 +24,7 @@ struct InvoiceDetailView: View {
     @State private var error: String?
     @State private var showingSuccess = false
     @State private var savedFilePath: String?
+    @State private var isSendingEmail = false
 
     private var creditorName: String { creditorInfo.name }
     private var canExportWithQRBill: Bool { creditorInfo.isValid }
@@ -134,13 +135,31 @@ struct InvoiceDetailView: View {
                 }
 
                 ToolbarItem(placement: .primaryAction) {
-                    Button {
-                        activeSheet = .markAsSent
+                    Menu {
+                        Button {
+                            Task { await sendViaEmail() }
+                        } label: {
+                            Label("Send via Email…", systemImage: "envelope")
+                        }
+                        .disabled(isProcessing || isPreviewing || !canExportWithQRBill)
+
+                        Divider()
+
+                        Button {
+                            activeSheet = .markAsSent
+                        } label: {
+                            Label("Mark as Sent (no email)", systemImage: "checkmark")
+                        }
                     } label: {
-                        Label("Mark as Sent", systemImage: "paperplane")
+                        if isSendingEmail {
+                            ProgressView()
+                                .scaleEffect(0.7)
+                        } else {
+                            Label("Send", systemImage: "paperplane")
+                        }
                     }
-                    .disabled(isPerformingSheetAction)
-                    .help("Mark as Sent")
+                    .disabled(isPerformingSheetAction || isSendingEmail)
+                    .help("Send invoice via email or mark as sent")
                 }
             }
 
@@ -659,6 +678,47 @@ struct InvoiceDetailView: View {
             onRefresh?()
         }
         isPerformingSheetAction = false
+    }
+
+    // MARK: - Send via Email
+
+    private func sendViaEmail() async {
+        isSendingEmail = true
+        error = nil
+
+        do {
+            let (pdf, _) = try await generatePDF()
+            let tempURL = FileManager.default.temporaryDirectory
+                .appendingPathComponent(invoiceFileName)
+            pdf.write(to: tempURL)
+
+            // Fetch client contact emails
+            var recipientEmails: [String] = []
+            if let credentials = try? await keychainService.loadHarvestCredentials() {
+                let contacts = try? await apiService.fetchClientContacts(
+                    clientId: invoice.client.id, credentials: credentials
+                )
+                recipientEmails = contacts?.compactMap(\.email).filter { !$0.isEmpty } ?? []
+            }
+
+            // Compose email via NSSharingService
+            guard let emailService = NSSharingService(named: .composeEmail) else {
+                self.error = "Email is not configured on this Mac."
+                isSendingEmail = false
+                return
+            }
+
+            emailService.recipients = recipientEmails
+            emailService.subject = "Invoice \(invoice.number)"
+            emailService.perform(withItems: [tempURL])
+
+            // Mark as sent in Harvest
+            await markAsSent()
+        } catch {
+            handlePDFError(error, context: "Send via email")
+        }
+
+        isSendingEmail = false
     }
 
     // MARK: - PDF Generation

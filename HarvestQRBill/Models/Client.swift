@@ -10,6 +10,27 @@ struct ClientReference: Codable, Identifiable, Sendable {
     let name: String
 }
 
+struct ClientContact: Codable, Identifiable, Sendable {
+    let id: Int
+    let firstName: String
+    let lastName: String
+    let email: String?
+
+    enum CodingKeys: String, CodingKey {
+        case id, email
+        case firstName = "first_name"
+        case lastName = "last_name"
+    }
+}
+
+struct ClientContactsResponse: Codable, Sendable {
+    let contacts: [ClientContact]
+
+    enum CodingKeys: String, CodingKey {
+        case contacts
+    }
+}
+
 struct Client: Codable, Identifiable, Sendable {
     let id: Int
     let name: String
