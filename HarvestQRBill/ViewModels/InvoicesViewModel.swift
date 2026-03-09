@@ -89,6 +89,7 @@ final class InvoicesViewModel {
     var updateError: String?
     var showUpdateSuccess = false
     var updatedCount = 0
+    var updateTotalCount = 0
 
     var allSelectedAreDrafts: Bool {
         guard !selectedInvoiceIDs.isEmpty else { return false }
@@ -485,6 +486,7 @@ final class InvoicesViewModel {
         isUpdating = true
         updateError = nil
         updatedCount = 0
+        updateTotalCount = invoices.count
 
         do {
             let credentials = try await keychainService.loadHarvestCredentials()

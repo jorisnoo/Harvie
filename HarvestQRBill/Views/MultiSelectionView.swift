@@ -75,6 +75,10 @@ struct MultiSelectionView: View {
                 DatePicker("Issue Date", selection: $batchIssueDate, displayedComponents: .date)
                     .datePickerStyle(.graphical)
                     .labelsHidden()
+
+                if viewModel.isUpdating {
+                    batchProgressView
+                }
             }
         }
         .sheet(isPresented: $showMarkAsSentSheet) {
@@ -92,7 +96,11 @@ struct MultiSelectionView: View {
                 },
                 onCancel: { showMarkAsSentSheet = false },
                 width: 300
-            )
+            ) {
+                if viewModel.isUpdating {
+                    batchProgressView
+                }
+            }
         }
         .sheet(isPresented: $showMarkAsDraftSheet) {
             ConfirmationSheet(
@@ -107,7 +115,11 @@ struct MultiSelectionView: View {
                     }
                 },
                 onCancel: { showMarkAsDraftSheet = false }
-            )
+            ) {
+                if viewModel.isUpdating {
+                    batchProgressView
+                }
+            }
         }
     }
 
@@ -205,6 +217,18 @@ struct MultiSelectionView: View {
             }
             .buttonStyle(.bordered)
             .controlSize(.large)
+        }
+    }
+
+    private var batchProgressView: some View {
+        VStack(spacing: 6) {
+            ProgressView(
+                value: Double(viewModel.updatedCount),
+                total: Double(viewModel.updateTotalCount)
+            )
+            Text("\(viewModel.updatedCount) of \(viewModel.updateTotalCount)")
+                .font(.caption)
+                .foregroundStyle(.secondary)
         }
     }
 
