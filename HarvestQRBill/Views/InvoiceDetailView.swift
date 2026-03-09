@@ -400,38 +400,31 @@ struct InvoiceDetailView: View {
                 HStack(alignment: .top) {
                     VStack(alignment: .leading, spacing: 2) {
                         HStack {
-                            Text(descriptionBinding(for: item).wrappedValue.harvestMarkdown)
+                            TextEditor(text: descriptionBinding(for: item))
                                 .font(.body)
-                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .scrollContentBackground(.hidden)
+                                .focused($focusedField, equals: .lineItem(item.id))
                                 .padding(.horizontal, 6)
                                 .padding(.vertical, 4)
-                                .opacity(focusedField == .lineItem(item.id) ? 0 : 1)
-                                .overlay {
-                                    if focusedField == .lineItem(item.id) {
-                                        MultilineTextField(
-                                            text: descriptionBinding(for: item),
-                                            font: .systemFont(ofSize: NSFont.systemFontSize),
-                                            isFocused: true,
-                                            onFocusChange: { focused in
-                                                if focused {
-                                                    focusedField = .lineItem(item.id)
-                                                } else if focusedField == .lineItem(item.id) {
-                                                    focusedField = nil
-                                                    if isLineItemModified(item) {
-                                                        Task { await saveLineItem(item) }
-                                                    }
-                                                }
-                                            }
-                                        )
-                                    }
-                                }
                                 .background(
                                     RoundedRectangle(cornerRadius: 6)
                                         .strokeBorder(focusedField == .lineItem(item.id) ? Color.accentColor.opacity(0.5) : .clear, lineWidth: 1.5)
                                 )
                                 .padding(.leading, -6)
-                                .onTapGesture {
-                                    focusedField = .lineItem(item.id)
+                                .overlay {
+                                    if focusedField != .lineItem(item.id) {
+                                        Text(descriptionBinding(for: item).wrappedValue.harvestMarkdown)
+                                            .font(.body)
+                                            .frame(maxWidth: .infinity, alignment: .leading)
+                                            .padding(.vertical, 4)
+                                            .background(.background)
+                                            .allowsHitTesting(false)
+                                    }
+                                }
+                                .onChange(of: focusedField) {
+                                    if focusedField != .lineItem(item.id), isLineItemModified(item) {
+                                        Task { await saveLineItem(item) }
+                                    }
                                 }
 
                             if savingLineItems.contains(item.id) {
