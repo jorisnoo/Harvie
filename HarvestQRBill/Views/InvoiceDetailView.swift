@@ -415,6 +415,7 @@ struct InvoiceDetailView: View {
                                     if focusedField != .lineItem(item.id) {
                                         Text(descriptionBinding(for: item).wrappedValue.harvestMarkdown)
                                             .font(.body)
+                                            .foregroundStyle(savingLineItems.contains(item.id) ? .tertiary : .primary)
                                             .frame(maxWidth: .infinity, alignment: .leading)
                                             .padding(.vertical, 4)
                                             .background(.background)
@@ -629,8 +630,6 @@ struct InvoiceDetailView: View {
         }
         savingLineItems.remove(item.id)
         if success {
-            editedDescriptions.removeValue(forKey: item.id)
-            editedUnitPrices.removeValue(forKey: item.id)
             savedLineItems.insert(item.id)
             savedTimers[item.id]?.cancel()
             savedTimers[item.id] = Task {
