@@ -76,6 +76,9 @@ struct InvoicesListView: View {
                 warningBanner
             }
         }
+        .safeAreaInset(edge: .bottom, spacing: 0) {
+            SidebarStatusBar(invoices: viewModel.sortedInvoices)
+        }
     }
 
     var body: some View {
@@ -346,6 +349,31 @@ struct ExportProgressOverlay: View {
             .padding(24)
             .background(.regularMaterial)
             .clipShape(RoundedRectangle(cornerRadius: 12))
+        }
+    }
+}
+
+private struct SidebarStatusBar: View {
+    let invoices: [Invoice]
+
+    private var totalByCurrency: [(currency: String, total: Decimal)] {
+        Dictionary(grouping: invoices, by: \.currency)
+            .map { (currency: $0.key, total: $0.value.reduce(0) { $0 + $1.displayAmount }) }
+            .sorted { $0.currency < $1.currency }
+    }
+
+    var body: some View {
+        if !invoices.isEmpty {
+            HStack {
+                Text("\(invoices.count) invoice\(invoices.count == 1 ? "" : "s")")
+                Spacer()
+                Text(totalByCurrency.map { CurrencyFormatter.format($0.total, currency: $0.currency) }.joined(separator: " · "))
+            }
+            .font(.caption)
+            .foregroundStyle(.secondary)
+            .padding(.horizontal)
+            .padding(.vertical, 6)
+            .background(.bar)
         }
     }
 }
