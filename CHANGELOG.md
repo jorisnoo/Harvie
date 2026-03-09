@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.4.3](https://github.com/jorisnoo/HarvestQRBill/releases/tag/v0.4.3) (2026-03-09)
+
+### Bug Fixes
+
+- ignore double-clicks in click-outside-text-fields monitor to prevent unintended field deselection ([868ea06](https://github.com/jorisnoo/HarvestQRBill/commit/868ea06b0c386d0b473e611ce88642093fe191b5))
 ## [0.4.2](https://github.com/jorisnoo/HarvestQRBill/releases/tag/v0.4.2) (2026-03-09)
 
 ### Features
