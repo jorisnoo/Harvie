@@ -2,6 +2,26 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.4.1](https://github.com/jorisnoo/HarvestQRBill/releases/tag/v0.4.1) (2026-03-09)
+
+### Features
+
+- replace TextField with TextEditor for line item descriptions and add Harvest-flavored markdown rendering ([38b7841](https://github.com/jorisnoo/HarvestQRBill/commit/38b7841b03500d6fca12e19275c72248b438b196))
+- add automatic update check on app launch ([6830100](https://github.com/jorisnoo/HarvestQRBill/commit/6830100ce39f674d6d921ece80962fcde19c71dc))
+
+### Bug Fixes
+
+- move sent date from dates section to invoice summary section ([a03951f](https://github.com/jorisnoo/HarvestQRBill/commit/a03951f64ce609bb4dc8a718dfbdc361bcc85051))
+- remove explicit labelStyle from Export QR Bill button ([3df3d06](https://github.com/jorisnoo/HarvestQRBill/commit/3df3d062c5c84ca3ca328e2e948e9f82524b19ec))
+- improve unit price field input filtering, refresh after saves, and use standard rounded border style ([fb2353a](https://github.com/jorisnoo/HarvestQRBill/commit/fb2353a5b5cb3cd44e899c5be6e8d85be652e67f))
+
+### Documentation
+
+- lower minimum macOS requirement from 15.0 to 14.0 ([709b725](https://github.com/jorisnoo/HarvestQRBill/commit/709b725abf5d7a37497d4a3956b7b5358cf46824))
+
+### Chores
+
+- add SwiftLint configuration and build phase integration ([2b87fc4](https://github.com/jorisnoo/HarvestQRBill/commit/2b87fc4f62accc126bd92c5988dd29965e60ba15))
 ## [0.4.0](https://github.com/jorisnoo/HarvestQRBill/releases/tag/v0.4.0) (2026-03-04)
 
 ### Features
