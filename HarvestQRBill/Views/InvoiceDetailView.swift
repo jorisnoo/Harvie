@@ -122,36 +122,38 @@ struct InvoiceDetailView: View {
                 .help(canExportWithQRBill ? "Download invoice PDF with Swiss QR bill" : "Configure creditor info in Settings first")
             }
 
-            ToolbarItem(placement: .primaryAction) {
-                Menu {
-                    if invoice.state == .draft {
-                        Button {
-                            activeSheet = .markAsSent
-                        } label: {
-                            Label("Mark as Sent", systemImage: "paperplane")
-                        }
-                        .disabled(isPerformingSheetAction)
-
-                        Button {
-                            issueDate.current = invoice.issueDate
-                            activeSheet = .changeDate
-                        } label: {
-                            Label("Change Date", systemImage: "calendar")
-                        }
+            if invoice.state == .draft {
+                ToolbarItem(placement: .primaryAction) {
+                    Button {
+                        issueDate.current = invoice.issueDate
+                        activeSheet = .changeDate
+                    } label: {
+                        Label("Change Date", systemImage: "calendar")
                     }
-
-                    if invoice.state == .open {
-                        Button {
-                            activeSheet = .markAsDraft
-                        } label: {
-                            Label("Mark as Draft", systemImage: "pencil")
-                        }
-                        .disabled(isPerformingSheetAction)
-                    }
-                } label: {
-                    Label("Actions", systemImage: "ellipsis.circle")
+                    .help("Change Date")
                 }
-                .disabled(invoice.state == .paid || invoice.state == .closed)
+
+                ToolbarItem(placement: .primaryAction) {
+                    Button {
+                        activeSheet = .markAsSent
+                    } label: {
+                        Label("Mark as Sent", systemImage: "paperplane")
+                    }
+                    .disabled(isPerformingSheetAction)
+                    .help("Mark as Sent")
+                }
+            }
+
+            if invoice.state == .open {
+                ToolbarItem(placement: .primaryAction) {
+                    Button {
+                        activeSheet = .markAsDraft
+                    } label: {
+                        Label("Mark as Draft", systemImage: "pencil")
+                    }
+                    .disabled(isPerformingSheetAction)
+                    .help("Mark as Draft")
+                }
             }
         }
         .alert("Error", isPresented: .init(
@@ -318,9 +320,22 @@ struct InvoiceDetailView: View {
                     .foregroundStyle(.secondary)
             }
 
-            Text("Issued \(invoice.issueDate.formatted(date: .long, time: .omitted))")
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
+            if let sentAt = invoice.sentAt,
+               Calendar.current.isDate(sentAt, inSameDayAs: invoice.issueDate) {
+                Text("Issued \(invoice.issueDate.formatted(date: .long, time: .omitted)), sent at \(sentAt.formatted(date: .omitted, time: .shortened))")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+            } else {
+                Text("Issued \(invoice.issueDate.formatted(date: .long, time: .omitted))")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+
+                if let sentAt = invoice.sentAt {
+                    Text("Sent \(sentAt.formatted(date: .long, time: .shortened))")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                }
+            }
 
             Text("Due \(invoice.dueDate.formatted(date: .long, time: .omitted))")
                 .font(.subheadline)
@@ -341,12 +356,6 @@ struct InvoiceDetailView: View {
 
     private var datesSection: some View {
         VStack(alignment: .leading, spacing: 4) {
-            if let sentAt = invoice.sentAt {
-                Text("Sent \(sentAt.formatted(date: .long, time: .shortened))")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-            }
-
             if let paidAt = invoice.paidAt {
                 Text("Paid \(paidAt.formatted(date: .long, time: .shortened))")
                     .font(.subheadline)
