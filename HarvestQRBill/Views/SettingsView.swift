@@ -313,7 +313,7 @@ struct TemplatesSettings: View {
     @State private var showLabelEditor = false
 
     var body: some View {
-        VStack(spacing: 0) {
+        ScrollView {
             Form {
                 Section("Company Logo") {
                     HStack {
@@ -405,6 +405,7 @@ struct TemplatesSettings: View {
             .padding(.horizontal)
             .padding(.bottom, 12)
         }
+        .scrollBounceBehavior(.basedOnSize)
         .onChange(of: viewModel.appSettings.pdfSource) {
             guard viewModel.appSettings.pdfSource == .template,
                   viewModel.appSettings.selectedTemplateId == nil else { return }
