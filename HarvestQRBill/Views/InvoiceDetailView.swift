@@ -35,6 +35,7 @@ struct InvoiceDetailView: View {
 
     // Line item editing
     @State private var editedDescriptions: [Int: String] = [:]
+    @State private var editedUnitPrices: [Int: String] = [:]
     @State private var savingLineItems: Set<Int> = []
     @State private var savedLineItems: Set<Int> = []
     @State private var savedTimers: [Int: Task<Void, Never>] = [:]
@@ -73,8 +74,6 @@ struct InvoiceDetailView: View {
                 notesSection
             }
             .padding()
-            .contentShape(Rectangle())
-            .onTapGesture { focusedField = nil }
         }
         .onExitCommand { focusedField = nil }
         .navigationTitle("Invoice \(invoice.number)")
@@ -83,6 +82,7 @@ struct InvoiceDetailView: View {
             notes.reset(to: invoice.notes ?? "")
             issueDate.reset(to: invoice.issueDate)
             editedDescriptions = [:]
+            editedUnitPrices = [:]
             savingLineItems = []
             savedLineItems = []
             savedTimers.values.forEach { $0.cancel() }
@@ -377,32 +377,62 @@ struct InvoiceDetailView: View {
                                         .strokeBorder(focusedField == .lineItem(item.id) ? Color.accentColor.opacity(0.5) : .clear, lineWidth: 1.5)
                                 )
                                 .padding(.leading, -6)
-
-                            if isLineItemModified(item) {
-                                if savedLineItems.contains(item.id) {
-                                    Image(systemName: "checkmark.circle.fill")
-                                        .foregroundStyle(.green)
+                                .onSubmit {
+                                    // Insert newline instead of submitting
+                                    let binding = descriptionBinding(for: item)
+                                    binding.wrappedValue += "\n"
                                 }
-
-                                Button {
-                                    Task { await saveLineItemDescription(item) }
-                                } label: {
-                                    if savingLineItems.contains(item.id) {
-                                        ProgressView()
-                                            .scaleEffect(0.6)
-                                    } else {
-                                        Image(systemName: "checkmark.circle")
+                                .overlay {
+                                    if focusedField != .lineItem(item.id) {
+                                        Text(descriptionBinding(for: item).wrappedValue.harvestMarkdown)
+                                            .font(.body)
+                                            .frame(maxWidth: .infinity, alignment: .leading)
+                                            .padding(.vertical, 4)
+                                            .background(.background)
+                                            .allowsHitTesting(false)
                                     }
                                 }
-                                .buttonStyle(.borderless)
-                                .disabled(savingLineItems.contains(item.id))
-                                .help("Save description")
+                                .onChange(of: focusedField) {
+                                    if focusedField != .lineItem(item.id), isLineItemModified(item) {
+                                        Task { await saveLineItem(item) }
+                                    }
+                                }
+
+                            if savingLineItems.contains(item.id) {
+                                ProgressView()
+                                    .scaleEffect(0.6)
+                            } else if savedLineItems.contains(item.id) {
+                                Image(systemName: "checkmark.circle.fill")
+                                    .foregroundStyle(.green)
                             }
                         }
 
-                        Text("\(item.quantity.formatted()) × \(CurrencyFormatter.format(item.unitPrice, currency: invoice.currency))")
+                        HStack(spacing: 2) {
+                            Text("\(item.quantity.formatted()) ×")
+                                .font(.caption)
+                                .foregroundStyle(.tertiary)
+
+                            TextField(
+                                "Price",
+                                text: unitPriceBinding(for: item)
+                            )
                             .font(.caption)
                             .foregroundStyle(.tertiary)
+                            .textFieldStyle(.plain)
+                            .focused($focusedField, equals: .unitPrice(item.id))
+                            .fixedSize()
+                            .padding(.horizontal, 4)
+                            .padding(.vertical, 2)
+                            .background(
+                                RoundedRectangle(cornerRadius: 4)
+                                    .strokeBorder(focusedField == .unitPrice(item.id) ? Color.accentColor.opacity(0.5) : .clear, lineWidth: 1)
+                            )
+                            .onChange(of: focusedField) {
+                                if focusedField != .unitPrice(item.id), isUnitPriceModified(item) {
+                                    Task { await saveLineItem(item) }
+                                }
+                            }
+                        }
                     }
 
                     Spacer()
@@ -442,27 +472,34 @@ struct InvoiceDetailView: View {
                         .strokeBorder(focusedField == .notes ? Color.accentColor.opacity(0.5) : .clear, lineWidth: 1.5)
                 )
                 .padding(.leading, -4)
+                .overlay {
+                    if focusedField != .notes {
+                        Text(notes.current.harvestMarkdown)
+                            .font(.body)
+                            .foregroundStyle(.secondary)
+                            .frame(maxWidth: .infinity, minHeight: 40, alignment: .topLeading)
+                            .padding(4)
+                            .background(.background)
+                            .allowsHitTesting(false)
+                    }
+                }
+                .onChange(of: focusedField) {
+                    if focusedField != .notes, notes.isModified {
+                        Task { await saveNotes() }
+                    }
+                }
 
-            if notes.isModified {
+            if notes.isSaving {
                 HStack {
                     Spacer()
-                    if notes.showSaved {
-                        Image(systemName: "checkmark.circle.fill")
-                            .foregroundStyle(.green)
-                    }
-                    Button {
-                        Task { await saveNotes() }
-                    } label: {
-                        if notes.isSaving {
-                            ProgressView()
-                                .scaleEffect(0.7)
-                        } else {
-                            Text("Save")
-                        }
-                    }
-                    .buttonStyle(.bordered)
-                    .controlSize(.small)
-                    .disabled(notes.isSaving)
+                    ProgressView()
+                        .scaleEffect(0.7)
+                }
+            } else if notes.showSaved {
+                HStack {
+                    Spacer()
+                    Image(systemName: "checkmark.circle.fill")
+                        .foregroundStyle(.green)
                 }
             }
         }
@@ -522,17 +559,46 @@ struct InvoiceDetailView: View {
     }
 
     private func isLineItemModified(_ item: LineItem) -> Bool {
-        guard let edited = editedDescriptions[item.id] else { return false }
-        return edited != (item.description ?? "")
+        if let edited = editedDescriptions[item.id], edited != (item.description ?? "") {
+            return true
+        }
+        return isUnitPriceModified(item)
     }
 
-    private func saveLineItemDescription(_ item: LineItem) async {
-        guard let description = editedDescriptions[item.id] else { return }
+    private func unitPriceBinding(for item: LineItem) -> Binding<String> {
+        Binding(
+            get: { editedUnitPrices[item.id] ?? CurrencyFormatter.format(item.unitPrice, currency: invoice.currency) },
+            set: { newValue in
+                editedUnitPrices[item.id] = newValue
+                savedLineItems.remove(item.id)
+            }
+        )
+    }
+
+    private func isUnitPriceModified(_ item: LineItem) -> Bool {
+        guard let edited = editedUnitPrices[item.id] else { return false }
+        return edited != CurrencyFormatter.format(item.unitPrice, currency: invoice.currency)
+    }
+
+    private func parsePrice(_ string: String) -> Decimal? {
+        let cleaned = string.replacingOccurrences(of: "[^0-9.,]", with: "", options: .regularExpression)
+        // Handle both comma and dot as decimal separator
+        let normalized = cleaned.replacingOccurrences(of: ",", with: ".")
+        return Decimal(string: normalized)
+    }
+
+    private func saveLineItem(_ item: LineItem) async {
+        let editedDescription = editedDescriptions[item.id]
+        let editedPrice = editedUnitPrices[item.id].flatMap { parsePrice($0) }
+        guard editedDescription != nil || editedPrice != nil else { return }
         savingLineItems.insert(item.id)
-        let success = await performAPIAction(label: "save description") { credentials in
-            try await apiService.updateLineItemDescription(
+        let success = await performAPIAction(label: "save line item") { credentials in
+            try await apiService.updateLineItem(
                 invoiceId: invoice.id, lineItemId: item.id,
-                description: description, credentials: credentials
+                description: editedDescription,
+                unitPrice: editedPrice,
+                allLineItems: invoice.lineItems ?? [],
+                credentials: credentials
             )
         }
         savingLineItems.remove(item.id)
@@ -728,7 +794,7 @@ struct InvoiceDetailView: View {
     }
 
     private enum FocusedField: Hashable {
-        case subject, notes, lineItem(Int)
+        case subject, notes, lineItem(Int), unitPrice(Int)
     }
 
     private enum ActiveSheet: Identifiable {
@@ -743,18 +809,36 @@ struct InvoiceDetailView: View {
 }
 
 private extension String {
-    var markdown: AttributedString {
-        var result = (try? AttributedString(
-            markdown: self,
-            options: .init(interpretedSyntax: .inlineOnlyPreservingWhitespace)
-        )) ?? AttributedString(self)
+    /// Renders Harvest-flavored markdown as an `AttributedString`.
+    /// Harvest treats both `*text*` and `**text**` as bold; `- item` as list bullets.
+    var harvestMarkdown: AttributedString {
+        // Normalize line endings, then convert list markers to bullet points
+        let normalized = self
+            .replacingOccurrences(of: "\r\n", with: "\n")
+            .replacingOccurrences(of: "\r", with: "\n")
+        let preprocessed = normalized
+            .split(separator: "\n", omittingEmptySubsequences: false)
+            .map { line -> String in
+                let trimmed = line.drop(while: { $0 == " " })
+                if trimmed.hasPrefix("- ") {
+                    return "• " + trimmed.dropFirst(2)
+                }
+                return String(line)
+            }
+            .joined(separator: "\n")
 
+        var result = (try? AttributedString(
+            markdown: preprocessed,
+            options: .init(interpretedSyntax: .inlineOnlyPreservingWhitespace)
+        )) ?? AttributedString(preprocessed)
+
+        // Harvest: both *text* and **text** render as bold only (no italic)
         for run in result.runs {
             guard let intent = run.inlinePresentationIntent else { continue }
-            var font: Font = .body
-            if intent.contains(.stronglyEmphasized) { font = font.bold() }
-            if intent.contains(.emphasized) { font = font.italic() }
-            result[run.range].font = font
+            if intent.contains(.stronglyEmphasized) || intent.contains(.emphasized) {
+                result[run.range].font = Font.body.bold()
+                result[run.range].inlinePresentationIntent = .stronglyEmphasized
+            }
         }
 
         return result

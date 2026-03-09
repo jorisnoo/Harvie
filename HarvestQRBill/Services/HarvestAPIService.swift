@@ -315,17 +315,27 @@ actor HarvestAPIService {
         try await performMutation(request)
     }
 
-    func updateLineItemDescription(
+    func updateLineItem(
         invoiceId: Int,
         lineItemId: Int,
-        description: String,
+        description: String? = nil,
+        unitPrice: Decimal? = nil,
+        allLineItems: [LineItem],
         credentials: HarvestCredentials
     ) async throws {
         var request = try makeRequest(path: "invoices/\(invoiceId)", credentials: credentials)
         request.httpMethod = "PATCH"
-        let payload = LineItemUpdatePayload(lineItems: [
-            .init(id: lineItemId, description: description)
-        ])
+        // Include all line items to preserve order
+        let payload = LineItemUpdatePayload(lineItems: allLineItems.map { item in
+            if item.id == lineItemId {
+                return .init(
+                    id: item.id,
+                    description: description ?? (item.description ?? ""),
+                    unitPrice: unitPrice
+                )
+            }
+            return .init(id: item.id, description: item.description ?? "", unitPrice: nil)
+        })
         request.httpBody = try JSONEncoder().encode(payload)
         try await performMutation(request)
     }
@@ -351,6 +361,19 @@ actor HarvestAPIService {
         struct Item: Encodable {
             let id: Int
             let description: String
+            let unitPrice: Decimal?
+
+            enum CodingKeys: String, CodingKey {
+                case id, description
+                case unitPrice = "unit_price"
+            }
+
+            func encode(to encoder: Encoder) throws {
+                var container = encoder.container(keyedBy: CodingKeys.self)
+                try container.encode(id, forKey: .id)
+                try container.encode(description, forKey: .description)
+                try container.encodeIfPresent(unitPrice, forKey: .unitPrice)
+            }
         }
     }
 
