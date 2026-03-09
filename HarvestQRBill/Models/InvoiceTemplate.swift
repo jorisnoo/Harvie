@@ -6,7 +6,7 @@
 import Foundation
 import SwiftData
 
-struct ColumnVisibility: Codable, Sendable {
+struct ColumnVisibility: Codable, Sendable, Equatable {
     var showQuantity: Bool = true
     var showUnitPrice: Bool = true
     var showTotalHours: Bool = false

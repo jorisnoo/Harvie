@@ -218,7 +218,8 @@ extension InvoicesViewModel {
                     credentials: credentials,
                     language: settings.templateLanguage,
                     labelOverrides: settings.labelOverrides,
-                    paidMarkStyle: settings.paidMarkStyle
+                    paidMarkStyle: settings.paidMarkStyle,
+                    columnVisibility: settings.columnVisibility
                 )
             } else {
                 return try await PDFService.shared.createInvoiceWithQRBill(

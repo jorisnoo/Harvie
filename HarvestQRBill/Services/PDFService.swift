@@ -173,7 +173,8 @@ actor PDFService {
         credentials: HarvestCredentials? = nil,
         language: TemplateLanguage = .en,
         labelOverrides: [String: [String: String]]? = nil,
-        paidMarkStyle: PaidMarkStyle = .default
+        paidMarkStyle: PaidMarkStyle = .default,
+        columnVisibility: ColumnVisibility = .default
     ) async throws -> PDFDocument {
         // Fetch client once and reuse for both address and debtor
         var resolvedClientAddress = clientAddress
@@ -197,7 +198,8 @@ actor PDFService {
 
         let basePDF = try await TemplatePDFService.shared.renderTemplate(
             template: template,
-            context: context
+            context: context,
+            columnVisibility: columnVisibility
         )
 
         // Build debtor address from already-fetched client

@@ -369,6 +369,23 @@ struct TemplatesSettings: View {
                         .help("Customize labels")
                     }
                 }
+
+                Section("Hide Columns") {
+                    Toggle("Hide Quantity column", isOn: Binding(
+                        get: { !viewModel.appSettings.columnVisibility.showQuantity },
+                        set: { viewModel.appSettings.columnVisibility.showQuantity = !$0 }
+                    ))
+                    Toggle("Hide Unit Price column", isOn: Binding(
+                        get: { !viewModel.appSettings.columnVisibility.showUnitPrice },
+                        set: { viewModel.appSettings.columnVisibility.showUnitPrice = !$0 }
+                    ))
+                    Toggle("Show Total Hours", isOn: $viewModel.appSettings.columnVisibility.showTotalHours)
+
+                    Text("Applies to custom templates only. To hide columns on Harvest PDFs, change this setting in the Harvest web UI under Invoices → Configure → Hide columns.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                .disabled(viewModel.appSettings.pdfSource != .template)
             }
             .sheet(isPresented: $showLabelEditor) {
                 LabelEditorSheet(labelOverrides: $viewModel.appSettings.labelOverrides)
@@ -381,7 +398,8 @@ struct TemplatesSettings: View {
                 activeTemplateId: viewModel.appSettings.pdfSource == .template
                     ? $viewModel.appSettings.selectedTemplateId : nil,
                 language: viewModel.appSettings.templateLanguage,
-                labelOverrides: viewModel.appSettings.labelOverrides
+                labelOverrides: viewModel.appSettings.labelOverrides,
+                columnVisibility: viewModel.appSettings.columnVisibility
             )
             .padding(.horizontal)
             .padding(.bottom, 12)

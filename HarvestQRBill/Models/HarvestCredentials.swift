@@ -132,6 +132,9 @@ struct AppSettings: Codable, Sendable, Equatable {
     // Paid mark watermark
     var paidMarkStyle: PaidMarkStyle
 
+    // Column visibility for custom templates
+    var columnVisibility: ColumnVisibility
+
     // Label customization: [languageRawValue: [labelKey: customValue]]
     // Template keys are bare ("invoice", "subtotal"). QR bill keys prefixed with "qr." ("qr.receipt").
     var labelOverrides: [String: [String: String]]?
@@ -157,12 +160,13 @@ struct AppSettings: Codable, Sendable, Equatable {
             pdfSource: .harvestPDF,
             selectedTemplateId: nil,
             templateLanguage: .en,
-            paidMarkStyle: .default
+            paidMarkStyle: .default,
+            columnVisibility: .default
         )
     }
 
     // swiftlint:disable:next line_length
-    init(downloadBehavior: DownloadBehavior, defaultDownloadPath: String?, downloadBookmarkData: Data?, filenamePattern: String = defaultFilenamePattern, dateFormat: String = defaultDateFormat, isDemoMode: Bool = false, pdfSource: InvoicePDFSource = .harvestPDF, selectedTemplateId: UUID? = nil, templateLanguage: TemplateLanguage = .en, paidMarkStyle: PaidMarkStyle = .default, labelOverrides: [String: [String: String]]? = nil) {
+    init(downloadBehavior: DownloadBehavior, defaultDownloadPath: String?, downloadBookmarkData: Data?, filenamePattern: String = defaultFilenamePattern, dateFormat: String = defaultDateFormat, isDemoMode: Bool = false, pdfSource: InvoicePDFSource = .harvestPDF, selectedTemplateId: UUID? = nil, templateLanguage: TemplateLanguage = .en, paidMarkStyle: PaidMarkStyle = .default, columnVisibility: ColumnVisibility = .default, labelOverrides: [String: [String: String]]? = nil) {
         self.downloadBehavior = downloadBehavior
         self.defaultDownloadPath = defaultDownloadPath
         self.downloadBookmarkData = downloadBookmarkData
@@ -173,6 +177,7 @@ struct AppSettings: Codable, Sendable, Equatable {
         self.selectedTemplateId = selectedTemplateId
         self.templateLanguage = templateLanguage
         self.paidMarkStyle = paidMarkStyle
+        self.columnVisibility = columnVisibility
         self.labelOverrides = labelOverrides
     }
 
@@ -188,6 +193,7 @@ struct AppSettings: Codable, Sendable, Equatable {
         selectedTemplateId = try container.decodeIfPresent(UUID.self, forKey: .selectedTemplateId)
         templateLanguage = try container.decodeIfPresent(TemplateLanguage.self, forKey: .templateLanguage) ?? .en
         paidMarkStyle = try container.decodeIfPresent(PaidMarkStyle.self, forKey: .paidMarkStyle) ?? .default
+        columnVisibility = try container.decodeIfPresent(ColumnVisibility.self, forKey: .columnVisibility) ?? .default
         lastSortOption = try container.decodeIfPresent(String.self, forKey: .lastSortOption)
         lastSortAscending = try container.decodeIfPresent(Bool.self, forKey: .lastSortAscending)
         lastFilterPeriod = try container.decodeIfPresent(String.self, forKey: .lastFilterPeriod)

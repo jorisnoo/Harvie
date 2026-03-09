@@ -79,10 +79,11 @@ final class TemplatePDFService {
 
     func renderTemplate(
         template: InvoiceTemplate,
-        context: [String: Any]
+        context: [String: Any],
+        columnVisibility: ColumnVisibility = .default
     ) async throws -> PDFDocument {
         let processedHTML = TemplateEngine.render(template.resolvedHTMLContent(), with: context)
-        let css = template.resolvedCSSContent() + "\n" + template.columnVisibility.cssVariables()
+        let css = template.resolvedCSSContent() + "\n" + columnVisibility.cssVariables()
         return try await renderPDF(html: processedHTML, css: css)
     }
 

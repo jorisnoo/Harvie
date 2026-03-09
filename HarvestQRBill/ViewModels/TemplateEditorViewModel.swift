@@ -39,12 +39,12 @@ final class TemplateEditorViewModel {
         fileWatcher?.stop()
     }
 
-    init(template: InvoiceTemplate, modelContext: ModelContext, language: TemplateLanguage = .en, labelOverrides: [String: [String: String]]? = nil) {
+    init(template: InvoiceTemplate, modelContext: ModelContext, language: TemplateLanguage = .en, labelOverrides: [String: [String: String]]? = nil, columnVisibility: ColumnVisibility = .default) {
         self.template = template
         self.htmlContent = template.resolvedHTMLContent()
         self.cssContent = template.resolvedCSSContent()
         self.name = template.name
-        self.columnVisibility = template.columnVisibility
+        self.columnVisibility = columnVisibility
         self.language = language
         self.labelOverrides = labelOverrides
         self.modelContext = modelContext
@@ -63,7 +63,6 @@ final class TemplateEditorViewModel {
 
     func save() {
         template.name = name
-        template.columnVisibility = columnVisibility
         template.updatedAt = Date()
 
         if !template.isBuiltIn {
@@ -95,12 +94,6 @@ final class TemplateEditorViewModel {
             TemplateFileManager.save(html: htmlContent, css: cssContent, for: template.id, name: name)
         }
         TemplateFileManager.revealInFinder(for: template.id)
-    }
-
-    func columnVisibilityChanged() {
-        template.columnVisibility = columnVisibility
-        try? modelContext.save()
-        updatePreview()
     }
 
     func insertVariable(_ variable: String) {

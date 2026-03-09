@@ -687,7 +687,8 @@ struct InvoiceDetailView: View {
                 credentials: credentials,
                 language: appSettings.templateLanguage,
                 labelOverrides: appSettings.labelOverrides,
-                paidMarkStyle: appSettings.paidMarkStyle
+                paidMarkStyle: appSettings.paidMarkStyle,
+                columnVisibility: appSettings.columnVisibility
             )
             return (pdf, appSettings)
         }

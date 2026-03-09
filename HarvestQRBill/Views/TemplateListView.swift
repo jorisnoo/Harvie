@@ -11,6 +11,7 @@ struct TemplateListView: View {
     var activeTemplateId: Binding<UUID?>?
     var language: TemplateLanguage = .en
     var labelOverrides: [String: [String: String]]?
+    var columnVisibility: ColumnVisibility = .default
 
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \InvoiceTemplate.createdAt) private var templates: [InvoiceTemplate]
@@ -219,7 +220,7 @@ struct TemplateListView: View {
     private func openEditor(for template: InvoiceTemplate) {
         editorControllers.removeAll { $0.window == nil || !$0.window!.isVisible }
 
-        let viewModel = TemplateEditorViewModel(template: template, modelContext: modelContext, language: language, labelOverrides: labelOverrides)
+        let viewModel = TemplateEditorViewModel(template: template, modelContext: modelContext, language: language, labelOverrides: labelOverrides, columnVisibility: columnVisibility)
         let editorView = TemplateEditorView(viewModel: viewModel)
 
         let window = NSWindow(
@@ -262,7 +263,7 @@ struct TemplateListView: View {
         context["creditor"] = creditor
 
         let processedHTML = TemplateEngine.render(template.resolvedHTMLContent(), with: context)
-        let css = template.resolvedCSSContent() + "\n" + template.columnVisibility.cssVariables()
+        let css = template.resolvedCSSContent() + "\n" + columnVisibility.cssVariables()
         let html = TemplateEditorViewModel.buildPreviewDocument(html: processedHTML, css: css)
 
         let previewView = TemplatePreviewView(html: html)
