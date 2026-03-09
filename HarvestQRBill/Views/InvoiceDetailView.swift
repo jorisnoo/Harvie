@@ -123,7 +123,7 @@ struct InvoiceDetailView: View {
                 .help(canExportWithQRBill ? Strings.InvoiceDetail.exportTooltip : Strings.InvoiceDetail.creditorRequiredTooltip)
             }
 
-            if invoice.state == .draft || invoice.state == .open {
+            if invoice.state == .open {
                 ToolbarItem(placement: .primaryAction) {
                     Button {
                         Task { await sendViaEmail() }
@@ -154,14 +154,28 @@ struct InvoiceDetailView: View {
                 ToolbarItem(placement: .primaryAction) {
                     Menu {
                         Button {
+                            Task { await sendViaEmail() }
+                        } label: {
+                            Label(Strings.InvoiceDetail.sendViaEmail, systemImage: "envelope")
+                        }
+                        .disabled(isProcessing || isPreviewing || isSendingEmail || !canExportWithQRBill)
+
+                        Divider()
+
+                        Button {
                             activeSheet = .markAsSent
                         } label: {
-                            Label(Strings.InvoiceDetail.markAsSentNoEmail, systemImage: "text.badge.checkmark")
+                            Label(Strings.InvoiceDetail.markAsSent, systemImage: "text.badge.checkmark")
                         }
                     } label: {
-                        Label(Strings.InvoiceDetail.send, systemImage: "paperplane")
+                        if isSendingEmail {
+                            ProgressView()
+                                .scaleEffect(0.7)
+                        } else {
+                            Label(Strings.InvoiceDetail.send, systemImage: "paperplane")
+                        }
                     }
-                    .disabled(isPerformingSheetAction)
+                    .disabled(isPerformingSheetAction || isSendingEmail)
                     .help(Strings.InvoiceDetail.sendTooltip)
                 }
             }

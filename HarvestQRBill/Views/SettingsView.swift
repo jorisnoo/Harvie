@@ -373,13 +373,12 @@ struct TemplatesSettings: View {
                         Toggle(Strings.Settings.showQuantityColumn, isOn: $viewModel.appSettings.columnVisibility.showQuantity)
                         Toggle(Strings.Settings.showUnitPriceColumn, isOn: $viewModel.appSettings.columnVisibility.showUnitPrice)
                         Toggle(Strings.Settings.showTotalHours, isOn: $viewModel.appSettings.columnVisibility.showTotalHours)
+                    } else {
+                        Text(Strings.Settings.harvestColumnHint)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
                     }
 
-                    Text(viewModel.appSettings.pdfSource == .template
-                         ? Strings.Settings.templateColumnHint
-                         : Strings.Settings.harvestColumnHint)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
                 }
             }
             .sheet(isPresented: $showLabelEditor) {
