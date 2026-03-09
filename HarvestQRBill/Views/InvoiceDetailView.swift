@@ -115,7 +115,6 @@ struct InvoiceDetailView: View {
                             .scaleEffect(0.7)
                     } else {
                         Label("Export QR Bill", systemImage: "square.and.arrow.down")
-                            .labelStyle(.titleAndIcon)
                     }
                 }
                 .buttonStyle(.borderedProminent)
