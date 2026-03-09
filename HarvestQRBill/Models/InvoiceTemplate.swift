@@ -11,9 +11,15 @@ struct ColumnVisibility: Codable, Sendable, Equatable {
     var showUnitPrice: Bool = true
     var showTotalHours: Bool = false
 
-    static let `default` = ColumnVisibility()
+    nonisolated init(showQuantity: Bool = true, showUnitPrice: Bool = true, showTotalHours: Bool = false) {
+        self.showQuantity = showQuantity
+        self.showUnitPrice = showUnitPrice
+        self.showTotalHours = showTotalHours
+    }
 
-    func cssVariables() -> String {
+    nonisolated static let `default` = ColumnVisibility()
+
+    nonisolated func cssVariables() -> String {
         """
         :root {
             --col-qty-display: \(showQuantity ? "table-cell" : "none");
@@ -21,6 +27,24 @@ struct ColumnVisibility: Codable, Sendable, Equatable {
             --total-hours-display: \(showTotalHours ? "flex" : "none");
         }
         """
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case showQuantity, showUnitPrice, showTotalHours
+    }
+
+    nonisolated init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        showQuantity = try container.decodeIfPresent(Bool.self, forKey: .showQuantity) ?? true
+        showUnitPrice = try container.decodeIfPresent(Bool.self, forKey: .showUnitPrice) ?? true
+        showTotalHours = try container.decodeIfPresent(Bool.self, forKey: .showTotalHours) ?? false
+    }
+
+    nonisolated func encode(to encoder: any Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(showQuantity, forKey: .showQuantity)
+        try container.encode(showUnitPrice, forKey: .showUnitPrice)
+        try container.encode(showTotalHours, forKey: .showTotalHours)
     }
 }
 

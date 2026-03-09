@@ -220,7 +220,11 @@ struct TemplateListView: View {
     private func openEditor(for template: InvoiceTemplate) {
         editorControllers.removeAll { $0.window == nil || !$0.window!.isVisible }
 
-        let viewModel = TemplateEditorViewModel(template: template, modelContext: modelContext, language: language, labelOverrides: labelOverrides, columnVisibility: columnVisibility)
+        let viewModel = TemplateEditorViewModel(
+            template: template, modelContext: modelContext,
+            language: language, labelOverrides: labelOverrides,
+            columnVisibility: columnVisibility
+        )
         let editorView = TemplateEditorView(viewModel: viewModel)
 
         let window = NSWindow(

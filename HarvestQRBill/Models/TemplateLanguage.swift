@@ -14,7 +14,7 @@ enum TemplateLanguage: String, Codable, CaseIterable, Sendable {
         let currency, amount, invoice: String
     }
 
-    var qrBillLabels: QRBillLabels {
+    nonisolated var qrBillLabels: QRBillLabels {
         switch self {
         case .de:
             QRBillLabels(
@@ -51,7 +51,7 @@ enum TemplateLanguage: String, Codable, CaseIterable, Sendable {
         }
     }
 
-    var paidMark: String {
+    nonisolated var paidMark: String {
         switch self {
         case .en: "PAID"
         case .de: "BEZAHLT"
@@ -60,7 +60,7 @@ enum TemplateLanguage: String, Codable, CaseIterable, Sendable {
         }
     }
 
-    var displayName: String {
+    nonisolated var displayName: String {
         switch self {
         case .en: "English"
         case .de: "Deutsch"
@@ -69,7 +69,7 @@ enum TemplateLanguage: String, Codable, CaseIterable, Sendable {
         }
     }
 
-    var labels: [String: String] {
+    nonisolated var labels: [String: String] {
         switch self {
         case .en: Self.en_labels
         case .de: Self.de_labels
@@ -78,7 +78,7 @@ enum TemplateLanguage: String, Codable, CaseIterable, Sendable {
         }
     }
 
-    private static let en_labels: [String: String] = [
+    nonisolated private static let en_labels: [String: String] = [
         "invoice": "Invoice",
         "description": "Description",
         "quantity": "Qty",
@@ -106,7 +106,7 @@ enum TemplateLanguage: String, Codable, CaseIterable, Sendable {
         "tax": "Tax",
     ]
 
-    private static let de_labels: [String: String] = [
+    nonisolated private static let de_labels: [String: String] = [
         "invoice": "Rechnung",
         "description": "Beschreibung",
         "quantity": "Menge",
@@ -134,7 +134,7 @@ enum TemplateLanguage: String, Codable, CaseIterable, Sendable {
         "tax": "Steuer",
     ]
 
-    private static let fr_labels: [String: String] = [
+    nonisolated private static let fr_labels: [String: String] = [
         "invoice": "Facture",
         "description": "Description",
         "quantity": "Qt\u{00E9}",
@@ -162,7 +162,7 @@ enum TemplateLanguage: String, Codable, CaseIterable, Sendable {
         "tax": "Taxe",
     ]
 
-    private static let it_labels: [String: String] = [
+    nonisolated private static let it_labels: [String: String] = [
         "invoice": "Fattura",
         "description": "Descrizione",
         "quantity": "Qt\u{00E0}",
@@ -192,14 +192,14 @@ enum TemplateLanguage: String, Codable, CaseIterable, Sendable {
 
     // MARK: - Label Keys (ordered for UI display)
 
-    static let templateLabelKeys: [String] = [
+    nonisolated static let templateLabelKeys: [String] = [
         "invoice", "number", "date", "due", "from", "billTo", "re",
         "description", "quantity", "unitPrice", "rate", "price", "amount",
         "subtotal", "discount", "vat", "tax", "total", "totalDue", "totalHours",
         "currency", "details", "iban", "paymentDetails", "notes",
     ]
 
-    static let qrBillLabelKeys: [String] = [
+    nonisolated static let qrBillLabelKeys: [String] = [
         "qr.receipt", "qr.paymentPart", "qr.accountPayableTo", "qr.reference",
         "qr.additionalInfo", "qr.payableBy", "qr.payableByPlaceholder",
         "qr.currency", "qr.amount", "qr.invoice",
@@ -207,7 +207,7 @@ enum TemplateLanguage: String, Codable, CaseIterable, Sendable {
 
     // MARK: - Resolved Labels
 
-    func resolvedLabels(overrides: [String: [String: String]]?) -> [String: String] {
+    nonisolated func resolvedLabels(overrides: [String: [String: String]]?) -> [String: String] {
         var result = labels
         guard let langOverrides = overrides?[rawValue] else { return result }
         for (key, value) in langOverrides where !value.isEmpty && !key.hasPrefix("qr.") {
@@ -216,7 +216,7 @@ enum TemplateLanguage: String, Codable, CaseIterable, Sendable {
         return result
     }
 
-    func resolvedQRBillLabels(overrides: [String: [String: String]]?) -> QRBillLabels {
+    nonisolated func resolvedQRBillLabels(overrides: [String: [String: String]]?) -> QRBillLabels {
         let defaults = qrBillLabels
         guard let langOverrides = overrides?[rawValue] else { return defaults }
 
@@ -240,7 +240,7 @@ enum TemplateLanguage: String, Codable, CaseIterable, Sendable {
     }
 
     /// Default value for a label key (template or QR bill)
-    func defaultValue(for key: String) -> String {
+    nonisolated func defaultValue(for key: String) -> String {
         if key.hasPrefix("qr.") {
             let qrKey = String(key.dropFirst(3))
             let l = qrBillLabels

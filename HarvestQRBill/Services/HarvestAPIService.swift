@@ -6,7 +6,7 @@
 import Foundation
 import os.log
 
-private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "HarvestQRBill", category: "API")
+nonisolated private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "HarvestQRBill", category: "API")
 
 actor HarvestAPIService {
     static let shared = HarvestAPIService()
@@ -18,13 +18,13 @@ actor HarvestAPIService {
     )
     private let decoder: JSONDecoder
 
-    private let iso8601Formatter: ISO8601DateFormatter = {
+    private static nonisolated(unsafe) let iso8601Formatter: ISO8601DateFormatter = {
         let f = ISO8601DateFormatter()
         f.formatOptions = [.withInternetDateTime]
         return f
     }()
 
-    private let dateOnlyFormatter: DateFormatter = {
+    private static nonisolated(unsafe) let dateOnlyFormatter: DateFormatter = {
         let f = DateFormatter()
         f.dateFormat = "yyyy-MM-dd"
         f.timeZone = TimeZone(identifier: "UTC")
@@ -36,8 +36,8 @@ actor HarvestAPIService {
         config.timeoutIntervalForRequest = 30
         session = URLSession(configuration: config, delegate: sessionDelegate, delegateQueue: nil)
 
-        let iso = iso8601Formatter
-        let dateOnly = dateOnlyFormatter
+        let iso = Self.iso8601Formatter
+        let dateOnly = Self.dateOnlyFormatter
 
         decoder = JSONDecoder()
         decoder.dateDecodingStrategy = .custom { decoder in
@@ -286,7 +286,7 @@ actor HarvestAPIService {
         issueDate: Date,
         credentials: HarvestCredentials
     ) async throws {
-        let dateString = dateOnlyFormatter.string(from: issueDate)
+        let dateString = Self.dateOnlyFormatter.string(from: issueDate)
         try await updateInvoice(id: invoiceId, fields: ["issue_date": dateString], credentials: credentials)
     }
 
@@ -420,7 +420,7 @@ struct Company: Decodable, Sendable {
     let fullDomain: String
     let name: String
 
-    var subdomain: String {
+    nonisolated var subdomain: String {
         fullDomain.components(separatedBy: ".").first ?? ""
     }
 
@@ -428,5 +428,12 @@ struct Company: Decodable, Sendable {
         case baseUri = "base_uri"
         case fullDomain = "full_domain"
         case name
+    }
+
+    nonisolated init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        baseUri = try container.decode(String.self, forKey: .baseUri)
+        fullDomain = try container.decode(String.self, forKey: .fullDomain)
+        name = try container.decode(String.self, forKey: .name)
     }
 }

@@ -17,6 +17,30 @@ struct HarvestCredentials: Codable, Sendable, Equatable {
     var isValid: Bool {
         canTestConnection && !subdomain.isEmpty
     }
+
+    private enum CodingKeys: String, CodingKey {
+        case accessToken, accountId, subdomain
+    }
+
+    nonisolated init(accessToken: String, accountId: String, subdomain: String) {
+        self.accessToken = accessToken
+        self.accountId = accountId
+        self.subdomain = subdomain
+    }
+
+    nonisolated init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        accessToken = try container.decode(String.self, forKey: .accessToken)
+        accountId = try container.decode(String.self, forKey: .accountId)
+        subdomain = try container.decode(String.self, forKey: .subdomain)
+    }
+
+    nonisolated func encode(to encoder: any Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(accessToken, forKey: .accessToken)
+        try container.encode(accountId, forKey: .accountId)
+        try container.encode(subdomain, forKey: .subdomain)
+    }
 }
 
 struct CreditorInfo: Codable, Sendable, Equatable {
@@ -54,6 +78,45 @@ struct CreditorInfo: Codable, Sendable, Equatable {
             country: "CH"
         )
     }
+
+    private enum CodingKeys: String, CodingKey {
+        case iban, name, streetName, buildingNumber, postalCode, town, country
+    }
+
+    nonisolated init(
+        iban: String, name: String, streetName: String, buildingNumber: String,
+        postalCode: String, town: String, country: String
+    ) {
+        self.iban = iban
+        self.name = name
+        self.streetName = streetName
+        self.buildingNumber = buildingNumber
+        self.postalCode = postalCode
+        self.town = town
+        self.country = country
+    }
+
+    nonisolated init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        iban = try container.decode(String.self, forKey: .iban)
+        name = try container.decode(String.self, forKey: .name)
+        streetName = try container.decode(String.self, forKey: .streetName)
+        buildingNumber = try container.decode(String.self, forKey: .buildingNumber)
+        postalCode = try container.decode(String.self, forKey: .postalCode)
+        town = try container.decode(String.self, forKey: .town)
+        country = try container.decode(String.self, forKey: .country)
+    }
+
+    nonisolated func encode(to encoder: any Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(iban, forKey: .iban)
+        try container.encode(name, forKey: .name)
+        try container.encode(streetName, forKey: .streetName)
+        try container.encode(buildingNumber, forKey: .buildingNumber)
+        try container.encode(postalCode, forKey: .postalCode)
+        try container.encode(town, forKey: .town)
+        try container.encode(country, forKey: .country)
+    }
 }
 
 enum InvoicePDFSource: String, Codable, CaseIterable, Sendable {
@@ -89,7 +152,7 @@ struct PaidMarkStyle: Codable, Sendable, Equatable {
     var showDate: Bool
     var css: String
 
-    static let defaultCSS = """
+    nonisolated static let defaultCSS = """
     .watermark {
         position: absolute;
         top: 18mm;
@@ -111,7 +174,7 @@ struct PaidMarkStyle: Codable, Sendable, Equatable {
     }
     """
 
-    static let `default` = PaidMarkStyle(
+    nonisolated static let `default` = PaidMarkStyle(
         enabled: true, showDate: true, css: defaultCSS
     )
 }

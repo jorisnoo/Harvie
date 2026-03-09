@@ -19,15 +19,13 @@ final class CertificatePinningDelegate: NSObject, URLSessionDelegate {
 
     nonisolated func urlSession(
         _ session: URLSession,
-        didReceive challenge: URLAuthenticationChallenge,
-        completionHandler: @escaping (URLSession.AuthChallengeDisposition, URLCredential?) -> Void
-    ) {
+        didReceive challenge: URLAuthenticationChallenge
+    ) async -> (URLSession.AuthChallengeDisposition, URLCredential?) {
         guard challenge.protectionSpace.authenticationMethod == NSURLAuthenticationMethodServerTrust,
               let serverTrust = challenge.protectionSpace.serverTrust,
               pinnedDomains.contains(where: { challenge.protectionSpace.host.hasSuffix($0) })
         else {
-            completionHandler(.performDefaultHandling, nil)
-            return
+            return (.performDefaultHandling, nil)
         }
 
         let policies = [SecPolicyCreateSSL(true, challenge.protectionSpace.host as CFString)]
@@ -37,12 +35,14 @@ final class CertificatePinningDelegate: NSObject, URLSessionDelegate {
         let isValid = SecTrustEvaluateWithError(serverTrust, &error)
 
         if isValid {
-            completionHandler(.useCredential, URLCredential(trust: serverTrust))
+            return (.useCredential, URLCredential(trust: serverTrust))
         } else {
             #if DEBUG
-            pinningLogger.error("Certificate validation failed for \(challenge.protectionSpace.host): \(error?.localizedDescription ?? "unknown")")
+            pinningLogger.error(
+                "Certificate validation failed for \(challenge.protectionSpace.host): \(error?.localizedDescription ?? "unknown")"
+            )
             #endif
-            completionHandler(.cancelAuthenticationChallenge, nil)
+            return (.cancelAuthenticationChallenge, nil)
         }
     }
 }

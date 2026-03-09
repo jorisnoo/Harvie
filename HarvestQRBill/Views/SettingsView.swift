@@ -381,9 +381,11 @@ struct TemplatesSettings: View {
                         Toggle("Show Total Hours", isOn: $viewModel.appSettings.columnVisibility.showTotalHours)
                     }
 
+                    // swiftlint:disable line_length
                     Text(viewModel.appSettings.pdfSource == .template
                          ? "To hide columns on Harvest PDFs, change this in the Harvest web UI."
                          : "Column visibility can be configured when using a custom template. For Harvest PDFs, change this in the Harvest web UI under Invoices → Configure → Hide columns.")
+                    // swiftlint:enable line_length
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }

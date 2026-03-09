@@ -128,7 +128,11 @@ struct QRBillRenderer {
         }
 
         // Payable by
-        y = drawDebtorBlock(context: context, data: data, x: leftMargin, y: y, fontSize: 8, labelFontSize: 6, maxWidth: maxWidth, placeholderWidthMM: 52, placeholderHeightMM: 20)
+        y = drawDebtorBlock(
+            context: context, data: data, x: leftMargin, y: y,
+            fontSize: 8, labelFontSize: 6, maxWidth: maxWidth,
+            placeholderWidthMM: 52, placeholderHeightMM: 20
+        )
 
         // Currency and Amount - fixed position at bottom
         let bottomY: CGFloat = 10 * mmToPoints
@@ -171,24 +175,43 @@ struct QRBillRenderer {
         var textY = titleY
 
         // Konto / Zahlbar an
-        textY = drawCreditorBlock(context: context, data: data, x: textColumnX, y: textY, fontSize: 10, labelFontSize: 8, maxWidth: textColumnMaxWidth)
+        textY = drawCreditorBlock(
+            context: context, data: data, x: textColumnX, y: textY,
+            fontSize: 10, labelFontSize: 8, maxWidth: textColumnMaxWidth
+        )
         textY -= 5 * mmToPoints
 
         // Referenz
         if let reference = data.reference, !reference.isEmpty {
-            textY = drawText(context: context, text: labels.reference, x: textColumnX, y: textY, fontSize: 8, bold: true, maxWidth: textColumnMaxWidth)
-            textY = drawText(context: context, text: formatReference(reference), x: textColumnX, y: textY, fontSize: 10, bold: false, maxWidth: textColumnMaxWidth)
+            textY = drawText(
+                context: context, text: labels.reference, x: textColumnX,
+                y: textY, fontSize: 8, bold: true, maxWidth: textColumnMaxWidth
+            )
+            textY = drawText(
+                context: context, text: formatReference(reference), x: textColumnX,
+                y: textY, fontSize: 10, bold: false, maxWidth: textColumnMaxWidth
+            )
             textY -= 5 * mmToPoints
         }
 
         // Zahlbar durch (must come before Additional Information per QR-bill spec)
-        textY = drawDebtorBlock(context: context, data: data, x: textColumnX, y: textY, fontSize: 10, labelFontSize: 8, maxWidth: textColumnMaxWidth, placeholderWidthMM: 65, placeholderHeightMM: 25)
+        textY = drawDebtorBlock(
+            context: context, data: data, x: textColumnX, y: textY,
+            fontSize: 10, labelFontSize: 8, maxWidth: textColumnMaxWidth,
+            placeholderWidthMM: 65, placeholderHeightMM: 25
+        )
 
         // Zusätzliche Informationen
         if let message = data.unstructuredMessage, !message.isEmpty {
             textY -= 5 * mmToPoints
-            textY = drawText(context: context, text: labels.additionalInfo, x: textColumnX, y: textY, fontSize: 8, bold: true, maxWidth: textColumnMaxWidth)
-            _ = drawText(context: context, text: message, x: textColumnX, y: textY, fontSize: 10, bold: false, maxWidth: textColumnMaxWidth)
+            textY = drawText(
+                context: context, text: labels.additionalInfo, x: textColumnX,
+                y: textY, fontSize: 8, bold: true, maxWidth: textColumnMaxWidth
+            )
+            _ = drawText(
+                context: context, text: message, x: textColumnX,
+                y: textY, fontSize: 10, bold: false, maxWidth: textColumnMaxWidth
+            )
         }
 
         // Währung und Betrag at bottom left of payment section
@@ -239,7 +262,11 @@ struct QRBillRenderer {
             y = drawText(context: context, text: debtor.cityLine, x: x, y: y, fontSize: fontSize, bold: false, maxWidth: maxWidth, wrap: true)
         } else {
             y = drawText(context: context, text: labels.payableByPlaceholder, x: x, y: y, fontSize: labelFontSize, bold: true, maxWidth: maxWidth)
-            drawCornerMarks(context: context, xMM: x / mmToPoints, yMM: y / mmToPoints - placeholderHeightMM, widthMM: placeholderWidthMM, heightMM: placeholderHeightMM)
+            drawCornerMarks(
+                context: context, xMM: x / mmToPoints,
+                yMM: y / mmToPoints - placeholderHeightMM,
+                widthMM: placeholderWidthMM, heightMM: placeholderHeightMM
+            )
             y -= placeholderHeightMM * mmToPoints
         }
         return y

@@ -6,20 +6,20 @@
 import PDFKit
 
 final class WatermarkedPDFPage: PDFPage {
-    private let originalPage: PDFPage
-    private let watermarkPage: PDFPage
+    private nonisolated(unsafe) let originalPage: PDFPage
+    private nonisolated(unsafe) let watermarkPage: PDFPage
 
-    init(page: PDFPage, watermarkPage: PDFPage) {
+    nonisolated init(page: PDFPage, watermarkPage: PDFPage) {
         self.originalPage = page
         self.watermarkPage = watermarkPage
         super.init()
     }
 
-    override func bounds(for box: PDFDisplayBox) -> CGRect {
+    nonisolated override func bounds(for box: PDFDisplayBox) -> CGRect {
         originalPage.bounds(for: box)
     }
 
-    override func draw(with box: PDFDisplayBox, to context: CGContext) {
+    nonisolated override func draw(with box: PDFDisplayBox, to context: CGContext) {
         originalPage.draw(with: box, to: context)
 
         // Align watermark bounds to the original page so any mediaBox

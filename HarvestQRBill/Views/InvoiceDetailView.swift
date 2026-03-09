@@ -341,6 +341,7 @@ struct InvoiceDetailView: View {
 
             if let sentAt = invoice.sentAt,
                Calendar.current.isDate(sentAt, inSameDayAs: invoice.issueDate) {
+                // swiftlint:disable:next line_length
                 Text("Issued \(invoice.issueDate.formatted(date: .long, time: .omitted)), sent at \(sentAt.formatted(date: .omitted, time: .shortened))")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)

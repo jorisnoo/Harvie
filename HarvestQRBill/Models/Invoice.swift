@@ -14,7 +14,7 @@ struct InvoicesResponse: Codable, Sendable {
     let previousPage: Int?
     let page: Int
 
-    enum CodingKeys: String, CodingKey {
+    private enum CodingKeys: String, CodingKey {
         case invoices
         case perPage = "per_page"
         case totalPages = "total_pages"
@@ -22,6 +22,17 @@ struct InvoicesResponse: Codable, Sendable {
         case nextPage = "next_page"
         case previousPage = "previous_page"
         case page
+    }
+
+    nonisolated init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        invoices = try container.decode([Invoice].self, forKey: .invoices)
+        perPage = try container.decode(Int.self, forKey: .perPage)
+        totalPages = try container.decode(Int.self, forKey: .totalPages)
+        totalEntries = try container.decode(Int.self, forKey: .totalEntries)
+        nextPage = try container.decodeIfPresent(Int.self, forKey: .nextPage)
+        previousPage = try container.decodeIfPresent(Int.self, forKey: .previousPage)
+        page = try container.decode(Int.self, forKey: .page)
     }
 }
 
@@ -68,11 +79,11 @@ struct Invoice: Codable, Identifiable, Hashable, Sendable {
         dueAmount > 0 ? dueAmount : amount
     }
 
-    var effectivePaidDate: Date? {
+    nonisolated var effectivePaidDate: Date? {
         paidAt ?? paidDate
     }
 
-    enum CodingKeys: String, CodingKey {
+    private enum CodingKeys: String, CodingKey {
         case id, number, amount, tax, discount, subject, notes, currency, state
         case clientKey = "client_key"
         case purchaseOrder = "purchase_order"
@@ -93,6 +104,38 @@ struct Invoice: Codable, Identifiable, Hashable, Sendable {
         case updatedAt = "updated_at"
         case client
         case lineItems = "line_items"
+    }
+
+    nonisolated init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(Int.self, forKey: .id)
+        clientKey = try container.decode(String.self, forKey: .clientKey)
+        number = try container.decode(String.self, forKey: .number)
+        purchaseOrder = try container.decodeIfPresent(String.self, forKey: .purchaseOrder)
+        amount = try container.decode(Decimal.self, forKey: .amount)
+        dueAmount = try container.decode(Decimal.self, forKey: .dueAmount)
+        tax = try container.decodeIfPresent(Decimal.self, forKey: .tax)
+        taxAmount = try container.decodeIfPresent(Decimal.self, forKey: .taxAmount)
+        tax2 = try container.decodeIfPresent(Decimal.self, forKey: .tax2)
+        tax2Amount = try container.decodeIfPresent(Decimal.self, forKey: .tax2Amount)
+        discount = try container.decodeIfPresent(Decimal.self, forKey: .discount)
+        discountAmount = try container.decodeIfPresent(Decimal.self, forKey: .discountAmount)
+        subject = try container.decodeIfPresent(String.self, forKey: .subject)
+        notes = try container.decodeIfPresent(String.self, forKey: .notes)
+        currency = try container.decode(String.self, forKey: .currency)
+        state = try container.decode(InvoiceState.self, forKey: .state)
+        periodStart = try container.decodeIfPresent(Date.self, forKey: .periodStart)
+        periodEnd = try container.decodeIfPresent(Date.self, forKey: .periodEnd)
+        issueDate = try container.decode(Date.self, forKey: .issueDate)
+        dueDate = try container.decode(Date.self, forKey: .dueDate)
+        sentAt = try container.decodeIfPresent(Date.self, forKey: .sentAt)
+        paidAt = try container.decodeIfPresent(Date.self, forKey: .paidAt)
+        paidDate = try container.decodeIfPresent(Date.self, forKey: .paidDate)
+        closedAt = try container.decodeIfPresent(Date.self, forKey: .closedAt)
+        createdAt = try container.decode(Date.self, forKey: .createdAt)
+        updatedAt = try container.decode(Date.self, forKey: .updatedAt)
+        client = try container.decode(ClientReference.self, forKey: .client)
+        lineItems = try container.decodeIfPresent([LineItem].self, forKey: .lineItems)
     }
 }
 

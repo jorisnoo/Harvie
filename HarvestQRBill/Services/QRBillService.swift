@@ -7,7 +7,7 @@ import Foundation
 import CoreImage
 
 struct QRBillService {
-    static func isCurrencySupported(_ currency: String) -> Bool {
+    nonisolated static func isCurrencySupported(_ currency: String) -> Bool {
         ["CHF", "EUR"].contains(currency.uppercased())
     }
 

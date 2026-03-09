@@ -9,7 +9,7 @@ struct TemplateContext {
     let invoice: InvoiceContext
     let client: ClientContext
     let creditor: CreditorContext
-    let lineItems: [[String: Any]]
+    nonisolated(unsafe) let lineItems: [[String: Any]]
 
     struct InvoiceContext {
         let number: String
@@ -165,7 +165,7 @@ struct TemplateContext {
     }
 
     // Minimal SVG logo for template editor preview (matches "Design Studio GmbH")
-    private static let sampleLogoSVG = """
+    nonisolated private static let sampleLogoSVG = """
         <svg xmlns="http://www.w3.org/2000/svg" width="80" height="80" viewBox="0 0 80 80">\
         <rect width="80" height="80" rx="12" fill="#2563eb"/>\
         <text x="40" y="52" font-family="-apple-system,Helvetica,sans-serif" \

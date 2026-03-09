@@ -39,7 +39,13 @@ final class TemplateEditorViewModel {
         fileWatcher?.stop()
     }
 
-    init(template: InvoiceTemplate, modelContext: ModelContext, language: TemplateLanguage = .en, labelOverrides: [String: [String: String]]? = nil, columnVisibility: ColumnVisibility = .default) {
+    init(
+        template: InvoiceTemplate,
+        modelContext: ModelContext,
+        language: TemplateLanguage = .en,
+        labelOverrides: [String: [String: String]]? = nil,
+        columnVisibility: ColumnVisibility = .default
+    ) {
         self.template = template
         self.htmlContent = template.resolvedHTMLContent()
         self.cssContent = template.resolvedCSSContent()

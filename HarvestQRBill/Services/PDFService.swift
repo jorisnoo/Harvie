@@ -8,7 +8,7 @@ import Foundation
 import os.log
 import PDFKit
 
-private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "HarvestQRBill", category: "PDF")
+nonisolated private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "HarvestQRBill", category: "PDF")
 
 actor PDFService {
     static let shared = PDFService()
