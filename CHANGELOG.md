@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.4.4](https://github.com/jorisnoo/Harvie/releases/tag/v0.4.4) (2026-03-10)
+
+### Features
+
+- add Cmd+Return keyboard shortcut to deselect focused field in invoice detail view ([3e6bdda](https://github.com/jorisnoo/Harvie/commit/3e6bddac8372e833353986632544d479448ba481))
+
+### Build System
+
+- universal build ([604373b](https://github.com/jorisnoo/Harvie/commit/604373bcf187b3629d925bf0076517643f6c011e))
+- rename to Harvie ([9be9e87](https://github.com/jorisnoo/Harvie/commit/9be9e87f54f70026e817733e95e70c5f44a1a87a))
 ## [0.4.3](https://github.com/jorisnoo/HarvestQRBill/releases/tag/v0.4.3) (2026-03-09)
 
 ### Bug Fixes
