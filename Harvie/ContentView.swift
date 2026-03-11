@@ -61,7 +61,10 @@ private struct DetailContentView: View {
                 invoice: invoice,
                 creditorInfo: viewModel.creditorInfo,
                 appSettings: viewModel.appSettings,
-                onRefresh: { viewModel.refreshInvoices(ids: [invoice.id]) }
+                onRefresh: { viewModel.refreshInvoices(ids: [invoice.id]) },
+                onStateChanged: { id, newState in
+                    viewModel.switchFilterAndSelect(invoiceId: id, to: newState)
+                }
             )
             .id(invoice.id)
         } else {

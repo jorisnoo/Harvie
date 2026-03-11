@@ -17,6 +17,7 @@ struct InvoiceDetailView: View {
     let creditorInfo: CreditorInfo
     let appSettings: AppSettings
     var onRefresh: (() -> Void)?
+    var onStateChanged: ((Int, InvoiceState) -> Void)?
 
     @Environment(\.modelContext) private var modelContext
     @State private var isProcessing = false
@@ -682,7 +683,7 @@ struct InvoiceDetailView: View {
         }
         if success {
             completedAction = .markedAsSent
-            onRefresh?()
+            onStateChanged?(invoice.id, .open)
         }
         isPerformingSheetAction = false
     }
@@ -694,7 +695,7 @@ struct InvoiceDetailView: View {
         }
         if success {
             completedAction = .markedAsDraft
-            onRefresh?()
+            onStateChanged?(invoice.id, .draft)
         }
         isPerformingSheetAction = false
     }

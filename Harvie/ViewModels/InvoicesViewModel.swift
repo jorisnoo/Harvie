@@ -397,6 +397,15 @@ final class InvoicesViewModel {
         }
     }
 
+    func switchFilterAndSelect(invoiceId: Int, to newState: InvoiceState) {
+        stateFilter = newState
+        loadInvoicesTask?.cancel()
+        loadInvoicesTask = Task {
+            await performLoadInvoices()
+            selectedInvoiceIDs = [invoiceId]
+        }
+    }
+
     private func performRefreshInvoices(ids: Set<Int>) async {
         guard let credentials = try? await keychainService.loadHarvestCredentials() else { return }
 
