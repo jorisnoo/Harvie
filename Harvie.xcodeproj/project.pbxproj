@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		CF02441E2F1F7D2A004AD884 /* AppUpdater in Frameworks */ = {isa = PBXBuildFile; productRef = CF02441D2F1F7D2A004AD884 /* AppUpdater */; };
 		CF05BE012F3C4061008D50C5 /* Aptabase in Frameworks */ = {isa = PBXBuildFile; productRef = CF05BE002F3C4061008D50C5 /* Aptabase */; };
+		CF1ACBAC2F60EDA500794231 /* HarvieIcon.icon in Resources */ = {isa = PBXBuildFile; fileRef = CF1ACBAB2F60EDA500794231 /* HarvieIcon.icon */; };
 		CFC0713A2F130E6000DBAFCB /* AppIcon.icon in Resources */ = {isa = PBXBuildFile; fileRef = CFC071392F130E6000DBAFCB /* AppIcon.icon */; };
 /* End PBXBuildFile section */
 
@@ -24,6 +25,7 @@
 
 /* Begin PBXFileReference section */
 		CF076F052F23AAB000DCF8D8 /* HarvieTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = HarvieTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		CF1ACBAB2F60EDA500794231 /* HarvieIcon.icon */ = {isa = PBXFileReference; lastKnownFileType = folder.iconcomposer.icon; path = HarvieIcon.icon; sourceTree = "<group>"; };
 		CFC06FAE2F12C02400DBAFCB /* Harvie.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Harvie.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		CFC071392F130E6000DBAFCB /* AppIcon.icon */ = {isa = PBXFileReference; lastKnownFileType = folder.iconcomposer.icon; path = AppIcon.icon; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -78,6 +80,7 @@
 				CF076F062F23AAB000DCF8D8 /* HarvieTests */,
 				CF05BDFF2F3C4061008D50C5 /* Frameworks */,
 				CFC06FAF2F12C02400DBAFCB /* Products */,
+				CF1ACBAB2F60EDA500794231 /* HarvieIcon.icon */,
 			);
 			sourceTree = "<group>";
 		};
@@ -197,6 +200,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				CFC0713A2F130E6000DBAFCB /* AppIcon.icon in Resources */,
+				CF1ACBAC2F60EDA500794231 /* HarvieIcon.icon in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

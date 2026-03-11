@@ -2,13 +2,13 @@
   "fill-specializations" : [
     {
       "value" : {
-        "automatic-gradient" : "display-p3:0.93848,0.56152,0.20789,1.00000"
+        "automatic-gradient" : "display-p3:0.90918,0.89275,0.90814,1.00000"
       }
     },
     {
       "appearance" : "dark",
       "value" : {
-        "automatic-gradient" : "display-p3:0.50000,0.22351,0.10088,1.00000"
+        "automatic-gradient" : "display-p3:0.11871,0.05785,0.00612,1.00000"
       }
     }
   ],
@@ -18,27 +18,14 @@
         {
           "blend-mode" : "normal",
           "fill" : {
-            "linear-gradient" : [
-              "display-p3:0.90256,0.88370,0.87647,1.00000",
-              "display-p3:1.00000,0.98253,0.97584,1.00000"
-            ],
-            "orientation" : {
-              "start" : {
-                "x" : 0.9381453557132456,
-                "y" : 0.9365675036390099
-              },
-              "stop" : {
-                "x" : 0.16623453420669565,
-                "y" : 0.16677469978165926
-              }
-            }
+            "solid" : "display-p3:1.00000,0.98253,0.97584,1.00000"
           },
           "glass" : false,
-          "hidden" : false,
+          "hidden" : true,
           "image-name" : "qrcode@2x.png",
           "name" : "qrcode@2x",
           "position" : {
-            "scale" : 1.2,
+            "scale" : 1,
             "translation-in-points" : [
               0,
               0
@@ -57,7 +44,20 @@
     },
     {
       "layers" : [
-
+        {
+          "blend-mode" : "normal",
+          "fill" : "none",
+          "glass" : false,
+          "image-name" : "bg Generated Image March 11, 2026 - 8_18AM.png",
+          "name" : "bg Generated Image March 11, 2026 - 8_18AM",
+          "position" : {
+            "scale" : 1.1,
+            "translation-in-points" : [
+              0,
+              106.2890625
+            ]
+          }
+        }
       ],
       "shadow" : {
         "kind" : "neutral",
