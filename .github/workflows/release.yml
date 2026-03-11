@@ -134,11 +134,11 @@ jobs:
           git clone "https://x-access-token:${WEBSITE_REPO_TOKEN}@github.com/jorisnoo/harvie-app.git" website-repo
           cd website-repo
 
-          sed -i '' "s|download_url: .*|download_url: 'https://github.com/jorisnoo/Harvie/releases/download/${VERSION}/${APP_NAME}-${VERSION}.dmg'|" content/globals/download.yaml
+          sed -i '' "s|downloadUrl:.*|downloadUrl: 'https://github.com/jorisnoo/Harvie/releases/download/${VERSION}/${APP_NAME}-${VERSION}.dmg',|" src/config.ts
 
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add content/globals/download.yaml
+          git add src/config.ts
           git commit -m "Update download URL to ${VERSION}"
           git push
 
