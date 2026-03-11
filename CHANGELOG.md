@@ -2,6 +2,23 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.4.5](https://github.com/jorisnoo/Harvie/releases/tag/v0.4.5) (2026-03-11)
+
+### Features
+
+- auto-switch filter and follow invoice after marking as sent or draft ([f30a48d](https://github.com/jorisnoo/Harvie/commit/f30a48d02d3d0dfee18bb33490845fcb506be10c))
+- rebrand to Harvie with new contact email, website, and privacy policy links ([c620921](https://github.com/jorisnoo/Harvie/commit/c6209210b085192e02979cd3ef9388fa70e6677d))
+- support local resource loading in custom templates and update website URL in release workflow ([cb0dab4](https://github.com/jorisnoo/Harvie/commit/cb0dab4bd5fd954aedbc4c66af67b003c724fc5b))
+- updated icon ([76c999f](https://github.com/jorisnoo/Harvie/commit/76c999f142d6da2bd9e823579e5fd3a92266522f))
+
+### Bug Fixes
+
+- fall back to first available template when selected template no longer exists ([1e73658](https://github.com/jorisnoo/Harvie/commit/1e73658d18e1114200bcd632034b3115092e5967))
+- update mark-as-draft button icon to arrow.uturn.backward ([b1dacfe](https://github.com/jorisnoo/Harvie/commit/b1dacfea4e9c283869e12f0c0739aae7f0683329))
+
+### Documentation
+
+- compressed images ([e5bfcdc](https://github.com/jorisnoo/Harvie/commit/e5bfcdc4d24955c0085f2ef3fd6c0fdeae768277))
 ## [0.4.4](https://github.com/jorisnoo/Harvie/releases/tag/v0.4.4) (2026-03-10)
 
 ### Features
