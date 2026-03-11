@@ -62,7 +62,7 @@ struct QRBillRenderer {
 
     let labels: TemplateLanguage.QRBillLabels
 
-    func renderQRBillPage(data: QRBillData, qrImage: CGImage) -> PDFPage? {
+    func renderQRBillPage(data: QRBillData, qrImage: CGImage, fillFullPage: Bool = true) -> PDFPage? {
         let pageWidth = pageWidthMM * mmToPoints
         let pageHeight = pageHeightMM * mmToPoints
 
@@ -77,9 +77,13 @@ struct QRBillRenderer {
 
         context.beginPDFPage(nil)
 
-        // White background
+        // White background — full page for standalone, QR area only for overlay
         context.setFillColor(CGColor.white)
-        context.fill(CGRect(x: 0, y: 0, width: pageWidth, height: pageHeight))
+        if fillFullPage {
+            context.fill(CGRect(x: 0, y: 0, width: pageWidth, height: pageHeight))
+        } else {
+            context.fill(CGRect(x: 0, y: 0, width: pageWidth, height: qrBillHeightMM * mmToPoints))
+        }
 
         // Draw horizontal cut line at top of QR bill section (separating from invoice content)
         drawHorizontalDashedLine(context: context, yMM: qrBillHeightMM)

@@ -64,6 +64,61 @@ actor PDFService {
         return document
     }
 
+    func overlayQRBill(on document: PDFDocument, qrBillPage: PDFPage) -> PDFDocument {
+        let lastIndex = document.pageCount - 1
+        guard let lastPage = document.page(at: lastIndex) else { return document }
+
+        let compositePage = WatermarkedPDFPage(page: lastPage, watermarkPage: qrBillPage)
+        document.removePage(at: lastIndex)
+        document.insert(compositePage, at: lastIndex)
+        return document
+    }
+
+    /// Checks whether the bottom 110mm (105mm QR bill + 5mm buffer) of the last page is empty.
+    func lastPageHasSpaceForQRBill(_ document: PDFDocument) -> Bool {
+        guard document.pageCount > 0,
+              let lastPage = document.page(at: document.pageCount - 1) else { return false }
+
+        let pageBounds = lastPage.bounds(for: .mediaBox)
+        let mmToPoints: CGFloat = 2.83465
+        let checkHeightPt = 110 * mmToPoints // 105mm QR bill + 5mm buffer
+
+        let width = Int(ceil(pageBounds.width))
+        let height = Int(ceil(checkHeightPt))
+        guard width > 0, height > 0 else { return false }
+
+        let colorSpace = CGColorSpaceCreateDeviceRGB()
+        guard let context = CGContext(
+            data: nil,
+            width: width,
+            height: height,
+            bitsPerComponent: 8,
+            bytesPerRow: width * 4,
+            space: colorSpace,
+            bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
+        ) else { return false }
+
+        // Pre-fill with white
+        context.setFillColor(CGColor.white)
+        context.fill(CGRect(x: 0, y: 0, width: width, height: height))
+
+        // Draw the page — only the bottom portion is visible due to context clipping
+        lastPage.draw(with: .mediaBox, to: context)
+
+        // Scan for non-white pixels
+        guard let data = context.data else { return false }
+        let pixels = data.bindMemory(to: UInt8.self, capacity: width * height * 4)
+        let threshold: UInt8 = 250
+
+        for i in stride(from: 0, to: width * height * 4, by: 4) {
+            if pixels[i] < threshold || pixels[i + 1] < threshold || pixels[i + 2] < threshold {
+                return false
+            }
+        }
+
+        return true
+    }
+
     func applyPaidMark(
         to document: PDFDocument,
         watermarkPage: PDFPage,
@@ -117,7 +172,8 @@ actor PDFService {
         creditorInfo: CreditorInfo,
         debtorAddress: StructuredAddress?,
         language: TemplateLanguage = .en,
-        labelOverrides: [String: [String: String]]? = nil
+        labelOverrides: [String: [String: String]]? = nil,
+        fillFullPage: Bool = true
     ) throws -> PDFPage {
         let qrBillService = QRBillService()
         let qrBillRenderer = QRBillRenderer(labels: language.resolvedQRBillLabels(overrides: labelOverrides))
@@ -134,7 +190,7 @@ actor PDFService {
             throw PDFError.qrBillGenerationFailed
         }
 
-        guard let page = qrBillRenderer.renderQRBillPage(data: qrBillData, qrImage: qrImage) else {
+        guard let page = qrBillRenderer.renderQRBillPage(data: qrBillData, qrImage: qrImage, fillFullPage: fillFullPage) else {
             throw PDFError.qrBillGenerationFailed
         }
 
@@ -220,7 +276,8 @@ actor PDFService {
         return try await attachQRBillAndPaidMark(
             to: basePDF, invoice: invoice, creditorInfo: creditorInfo,
             debtorAddress: debtorAddress, language: language,
-            labelOverrides: labelOverrides, paidMarkStyle: paidMarkStyle
+            labelOverrides: labelOverrides, paidMarkStyle: paidMarkStyle,
+            preferOverlay: true
         )
     }
 
@@ -231,7 +288,8 @@ actor PDFService {
         debtorAddress: StructuredAddress?,
         language: TemplateLanguage,
         labelOverrides: [String: [String: String]]?,
-        paidMarkStyle: PaidMarkStyle
+        paidMarkStyle: PaidMarkStyle,
+        preferOverlay: Bool = false
     ) async throws -> PDFDocument {
         guard QRBillService.isCurrencySupported(invoice.currency) else {
             try await renderAndApplyPaidMark(
@@ -241,21 +299,29 @@ actor PDFService {
             return document
         }
 
+        let canOverlay = preferOverlay && lastPageHasSpaceForQRBill(document)
+
         let qrBillPage = try await MainActor.run {
             try generateQRBillPage(
                 invoice: invoice,
                 creditorInfo: creditorInfo,
                 debtorAddress: debtorAddress,
                 language: language,
-                labelOverrides: labelOverrides
+                labelOverrides: labelOverrides,
+                fillFullPage: !canOverlay
             )
         }
 
-        let result = appendQRBill(to: document, qrBillPage: qrBillPage)
+        let result: PDFDocument
+        if canOverlay {
+            result = overlayQRBill(on: document, qrBillPage: qrBillPage)
+        } else {
+            result = appendQRBill(to: document, qrBillPage: qrBillPage)
+        }
 
         try await renderAndApplyPaidMark(
             to: result, invoice: invoice, language: language,
-            paidMarkStyle: paidMarkStyle, excludingLastPage: true
+            paidMarkStyle: paidMarkStyle, excludingLastPage: !canOverlay
         )
 
         return result
