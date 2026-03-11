@@ -150,7 +150,7 @@ struct MultiSelectionView: View {
         Button {
             showMarkAsDraftSheet = true
         } label: {
-            Label(Strings.InvoiceDetail.markAsDraft, systemImage: "pencil")
+            Label(Strings.InvoiceDetail.markAsDraft, systemImage: "arrow.uturn.backward")
                 .frame(maxWidth: 150)
         }
         .buttonStyle(.bordered)

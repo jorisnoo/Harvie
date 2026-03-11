@@ -190,7 +190,7 @@ struct InvoiceDetailView: View {
                     Button {
                         activeSheet = .markAsDraft
                     } label: {
-                        Label(Strings.InvoiceDetail.markAsDraft, systemImage: "pencil")
+                        Label(Strings.InvoiceDetail.markAsDraft, systemImage: "arrow.uturn.backward")
                     }
                     .disabled(isPerformingSheetAction)
                     .help(Strings.InvoiceDetail.markAsDraft)
