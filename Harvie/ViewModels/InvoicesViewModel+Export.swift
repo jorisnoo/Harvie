@@ -52,8 +52,7 @@ extension InvoicesViewModel {
             // Load template if using template mode
             var template: InvoiceTemplate?
             if withQRBill && appSettings.effectivePDFSource == .template {
-                guard let templateId = appSettings.selectedTemplateId,
-                      let loaded = await loadTemplate(id: templateId) else {
+                guard let loaded = await resolveTemplate() else {
                     exportError = Strings.Errors.noTemplateSelected
                     isExporting = false
                     return
@@ -124,6 +123,28 @@ extension InvoicesViewModel {
         }
     }
 
+    /// Resolves the selected template, falling back to the first available template
+    /// if the selected one no longer exists (e.g. after a template was deleted or re-seeded).
+    private func resolveTemplate() async -> InvoiceTemplate? {
+        // Try the explicitly selected template first
+        if let templateId = appSettings.selectedTemplateId,
+           let template = await loadTemplate(id: templateId) {
+            return template
+        }
+
+        // Fall back to the first available template
+        guard let context = modelContext else { return nil }
+        let descriptor = FetchDescriptor<InvoiceTemplate>(
+            sortBy: [SortDescriptor(\.name)]
+        )
+
+        guard let fallback = try? context.fetch(descriptor).first else { return nil }
+
+        // Update the setting so future calls don't need the fallback
+        appSettings.selectedTemplateId = fallback.id
+        return fallback
+    }
+
     // MARK: - Drag & Drop
     // TODO: Drag-and-drop export is temporarily disabled (see InvoicesListView)
 
@@ -163,14 +184,13 @@ extension InvoicesViewModel {
                     let credentials = try await KeychainService.shared.loadHarvestCredentials()
 
                     let template: InvoiceTemplate?
-                    if creditor.isValid && settings.effectivePDFSource == .template,
-                       let templateId = settings.selectedTemplateId {
-                        template = await self.loadTemplate(id: templateId)
-                        guard template != nil else {
+                    if creditor.isValid && settings.effectivePDFSource == .template {
+                        guard let loaded = await self.resolveTemplate() else {
                             throw NSError(domain: "Harvie", code: 1, userInfo: [
                                 NSLocalizedDescriptionKey: Strings.Errors.noTemplateSelected
                             ])
                         }
+                        template = loaded
                     } else {
                         template = nil
                     }

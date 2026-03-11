@@ -757,8 +757,7 @@ struct InvoiceDetailView: View {
         }
 
         if appSettings.effectivePDFSource == .template {
-            guard let templateId = appSettings.selectedTemplateId,
-                  let template = loadTemplate(id: templateId) else {
+            guard let template = resolveTemplate() else {
                 throw GenerationError.templateNotFound
             }
             let credentials = try? await keychainService.loadHarvestCredentials()
@@ -854,6 +853,19 @@ struct InvoiceDetailView: View {
     private func loadTemplate(id: UUID) -> InvoiceTemplate? {
         let descriptor = FetchDescriptor<InvoiceTemplate>(
             predicate: #Predicate { $0.id == id }
+        )
+        return try? modelContext.fetch(descriptor).first
+    }
+
+    private func resolveTemplate() -> InvoiceTemplate? {
+        if let templateId = appSettings.selectedTemplateId,
+           let template = loadTemplate(id: templateId) {
+            return template
+        }
+
+        // Fall back to the first available template if the selected one is stale
+        let descriptor = FetchDescriptor<InvoiceTemplate>(
+            sortBy: [SortDescriptor(\.name)]
         )
         return try? modelContext.fetch(descriptor).first
     }
