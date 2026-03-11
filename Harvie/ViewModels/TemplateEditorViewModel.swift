@@ -62,6 +62,10 @@ final class TemplateEditorViewModel {
         template.isBuiltIn
     }
 
+    var baseURL: URL? {
+        template.isBuiltIn ? nil : TemplateFileManager.existingDirectory(for: template.id)
+    }
+
     func contentChanged() {
         isDirty = true
         schedulePreviewUpdate()

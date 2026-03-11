@@ -137,7 +137,7 @@ private struct PreviewPanel: View {
 
             Divider()
 
-            TemplatePreviewView(html: viewModel.previewHTML)
+            TemplatePreviewView(html: viewModel.previewHTML, baseURL: viewModel.baseURL)
         }
         .background(.white)
     }

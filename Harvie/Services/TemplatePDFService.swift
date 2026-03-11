@@ -36,9 +36,9 @@ final class TemplatePDFService {
         return window
     }()
 
-    func renderPDF(html: String, css: String) async throws -> PDFDocument {
+    func renderPDF(html: String, css: String, baseURL: URL? = nil) async throws -> PDFDocument {
         let fullHTML = buildHTMLDocument(html: html, css: css)
-        return try await renderHTMLToPDF(fullHTML)
+        return try await renderHTMLToPDF(fullHTML, baseURL: baseURL)
     }
 
     func renderWatermarkPage(text: String, dateText: String?, css: String) async throws -> PDFPage {
@@ -84,7 +84,8 @@ final class TemplatePDFService {
     ) async throws -> PDFDocument {
         let processedHTML = TemplateEngine.render(template.resolvedHTMLContent(), with: context)
         let css = template.resolvedCSSContent() + "\n" + columnVisibility.cssVariables()
-        return try await renderPDF(html: processedHTML, css: css)
+        let baseURL = template.isBuiltIn ? nil : TemplateFileManager.existingDirectory(for: template.id)
+        return try await renderPDF(html: processedHTML, css: css, baseURL: baseURL)
     }
 
     private func buildHTMLDocument(html: String, css: String) -> String {
@@ -133,7 +134,17 @@ final class TemplatePDFService {
         """
     }
 
-    private func renderHTMLToPDF(_ html: String, rect: CGRect? = nil) async throws -> PDFDocument {
+    private func renderHTMLToPDF(_ html: String, baseURL: URL? = nil, rect: CGRect? = nil) async throws -> PDFDocument {
+        // When a baseURL is provided, write HTML to a temp file and use loadFileURL
+        // so WKWebView's WebContent process can access local resources (images, etc.)
+        var tempFileURL: URL?
+        if let baseURL {
+            let fileURL = baseURL.appendingPathComponent(".harvie-render.html")
+            try? html.write(to: fileURL, atomically: true, encoding: .utf8)
+            tempFileURL = fileURL
+        }
+        defer { if let url = tempFileURL { try? FileManager.default.removeItem(at: url) } }
+
         let config = WKWebViewConfiguration()
         config.websiteDataStore = .nonPersistent()
         config.suppressesIncrementalRendering = true
@@ -175,7 +186,11 @@ final class TemplatePDFService {
                     // Retain delegate via associated object — WKWebView.navigationDelegate is weak
                     objc_setAssociatedObject(webView, "navDelegate", delegate, .OBJC_ASSOCIATION_RETAIN)
                     webView.navigationDelegate = delegate
-                    webView.loadHTMLString(html, baseURL: nil)
+                    if let tempFileURL, let baseURL {
+                        webView.loadFileURL(tempFileURL, allowingReadAccessTo: baseURL)
+                    } else {
+                        webView.loadHTMLString(html, baseURL: nil)
+                    }
                 }
             }
 

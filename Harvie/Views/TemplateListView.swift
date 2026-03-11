@@ -270,7 +270,8 @@ struct TemplateListView: View {
         let css = template.resolvedCSSContent() + "\n" + columnVisibility.cssVariables()
         let html = TemplateEditorViewModel.buildPreviewDocument(html: processedHTML, css: css)
 
-        let previewView = TemplatePreviewView(html: html)
+        let baseURL = template.isBuiltIn ? nil : TemplateFileManager.existingDirectory(for: template.id)
+        let previewView = TemplatePreviewView(html: html, baseURL: baseURL)
 
         let window = NSWindow(
             contentRect: NSRect(x: 0, y: 0, width: 800, height: 900),

@@ -124,6 +124,24 @@ jobs:
           git commit -m "Update harvest-qr-bill to ${VERSION}"
           git push
 
+      - name: Update website download URL
+        env:
+          WEBSITE_REPO_TOKEN: ${{ secrets.WEBSITE_REPO_PAT }}
+        run: |
+          VERSION="${{ steps.version.outputs.VERSION }}"
+          APP_NAME="${{ env.APP_NAME }}"
+
+          git clone "https://x-access-token:${WEBSITE_REPO_TOKEN}@github.com/jorisnoo/harvie-app.git" website-repo
+          cd website-repo
+
+          sed -i '' "s|download_url: .*|download_url: 'https://github.com/jorisnoo/Harvie/releases/download/${VERSION}/${APP_NAME}-${VERSION}.dmg'|" content/globals/download.yaml
+
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add content/globals/download.yaml
+          git commit -m "Update download URL to ${VERSION}"
+          git push
+
       - name: Cleanup keychain
         if: always()
         run: |
