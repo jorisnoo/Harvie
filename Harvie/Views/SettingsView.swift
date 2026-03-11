@@ -419,8 +419,16 @@ struct FeedbackSettings: View {
     var body: some View {
         Form {
             Section(Strings.Settings.contact) {
-                Link(destination: URL(string: "mailto:contact@noordermeer.ch")!) {
+                Link(destination: URL(string: "mailto:hello@harvie.app")!) {
                     Label(Strings.Settings.contactEmail, systemImage: "envelope")
+                }
+
+                Link(destination: URL(string: "https://harvie.app")!) {
+                    Label(Strings.Settings.websiteURL, systemImage: "globe")
+                }
+
+                Link(destination: URL(string: "https://harvie.app/privacy-policy")!) {
+                    Label(Strings.Settings.privacyPolicy, systemImage: "hand.raised")
                 }
 
                 Text(Strings.Settings.contactHint)

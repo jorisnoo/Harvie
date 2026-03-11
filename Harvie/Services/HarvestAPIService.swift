@@ -109,7 +109,7 @@ actor HarvestAPIService {
         var request = URLRequest(url: url)
         request.setValue("Bearer \(credentials.accessToken)", forHTTPHeaderField: "Authorization")
         request.setValue(credentials.accountId, forHTTPHeaderField: "Harvest-Account-Id")
-        request.setValue("Harvester (support@noordermeer.ch)", forHTTPHeaderField: "User-Agent")
+        request.setValue("Harvie (hello@harvie.app)", forHTTPHeaderField: "User-Agent")
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         return request
     }

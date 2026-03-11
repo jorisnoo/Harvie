@@ -140,7 +140,7 @@
 				CF02441D2F1F7D2A004AD884 /* AppUpdater */,
 				CF05BE002F3C4061008D50C5 /* Aptabase */,
 			);
-			productName = Harvester;
+			productName = Harvie;
 			productReference = CFC06FAE2F12C02400DBAFCB /* Harvie.app */;
 			productType = "com.apple.product-type.application";
 		};

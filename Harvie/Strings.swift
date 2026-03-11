@@ -278,8 +278,11 @@ enum Strings {
 
         // Feedback
         static let contact = "Contact"
-        static let contactEmail = "contact@noordermeer.ch"
+        static let contactEmail = "hello@harvie.app"
         static let contactHint = "Send us an email with questions, suggestions, or feedback."
+        static let website = "Website"
+        static let websiteURL = "harvie.app"
+        static let privacyPolicy = "Privacy Policy"
         static let reportAnIssue = "Report an Issue"
         static let openGitHubIssues = "Open GitHub Issues"
         static let reportHint = "Report bugs or request features on GitHub."
