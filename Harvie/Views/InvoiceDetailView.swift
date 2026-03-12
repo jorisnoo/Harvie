@@ -522,7 +522,7 @@ struct InvoiceDetailView: View {
                         Text(notes.current.harvestMarkdown)
                             .font(.body)
                             .foregroundStyle(.secondary)
-                            .frame(maxWidth: .infinity, minHeight: 40, alignment: .topLeading)
+                            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
                             .padding(4)
                             .background(.background)
                             .allowsHitTesting(false)
