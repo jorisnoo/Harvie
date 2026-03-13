@@ -637,8 +637,7 @@ struct InvoiceDetailView: View {
         Binding(
             get: { editedQuantities[item.id] ?? item.quantity.formatted() },
             set: { newValue in
-                let filtered = newValue.filter { $0.isNumber || $0 == "." || $0 == "," }
-                editedQuantities[item.id] = filtered
+                editedQuantities[item.id] = newValue
                 savedLineItems.remove(item.id)
             }
         )
@@ -653,8 +652,7 @@ struct InvoiceDetailView: View {
         Binding(
             get: { editedUnitPrices[item.id] ?? item.unitPrice.formatted() },
             set: { newValue in
-                let filtered = newValue.filter { $0.isNumber || $0 == "." || $0 == "," }
-                editedUnitPrices[item.id] = filtered
+                editedUnitPrices[item.id] = newValue
                 savedLineItems.remove(item.id)
             }
         )
