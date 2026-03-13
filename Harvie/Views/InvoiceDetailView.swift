@@ -26,6 +26,8 @@ struct InvoiceDetailView: View {
     @State private var showingSuccess = false
     @State private var savedFilePath: String?
     @State private var isSendingEmail = false
+    @State private var showMoneyRain = false
+    @State private var lastLiveAmount: Decimal = 0
 
     private var creditorName: String { creditorInfo.name }
     private var canExportWithQRBill: Bool { creditorInfo.isValid }
@@ -55,12 +57,68 @@ struct InvoiceDetailView: View {
     private let keychainService = KeychainService.shared
     private let apiService = HarvestAPIService.shared
 
+    private var liveAmount: Decimal {
+        guard let lineItems = invoice.lineItems,
+              !editedQuantities.isEmpty || !editedUnitPrices.isEmpty else {
+            return invoice.amount
+        }
+
+        var subtotal: Decimal = 0
+        var taxableAmount: Decimal = 0
+        var taxable2Amount: Decimal = 0
+
+        for item in lineItems {
+            let amount = liveLineItemAmount(for: item)
+            subtotal += amount
+            if item.taxed { taxableAmount += amount }
+            if item.taxed2 { taxable2Amount += amount }
+        }
+
+        let tax = (invoice.tax ?? 0) * taxableAmount / 100
+        let tax2 = (invoice.tax2 ?? 0) * taxable2Amount / 100
+        let discount = (invoice.discount ?? 0) * subtotal / 100
+
+        return subtotal + tax + tax2 - discount
+    }
+
+    private var liveDueAmount: Decimal {
+        invoice.dueAmount + (liveAmount - invoice.amount)
+    }
+
     private var formattedAmount: String {
-        CurrencyFormatter.format(invoice.amount, currency: invoice.currency)
+        CurrencyFormatter.format(liveAmount, currency: invoice.currency)
     }
 
     private var formattedDueAmount: String {
-        CurrencyFormatter.format(invoice.dueAmount, currency: invoice.currency)
+        CurrencyFormatter.format(liveDueAmount, currency: invoice.currency)
+    }
+
+    private var liveTaxAmount: Decimal {
+        guard let lineItems = invoice.lineItems, let taxRate = invoice.tax,
+              !editedQuantities.isEmpty || !editedUnitPrices.isEmpty else {
+            return invoice.taxAmount ?? 0
+        }
+        let taxable = lineItems.reduce(Decimal.zero) { total, item in
+            item.taxed ? total + liveLineItemAmount(for: item) : total
+        }
+        return taxable * taxRate / 100
+    }
+
+    private var liveDiscountAmount: Decimal {
+        guard let lineItems = invoice.lineItems, let discountRate = invoice.discount,
+              !editedQuantities.isEmpty || !editedUnitPrices.isEmpty else {
+            return invoice.discountAmount ?? 0
+        }
+        let subtotal = lineItems.reduce(Decimal.zero) { total, item in
+            total + liveLineItemAmount(for: item)
+        }
+        return subtotal * discountRate / 100
+    }
+
+    private func liveLineItemAmount(for item: LineItem) -> Decimal {
+        let qty = editedQuantities[item.id].flatMap { parsePrice($0) } ?? item.quantity
+        let price = editedUnitPrices[item.id].flatMap { parsePrice($0) } ?? item.unitPrice
+        return qty * price
     }
 
     var body: some View {
@@ -97,6 +155,14 @@ struct InvoiceDetailView: View {
             savedLineItems = []
             savedTimers.values.forEach { $0.cancel() }
             savedTimers = [:]
+            lastLiveAmount = invoice.amount
+        }
+        .onChange(of: editedQuantities) { triggerMoneyRainIfNeeded() }
+        .onChange(of: editedUnitPrices) { triggerMoneyRainIfNeeded() }
+        .overlay {
+            if showMoneyRain {
+                MoneyRainView { showMoneyRain = false }
+            }
         }
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
@@ -358,11 +424,14 @@ struct InvoiceDetailView: View {
             Text(invoice.state == .paid ? formattedAmount : formattedDueAmount)
                 .font(.title)
                 .fontWeight(.bold)
+                .contentTransition(.numericText())
+                .animation(.default, value: liveAmount)
 
-            if invoice.state != .paid, invoice.dueAmount != invoice.amount {
+            if invoice.state != .paid, liveDueAmount != liveAmount {
                 Text(Strings.InvoiceDetail.ofTotal(formattedAmount))
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
+                    .contentTransition(.numericText())
             }
 
             if let sentAt = invoice.sentAt,
@@ -389,15 +458,19 @@ struct InvoiceDetailView: View {
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
 
-            if let tax = invoice.tax, let taxAmount = invoice.taxAmount {
-                Text(Strings.InvoiceDetail.inclTax(tax.formatted(), CurrencyFormatter.format(taxAmount, currency: invoice.currency)))
+            if let tax = invoice.tax, invoice.taxAmount != nil {
+                Text(Strings.InvoiceDetail.inclTax(tax.formatted(), CurrencyFormatter.format(liveTaxAmount, currency: invoice.currency)))
                     .font(.caption)
                     .foregroundStyle(.tertiary)
+                    .contentTransition(.numericText())
+                    .animation(.default, value: liveAmount)
             }
 
-            if let discount = invoice.discount, let discountAmount = invoice.discountAmount {
-                Text(Strings.InvoiceDetail.discount(discount.formatted(), CurrencyFormatter.format(discountAmount, currency: invoice.currency)))
+            if let discount = invoice.discount, invoice.discountAmount != nil {
+                Text(Strings.InvoiceDetail.discount(discount.formatted(), CurrencyFormatter.format(liveDiscountAmount, currency: invoice.currency)))
                     .font(.caption)
+                    .contentTransition(.numericText())
+                    .animation(.default, value: liveAmount)
             }
         }
     }
@@ -451,13 +524,15 @@ struct InvoiceDetailView: View {
                                     }
                                 }
 
-                            if savingLineItems.contains(item.id) {
-                                ProgressView()
-                                    .scaleEffect(0.6)
-                            } else if savedLineItems.contains(item.id) {
-                                Image(systemName: "checkmark.circle.fill")
-                                    .foregroundStyle(.green)
-                            }
+                            Image(systemName: "checkmark.circle.fill")
+                                .foregroundStyle(.green)
+                                .opacity(savedLineItems.contains(item.id) ? 1 : 0)
+                                .overlay {
+                                    if savingLineItems.contains(item.id) {
+                                        ProgressView()
+                                            .scaleEffect(0.6)
+                                    }
+                                }
                         }
 
                         HStack(spacing: 2) {
@@ -501,9 +576,10 @@ struct InvoiceDetailView: View {
 
                     Spacer()
 
-                    Text(CurrencyFormatter.format(item.amount, currency: invoice.currency))
+                    Text(CurrencyFormatter.format(liveLineItemAmount(for: item), currency: invoice.currency))
                         .font(.body)
                         .foregroundStyle(.secondary)
+                        .contentTransition(.numericText())
                 }
                 .padding(.vertical, 8)
 
@@ -567,6 +643,16 @@ struct InvoiceDetailView: View {
                 }
             }
         }
+    }
+
+    // MARK: - Easter Egg
+
+    private func triggerMoneyRainIfNeeded() {
+        let current = liveAmount
+        if current >= 1_000_000, lastLiveAmount < 1_000_000, !showMoneyRain {
+            showMoneyRain = true
+        }
+        lastLiveAmount = current
     }
 
     // MARK: - API Actions

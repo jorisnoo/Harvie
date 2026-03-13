@@ -18,6 +18,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     )
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        #if DEBUG
+        return
+        #endif
         updater.check(
             success: { [updater] in
                 Task { @MainActor in
