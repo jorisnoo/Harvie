@@ -2,6 +2,23 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.5.0](https://github.com/jorisnoo/Harvie/releases/tag/v0.5.0) (2026-03-13)
+
+### Features
+
+- make line item quantity editable ([0b1e761](https://github.com/jorisnoo/Harvie/commit/0b1e7619cb191603376c6ba8ed57ccb243bd7002))
+- overlay QR bill on last page when space available instead of appending ([b7e83ac](https://github.com/jorisnoo/Harvie/commit/b7e83aca4afedb3322b21cb1442969c175b45be0))
+
+### Bug Fixes
+
+- remove input filtering from quantity and price bindings ([1abb82a](https://github.com/jorisnoo/Harvie/commit/1abb82ad65f12869b0655e9dac06748796ec7a9b))
+- skip API mutations in demo mode ([5d344bd](https://github.com/jorisnoo/Harvie/commit/5d344bd2e1c5825ecc28436335c156f838c53543))
+- header alignment ([61763fc](https://github.com/jorisnoo/Harvie/commit/61763fcd1b266ea8888e7cfc48c41e1933ddc1b7))
+- allow notes text view to expand fully instead of constraining minimum height ([ece62bf](https://github.com/jorisnoo/Harvie/commit/ece62bfbb6396290b702cdc2b56679937c9d6810))
+
+### Continuous Integration
+
+- update website repo download URL path from YAML to config.php ([a222550](https://github.com/jorisnoo/Harvie/commit/a2225506b30982514b2610aeb890f46a96d9ad65))
 ## [0.4.5](https://github.com/jorisnoo/Harvie/releases/tag/v0.4.5) (2026-03-11)
 
 ### Features
