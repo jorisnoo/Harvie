@@ -134,7 +134,10 @@ jobs:
           git clone "https://x-access-token:${WEBSITE_REPO_TOKEN}@github.com/jorisnoo/harvie-app.git" website-repo
           cd website-repo
 
+          # Replace the downloadUrl line with the new single-line value
           sed -i '' "s|downloadUrl:.*|downloadUrl: 'https://github.com/jorisnoo/Harvie/releases/download/${VERSION}/${APP_NAME}-${VERSION}.dmg',|" src/config.ts
+          # Remove any orphaned continuation line (bare URL string left from multi-line format)
+          sed -i '' "/^[[:space:]]*'https:\/\/github\.com\/.*\/releases\/download\/.*\.dmg',$/d" src/config.ts
 
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
