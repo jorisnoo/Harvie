@@ -362,13 +362,20 @@ private struct SidebarStatusBar: View {
             .sorted { $0.currency < $1.currency }
     }
 
+    private var formattedTotal: String {
+        totalByCurrency.map { CurrencyFormatter.format($0.total, currency: $0.currency) }.joined(separator: " · ")
+    }
+
     var body: some View {
         if !invoices.isEmpty {
             HStack {
                 Text(Strings.InvoicesList.invoiceCount(invoices.count))
+                    .contentTransition(.numericText())
                 Spacer()
-                Text(totalByCurrency.map { CurrencyFormatter.format($0.total, currency: $0.currency) }.joined(separator: " · "))
+                Text(formattedTotal)
+                    .contentTransition(.numericText())
             }
+            .animation(.default, value: formattedTotal)
             .font(.caption)
             .foregroundStyle(.secondary)
             .padding(.horizontal)
@@ -416,6 +423,8 @@ struct InvoiceRowView: View {
                 Text(formattedAmount)
                     .font(.subheadline)
                     .fontWeight(.medium)
+                    .contentTransition(.numericText())
+                    .animation(.default, value: invoice.displayAmount)
 
                 Text(formattedDate)
                     .font(.caption2)

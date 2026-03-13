@@ -29,6 +29,7 @@ struct ContentView: View {
             isSearching = true
         }
         .overlay { ExportOverlayView(viewModel: viewModel) }
+        .overlay { MoneyRainOverlay() }
         .task {
             viewModel.modelContext = modelContext
             await viewModel.loadSavedState()
