@@ -575,6 +575,10 @@ struct InvoiceDetailView: View {
         label: String,
         action: (HarvestCredentials) async throws -> Void
     ) async -> Bool {
+        #if DEBUG
+        if appSettings.isDemoMode { return true }
+        #endif
+
         do {
             let credentials = try await keychainService.loadHarvestCredentials()
             try await action(credentials)

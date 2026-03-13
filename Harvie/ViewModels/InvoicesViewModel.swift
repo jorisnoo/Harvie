@@ -476,6 +476,10 @@ final class InvoicesViewModel {
     }
 
     func updateIssueDate(for invoiceId: Int, to date: Date) async throws {
+        #if DEBUG
+        if appSettings.isDemoMode { return }
+        #endif
+
         let credentials = try await keychainService.loadHarvestCredentials()
         try await apiService.updateInvoiceIssueDate(
             invoiceId: invoiceId,
@@ -491,6 +495,13 @@ final class InvoicesViewModel {
         operation: (Int, HarvestCredentials) async throws -> Void
     ) async {
         guard !invoices.isEmpty else { return }
+
+        #if DEBUG
+        if appSettings.isDemoMode {
+            showUpdateSuccess = true
+            return
+        }
+        #endif
 
         isUpdating = true
         updateError = nil
@@ -521,6 +532,10 @@ final class InvoicesViewModel {
     }
 
     func markAsSent(invoiceId: Int) async throws {
+        #if DEBUG
+        if appSettings.isDemoMode { return }
+        #endif
+
         let credentials = try await keychainService.loadHarvestCredentials()
         try await apiService.markInvoiceAsSent(
             invoiceId: invoiceId,
@@ -535,6 +550,10 @@ final class InvoicesViewModel {
     }
 
     func markAsDraft(invoiceId: Int) async throws {
+        #if DEBUG
+        if appSettings.isDemoMode { return }
+        #endif
+
         let credentials = try await keychainService.loadHarvestCredentials()
         try await apiService.markInvoiceAsDraft(
             invoiceId: invoiceId,
