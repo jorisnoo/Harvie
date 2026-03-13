@@ -311,6 +311,7 @@ struct InvoiceDetailView: View {
                         RoundedRectangle(cornerRadius: 6)
                             .strokeBorder(focusedField == .subject ? Color.accentColor.opacity(0.5) : .clear, lineWidth: 1.5)
                     )
+                    .padding(.leading, -6)
 
                 if subject.isModified {
                     if subject.showSaved {
