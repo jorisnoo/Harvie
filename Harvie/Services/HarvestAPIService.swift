@@ -332,6 +332,7 @@ actor HarvestAPIService {
         invoiceId: Int,
         lineItemId: Int,
         description: String? = nil,
+        quantity: Decimal? = nil,
         unitPrice: Decimal? = nil,
         allLineItems: [LineItem],
         credentials: HarvestCredentials
@@ -344,10 +345,11 @@ actor HarvestAPIService {
                 return .init(
                     id: item.id,
                     description: description ?? (item.description ?? ""),
+                    quantity: quantity,
                     unitPrice: unitPrice
                 )
             }
-            return .init(id: item.id, description: item.description ?? "", unitPrice: nil)
+            return .init(id: item.id, description: item.description ?? "", quantity: nil, unitPrice: nil)
         })
         request.httpBody = try JSONEncoder().encode(payload)
         try await performMutation(request)
@@ -374,10 +376,11 @@ actor HarvestAPIService {
         struct Item: Encodable {
             let id: Int
             let description: String
+            let quantity: Decimal?
             let unitPrice: Decimal?
 
             enum CodingKeys: String, CodingKey {
-                case id, description
+                case id, description, quantity
                 case unitPrice = "unit_price"
             }
 
@@ -385,6 +388,7 @@ actor HarvestAPIService {
                 var container = encoder.container(keyedBy: CodingKeys.self)
                 try container.encode(id, forKey: .id)
                 try container.encode(description, forKey: .description)
+                try container.encodeIfPresent(quantity, forKey: .quantity)
                 try container.encodeIfPresent(unitPrice, forKey: .unitPrice)
             }
         }

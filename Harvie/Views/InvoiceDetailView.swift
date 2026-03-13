@@ -37,6 +37,7 @@ struct InvoiceDetailView: View {
 
     // Line item editing
     @State private var editedDescriptions: [Int: String] = [:]
+    @State private var editedQuantities: [Int: String] = [:]
     @State private var editedUnitPrices: [Int: String] = [:]
     @State private var savingLineItems: Set<Int> = []
     @State private var savedLineItems: Set<Int> = []
@@ -90,6 +91,7 @@ struct InvoiceDetailView: View {
             notes.reset(to: invoice.notes ?? "")
             issueDate.reset(to: invoice.issueDate)
             editedDescriptions = [:]
+            editedQuantities = [:]
             editedUnitPrices = [:]
             savingLineItems = []
             savedLineItems = []
@@ -459,7 +461,23 @@ struct InvoiceDetailView: View {
                         }
 
                         HStack(spacing: 2) {
-                            Text("\(item.quantity.formatted()) ×")
+                            TextField(
+                                "Qty",
+                                text: quantityBinding(for: item)
+                            )
+                            .font(.caption)
+                            .foregroundStyle(.tertiary)
+                            .textFieldStyle(.roundedBorder)
+                            .focused($focusedField, equals: .quantity(item.id))
+                            .fixedSize()
+                            .onSubmit { focusedField = nil }
+                            .onChange(of: focusedField) {
+                                if focusedField != .quantity(item.id), isQuantityModified(item) {
+                                    Task { await saveLineItem(item) }
+                                }
+                            }
+
+                            Text("×")
                                 .font(.caption)
                                 .foregroundStyle(.tertiary)
 
@@ -608,14 +626,29 @@ struct InvoiceDetailView: View {
         if let edited = editedDescriptions[item.id], edited != (item.description ?? "") {
             return true
         }
-        return isUnitPriceModified(item)
+        return isQuantityModified(item) || isUnitPriceModified(item)
+    }
+
+    private func quantityBinding(for item: LineItem) -> Binding<String> {
+        Binding(
+            get: { editedQuantities[item.id] ?? item.quantity.formatted() },
+            set: { newValue in
+                let filtered = newValue.filter { $0.isNumber || $0 == "." || $0 == "," }
+                editedQuantities[item.id] = filtered
+                savedLineItems.remove(item.id)
+            }
+        )
+    }
+
+    private func isQuantityModified(_ item: LineItem) -> Bool {
+        guard let edited = editedQuantities[item.id] else { return false }
+        return edited != item.quantity.formatted()
     }
 
     private func unitPriceBinding(for item: LineItem) -> Binding<String> {
         Binding(
             get: { editedUnitPrices[item.id] ?? item.unitPrice.formatted() },
             set: { newValue in
-                // Allow only digits, dots, and commas
                 let filtered = newValue.filter { $0.isNumber || $0 == "." || $0 == "," }
                 editedUnitPrices[item.id] = filtered
                 savedLineItems.remove(item.id)
@@ -637,13 +670,15 @@ struct InvoiceDetailView: View {
 
     private func saveLineItem(_ item: LineItem) async {
         let editedDescription = editedDescriptions[item.id]
+        let editedQuantity = editedQuantities[item.id].flatMap { parsePrice($0) }
         let editedPrice = editedUnitPrices[item.id].flatMap { parsePrice($0) }
-        guard editedDescription != nil || editedPrice != nil else { return }
+        guard editedDescription != nil || editedQuantity != nil || editedPrice != nil else { return }
         savingLineItems.insert(item.id)
         let success = await performAPIAction(label: "save line item") { credentials in
             try await apiService.updateLineItem(
                 invoiceId: invoice.id, lineItemId: item.id,
                 description: editedDescription,
+                quantity: editedQuantity,
                 unitPrice: editedPrice,
                 allLineItems: invoice.lineItems ?? [],
                 credentials: credentials
@@ -900,7 +935,7 @@ struct InvoiceDetailView: View {
     }
 
     private enum FocusedField: Hashable {
-        case subject, notes, lineItem(Int), unitPrice(Int)
+        case subject, notes, lineItem(Int), quantity(Int), unitPrice(Int)
     }
 
     private enum ActiveSheet: Identifiable {
