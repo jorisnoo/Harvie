@@ -26,7 +26,6 @@ struct InvoiceDetailView: View {
     @State private var showingSuccess = false
     @State private var savedFilePath: String?
     @State private var isSendingEmail = false
-    @State private var lastLiveAmount: Decimal = 0
 
     private var creditorName: String { creditorInfo.name }
     private var canExportWithQRBill: Bool { creditorInfo.isValid }
@@ -166,15 +165,15 @@ struct InvoiceDetailView: View {
             savedLineItems = []
             savedTimers.values.forEach { $0.cancel() }
             savedTimers = [:]
-            lastLiveAmount = invoice.amount
         }
-        .onChange(of: formattedAmount) {
-            let current = liveAmount
-            if current >= 1_000_000, lastLiveAmount < 1_000_000 {
-                logger.info("💰 THRESHOLD CROSSED — liveAmount=\(current), last=\(lastLiveAmount), setting isShowing=true")
-                MoneyRainState.shared.isShowing = true
+        .onChange(of: invoice.amount) { old, new in
+            if new >= 1_000_000, old < 1_000_000 {
+                logger.info("💰 THRESHOLD CROSSED — amount=\(new), was=\(old)")
+                Task {
+                    try? await Task.sleep(for: .seconds(0.8))
+                    MoneyRainState.shared.trigger = true
+                }
             }
-            lastLiveAmount = current
         }
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
@@ -530,16 +529,6 @@ struct InvoiceDetailView: View {
                                         Task { await saveLineItem(item) }
                                     }
                                 }
-
-                            Image(systemName: "checkmark.circle.fill")
-                                .foregroundStyle(.green)
-                                .opacity(savedLineItems.contains(item.id) ? 1 : 0)
-                                .overlay {
-                                    if savingLineItems.contains(item.id) {
-                                        ProgressView()
-                                            .scaleEffect(0.6)
-                                    }
-                                }
                         }
 
                         HStack(spacing: 2) {
@@ -582,6 +571,16 @@ struct InvoiceDetailView: View {
                     }
 
                     Spacer()
+
+                    Image(systemName: "checkmark.circle.fill")
+                        .foregroundStyle(.green)
+                        .opacity(savedLineItems.contains(item.id) ? 1 : 0)
+                        .overlay {
+                            if savingLineItems.contains(item.id) {
+                                ProgressView()
+                                    .scaleEffect(0.6)
+                            }
+                        }
 
                     Text(CurrencyFormatter.format(liveLineItemAmount(for: item), currency: invoice.currency))
                         .font(.body)
@@ -726,8 +725,9 @@ struct InvoiceDetailView: View {
     }
 
     private func isQuantityModified(_ item: LineItem) -> Bool {
-        guard let edited = editedQuantities[item.id] else { return false }
-        return edited != item.quantity.formatted()
+        guard let edited = editedQuantities[item.id],
+              let parsed = parsePrice(edited) else { return false }
+        return parsed != item.quantity
     }
 
     private func unitPriceBinding(for item: LineItem) -> Binding<String> {
@@ -741,8 +741,9 @@ struct InvoiceDetailView: View {
     }
 
     private func isUnitPriceModified(_ item: LineItem) -> Bool {
-        guard let edited = editedUnitPrices[item.id] else { return false }
-        return edited != item.unitPrice.formatted()
+        guard let edited = editedUnitPrices[item.id],
+              let parsed = parsePrice(edited) else { return false }
+        return parsed != item.unitPrice
     }
 
     private func parsePrice(_ string: String) -> Decimal? {
@@ -758,6 +759,8 @@ struct InvoiceDetailView: View {
         let editedPrice = editedUnitPrices[item.id].flatMap { parsePrice($0) }
         guard editedDescription != nil || editedQuantity != nil || editedPrice != nil else { return }
         savingLineItems.insert(item.id)
+        savedLineItems.remove(item.id)
+        savedTimers[item.id]?.cancel()
         let success = await performAPIAction(label: "save line item") { credentials in
             try await apiService.updateLineItem(
                 invoiceId: invoice.id, lineItemId: item.id,
@@ -770,6 +773,7 @@ struct InvoiceDetailView: View {
         }
         savingLineItems.remove(item.id)
         if success {
+            editedDescriptions.removeValue(forKey: item.id)
             savedLineItems.insert(item.id)
             savedTimers[item.id]?.cancel()
             savedTimers[item.id] = Task {

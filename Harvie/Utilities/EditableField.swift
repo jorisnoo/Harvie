@@ -35,7 +35,11 @@ struct EditableField<Value: Equatable & Sendable>: DynamicProperty, Sendable {
         showSaved = false
     }
 
-    func markSaving() { isSaving = true }
+    func markSaving() {
+        isSaving = true
+        showSaved = false
+        clearSavedTask?.cancel()
+    }
 
     func markSaved() {
         lastSaved = current
