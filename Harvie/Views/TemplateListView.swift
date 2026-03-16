@@ -5,6 +5,7 @@
 
 import SwiftData
 import SwiftUI
+import UniformTypeIdentifiers
 
 struct TemplateListView: View {
     /// When non-nil, double-clicking a template selects it as the active template.
@@ -20,6 +21,7 @@ struct TemplateListView: View {
     @State private var templateToDelete: InvoiceTemplate?
     @State private var editorControllers: [NSWindowController] = []
     @State private var previewControllers: [NSWindowController] = []
+    @State private var importError: String?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -83,6 +85,24 @@ struct TemplateListView: View {
                 Spacer()
 
                 Button {
+                    importTemplate()
+                } label: {
+                    Image(systemName: "square.and.arrow.down")
+                        .frame(height: 16)
+                }
+                .help(Strings.Templates.importTemplate)
+
+                Button {
+                    guard let selected = selectedTemplate else { return }
+                    exportTemplate(selected)
+                } label: {
+                    Image(systemName: "square.and.arrow.up")
+                        .frame(height: 16)
+                }
+                .disabled(selectedTemplate == nil)
+                .help(Strings.Templates.exportTemplate)
+
+                Button {
                     TemplateFileManager.revealTemplatesFolder()
                 } label: {
                     Image(systemName: "folder")
@@ -119,6 +139,14 @@ struct TemplateListView: View {
         } message: {
             Text(Strings.Templates.deleteConfirmation(templateToDelete?.name ?? ""))
         }
+        .alert(Strings.Templates.importErrorTitle, isPresented: Binding(
+            get: { importError != nil },
+            set: { if !$0 { importError = nil } }
+        )) {
+            Button(Strings.Common.ok) { importError = nil }
+        } message: {
+            Text(importError ?? "")
+        }
     }
 
     @ViewBuilder
@@ -133,6 +161,10 @@ struct TemplateListView: View {
 
         Button(Strings.Templates.duplicate) {
             duplicateTemplate(template)
+        }
+
+        Button(Strings.Templates.export) {
+            exportTemplate(template)
         }
 
         if !template.isBuiltIn {
@@ -206,6 +238,62 @@ struct TemplateListView: View {
         }
 
         selectedTemplate = copy
+    }
+
+    private func exportTemplate(_ template: InvoiceTemplate) {
+        let panel = NSSavePanel()
+        panel.allowedContentTypes = [TemplateFileManager.templateContentType]
+        panel.nameFieldStringValue = template.name
+        panel.prompt = Strings.Templates.export
+
+        guard panel.runModal() == .OK, let url = panel.url else { return }
+
+        do {
+            try TemplateFileManager.exportTemplate(
+                name: template.name,
+                html: template.resolvedHTMLContent(),
+                css: template.resolvedCSSContent(),
+                to: url
+            )
+        } catch {
+            importError = error.localizedDescription
+        }
+    }
+
+    private func importTemplate() {
+        let panel = NSOpenPanel()
+        panel.canChooseFiles = true
+        panel.canChooseDirectories = false
+        panel.allowsMultipleSelection = true
+        panel.allowedContentTypes = [TemplateFileManager.templateContentType]
+        panel.message = Strings.Templates.importMessage
+
+        guard panel.runModal() == .OK, !panel.urls.isEmpty else { return }
+
+        for url in panel.urls {
+            do {
+                let package = try TemplateFileManager.importTemplate(from: url)
+
+                let template = InvoiceTemplate(
+                    name: package.name,
+                    htmlContent: "",
+                    cssContent: ""
+                )
+                modelContext.insert(template)
+                try modelContext.save()
+
+                TemplateFileManager.save(
+                    html: package.html,
+                    css: package.css,
+                    for: template.id,
+                    name: template.name
+                )
+
+                selectedTemplate = template
+            } catch {
+                importError = error.localizedDescription
+            }
+        }
     }
 
     private func deleteTemplate(_ template: InvoiceTemplate) {

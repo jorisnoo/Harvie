@@ -219,12 +219,14 @@ struct InvoiceDetailView: View {
                     Button {
                         Task { await sendViaEmail() }
                     } label: {
-                        if isSendingEmail {
-                            ProgressView()
-                                .scaleEffect(0.7)
-                        } else {
-                            Label(Strings.InvoiceDetail.sendViaEmail, systemImage: "envelope")
-                        }
+                        Label(Strings.InvoiceDetail.sendViaEmail, systemImage: "envelope")
+                            .opacity(isSendingEmail ? 0 : 1)
+                            .overlay {
+                                if isSendingEmail {
+                                    ProgressView()
+                                        .controlSize(.small)
+                                }
+                            }
                     }
                     .disabled(isProcessing || isPreviewing || isSendingEmail || !canExportWithQRBill)
                     .help(Strings.InvoiceDetail.sendViaEmail)
@@ -259,12 +261,14 @@ struct InvoiceDetailView: View {
                             Label(Strings.InvoiceDetail.markAsSent, systemImage: "text.badge.checkmark")
                         }
                     } label: {
-                        if isSendingEmail {
-                            ProgressView()
-                                .scaleEffect(0.7)
-                        } else {
-                            Label(Strings.InvoiceDetail.send, systemImage: "paperplane")
-                        }
+                        Label(Strings.InvoiceDetail.send, systemImage: "paperplane")
+                            .opacity(isSendingEmail ? 0 : 1)
+                            .overlay {
+                                if isSendingEmail {
+                                    ProgressView()
+                                        .controlSize(.small)
+                                }
+                            }
                     }
                     .disabled(isPerformingSheetAction || isSendingEmail)
                     .help(Strings.InvoiceDetail.sendTooltip)

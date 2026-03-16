@@ -15,5 +15,25 @@
 	<string>Harvie</string>
 	<key>GHRepositoryOwner</key>
 	<string>jorisnoo</string>
+	<key>UTExportedTypeDeclarations</key>
+	<array>
+		<dict>
+			<key>UTTypeIdentifier</key>
+			<string>app.harvie.template</string>
+			<key>UTTypeDescription</key>
+			<string>Harvie Template</string>
+			<key>UTTypeConformsTo</key>
+			<array>
+				<string>public.json</string>
+			</array>
+			<key>UTTypeTagSpecification</key>
+			<dict>
+				<key>public.filename-extension</key>
+				<array>
+					<string>harvietemplate</string>
+				</array>
+			</dict>
+		</dict>
+	</array>
 </dict>
 </plist>

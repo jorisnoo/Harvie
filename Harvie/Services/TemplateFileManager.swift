@@ -6,6 +6,7 @@
 import AppKit
 import Foundation
 import os.log
+import UniformTypeIdentifiers
 
 private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "app.harvie", category: "TemplateFileManager")
 
@@ -129,6 +130,32 @@ enum TemplateFileManager {
         try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
         NSWorkspace.shared.open(dir)
     }
+
+    // MARK: - Import / Export
+
+    static let templateContentType = UTType("app.harvie.template") ?? .json
+
+    struct TemplatePackage: Codable {
+        let name: String
+        let version: Int
+        let html: String
+        let css: String
+    }
+
+    static func exportTemplate(name: String, html: String, css: String, to url: URL) throws {
+        let package = TemplatePackage(name: name, version: 1, html: html, css: css)
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+        let data = try encoder.encode(package)
+        try data.write(to: url)
+    }
+
+    static func importTemplate(from url: URL) throws -> TemplatePackage {
+        let data = try Data(contentsOf: url)
+        return try JSONDecoder().decode(TemplatePackage.self, from: data)
+    }
+
+    // MARK: - Private
 
     private static func sanitize(_ name: String) -> String {
         let allowed = CharacterSet.alphanumerics.union(CharacterSet(charactersIn: "-_ "))

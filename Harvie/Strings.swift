@@ -310,6 +310,11 @@ enum Strings {
         static let revealInFinder = "Reveal in Finder"
         static let untitledTemplate = "Untitled Template"
         static let builtIn = "Built-in"
+        static let export = "Export\u{2026}"
+        static let exportTemplate = "Export template"
+        static let importTemplate = "Import template"
+        static let importMessage = "Select a template file to import"
+        static let importErrorTitle = "Import Failed"
 
         static func deleteConfirmation(_ name: String) -> String {
             "Are you sure you want to delete \"\(name)\"? This cannot be undone."
