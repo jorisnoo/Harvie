@@ -596,6 +596,7 @@ struct InvoiceDetailView: View {
                         .font(.body)
                         .foregroundStyle(.secondary)
                         .contentTransition(.numericText())
+                        .animation(.default, value: liveLineItemAmount(for: item))
                 }
                 .padding(.vertical, 8)
 
