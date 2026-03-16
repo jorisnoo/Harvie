@@ -109,6 +109,12 @@ struct HarvestSettings: View {
 struct QRBillSettings: View {
     @Bindable var viewModel: SettingsViewModel
 
+    private enum Field: Int, CaseIterable {
+        case iban, name, street, number, zip, city, country
+    }
+
+    @FocusState private var focusedField: Field?
+
     var body: some View {
         Form {
             Section(Strings.Settings.creditorInformation) {
@@ -116,42 +122,63 @@ struct QRBillSettings: View {
                     TextField("", text: $viewModel.creditorInfo.iban)
                         .textContentType(.creditCardNumber)
                         .multilineTextAlignment(.trailing)
+                        .focused($focusedField, equals: .iban)
                 }
+                .contentShape(Rectangle())
+                .onTapGesture { focusedField = .iban }
 
                 LabeledContent(Strings.Settings.name) {
                     TextField("", text: $viewModel.creditorInfo.name)
                         .multilineTextAlignment(.trailing)
+                        .focused($focusedField, equals: .name)
                 }
+                .contentShape(Rectangle())
+                .onTapGesture { focusedField = .name }
             }
 
             Section(Strings.Settings.address) {
                 LabeledContent(Strings.Settings.street) {
                     TextField("", text: $viewModel.creditorInfo.streetName)
                         .multilineTextAlignment(.trailing)
+                        .focused($focusedField, equals: .street)
                 }
+                .contentShape(Rectangle())
+                .onTapGesture { focusedField = .street }
 
                 LabeledContent(Strings.Settings.number) {
                     TextField("", text: $viewModel.creditorInfo.buildingNumber)
                         .frame(width: 80)
                         .multilineTextAlignment(.trailing)
+                        .focused($focusedField, equals: .number)
                 }
+                .contentShape(Rectangle())
+                .onTapGesture { focusedField = .number }
 
                 LabeledContent(Strings.Settings.zip) {
                     TextField("", text: $viewModel.creditorInfo.postalCode)
                         .frame(width: 80)
                         .multilineTextAlignment(.trailing)
+                        .focused($focusedField, equals: .zip)
                 }
+                .contentShape(Rectangle())
+                .onTapGesture { focusedField = .zip }
 
                 LabeledContent(Strings.Settings.city) {
                     TextField("", text: $viewModel.creditorInfo.town)
                         .multilineTextAlignment(.trailing)
+                        .focused($focusedField, equals: .city)
                 }
+                .contentShape(Rectangle())
+                .onTapGesture { focusedField = .city }
 
                 LabeledContent(Strings.Settings.country) {
                     TextField("", text: $viewModel.creditorInfo.country)
                         .frame(width: 80)
                         .multilineTextAlignment(.trailing)
+                        .focused($focusedField, equals: .country)
                 }
+                .contentShape(Rectangle())
+                .onTapGesture { focusedField = .country }
             }
 
             Section {
