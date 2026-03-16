@@ -165,8 +165,11 @@ enum Strings {
             "Failed to \(label). Please try again."
         }
 
-        static func emailSubject(label: String, number: String) -> String {
-            "\(label) \(number)"
+        static func emailSubject(label: String, number: String, title: String?) -> String {
+            if let title, !title.isEmpty {
+                return "\(label) \(number) \(title)"
+            }
+            return "\(label) \(number)"
         }
 
         static let emailNotConfigured = "Email is not configured on this Mac."
