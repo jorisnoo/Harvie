@@ -2,6 +2,30 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.6.0](https://github.com/jorisnoo/Harvie/releases/tag/v0.6.0) (2026-03-16)
+
+### Features
+
+- include invoice title in email subject ([cd6edcc](https://github.com/jorisnoo/Harvie/commit/cd6edcc78bf4a393a5b8fce810371fb7c5d1fc55))
+- make full row clickable to focus text fields in QR bill settings ([1fc5e90](https://github.com/jorisnoo/Harvie/commit/1fc5e90e68e0ba78f0f26e1cd150db49c347ce71))
+- animate sidebar totals and fix rounding ([7ff7f8e](https://github.com/jorisnoo/Harvie/commit/7ff7f8e177c62139796e614327e81ba354a4049b))
+- include tax/discount in live amount calculations and fix save indicator layout ([9082c71](https://github.com/jorisnoo/Harvie/commit/9082c71c9bb2267b11cfd0d0af2906343df0d1ac))
+
+### Bug Fixes
+
+- animate line item total on quantity/price change ([fb4c30e](https://github.com/jorisnoo/Harvie/commit/fb4c30e51f671863763d026734f89496f25fc432))
+- show loading spinner in toolbar during send via email ([08c9e1b](https://github.com/jorisnoo/Harvie/commit/08c9e1b68bb758751ace32faee9662b552ba94a4))
+- use Swiss rounding (nearest 0.05) and check actual modifications ([96f79b4](https://github.com/jorisnoo/Harvie/commit/96f79b4994970605c89a01d808ac860aacff1004))
+- prevent spurious saves and overlapping save indicators on editable fields ([0bb7091](https://github.com/jorisnoo/Harvie/commit/0bb70911350cac7885a7c0db2274017ed6f08fdd))
+- **ci:** handle multi-line downloadUrl in website update step ([d422391](https://github.com/jorisnoo/Harvie/commit/d422391ed562870ef5a31c15f9bdf8b75c7fde0d))
+
+### Code Refactoring
+
+- use bundled resources and simplify overlay animation ([b6ce4ce](https://github.com/jorisnoo/Harvie/commit/b6ce4ce1c7073853a6983b53a7efe9b1567a567a))
+
+### Chores
+
+- cleanup from code review ([b98753c](https://github.com/jorisnoo/Harvie/commit/b98753c737a2dca5df567b72806593f0c53ccad6))
 ## [0.5.0](https://github.com/jorisnoo/Harvie/releases/tag/v0.5.0) (2026-03-13)
 
 ### Features
