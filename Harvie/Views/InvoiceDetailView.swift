@@ -56,8 +56,7 @@ struct InvoiceDetailView: View {
     private let apiService = HarvestAPIService.shared
 
     private var liveAmount: Decimal {
-        guard let lineItems = invoice.lineItems,
-              !editedQuantities.isEmpty || !editedUnitPrices.isEmpty else {
+        guard let lineItems = invoice.lineItems, hasModifiedLineItems else {
             return invoice.amount
         }
 
@@ -76,11 +75,11 @@ struct InvoiceDetailView: View {
         let tax2 = rounded((invoice.tax2 ?? 0) * taxable2Amount / 100)
         let discount = rounded((invoice.discount ?? 0) * subtotal / 100)
 
-        return subtotal + tax + tax2 - discount
+        return rounded(subtotal + tax + tax2 - discount)
     }
 
     private var liveDueAmount: Decimal {
-        invoice.dueAmount + (liveAmount - invoice.amount)
+        rounded(invoice.dueAmount + (liveAmount - invoice.amount))
     }
 
     private var formattedAmount: String {
@@ -93,7 +92,7 @@ struct InvoiceDetailView: View {
 
     private var liveTaxAmount: Decimal {
         guard let lineItems = invoice.lineItems, let taxRate = invoice.tax,
-              !editedQuantities.isEmpty || !editedUnitPrices.isEmpty else {
+              hasModifiedLineItems else {
             return invoice.taxAmount ?? 0
         }
         let taxable = lineItems.reduce(Decimal.zero) { total, item in
@@ -104,7 +103,7 @@ struct InvoiceDetailView: View {
 
     private var liveDiscountAmount: Decimal {
         guard let lineItems = invoice.lineItems, let discountRate = invoice.discount,
-              !editedQuantities.isEmpty || !editedUnitPrices.isEmpty else {
+              hasModifiedLineItems else {
             return invoice.discountAmount ?? 0
         }
         let subtotal = lineItems.reduce(Decimal.zero) { total, item in
@@ -113,8 +112,14 @@ struct InvoiceDetailView: View {
         return rounded(subtotal * discountRate / 100)
     }
 
+    private var hasModifiedLineItems: Bool {
+        guard let lineItems = invoice.lineItems,
+              !editedQuantities.isEmpty || !editedUnitPrices.isEmpty else { return false }
+        return lineItems.contains { isQuantityModified($0) || isUnitPriceModified($0) }
+    }
+
     private func isLineItemEdited(_ item: LineItem) -> Bool {
-        editedQuantities[item.id] != nil || editedUnitPrices[item.id] != nil
+        isQuantityModified(item) || isUnitPriceModified(item)
     }
 
     private func liveLineItemAmount(for item: LineItem) -> Decimal {
@@ -125,10 +130,11 @@ struct InvoiceDetailView: View {
     }
 
     private func rounded(_ value: Decimal) -> Decimal {
-        var result = value
-        var rounded = Decimal()
-        NSDecimalRound(&rounded, &result, 2, .bankers)
-        return rounded
+        // Round to nearest 0.05 (Swiss rounding)
+        var multiplied = value * 20
+        var result = Decimal()
+        NSDecimalRound(&result, &multiplied, 0, .bankers)
+        return result / 20
     }
 
     var body: some View {
