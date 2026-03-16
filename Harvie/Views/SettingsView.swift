@@ -124,16 +124,14 @@ struct QRBillSettings: View {
                         .multilineTextAlignment(.trailing)
                         .focused($focusedField, equals: .iban)
                 }
-                .contentShape(Rectangle())
-                .onTapGesture { focusedField = .iban }
+                .tapToFocus { focusedField = .iban }
 
                 LabeledContent(Strings.Settings.name) {
                     TextField("", text: $viewModel.creditorInfo.name)
                         .multilineTextAlignment(.trailing)
                         .focused($focusedField, equals: .name)
                 }
-                .contentShape(Rectangle())
-                .onTapGesture { focusedField = .name }
+                .tapToFocus { focusedField = .name }
             }
 
             Section(Strings.Settings.address) {
@@ -142,8 +140,7 @@ struct QRBillSettings: View {
                         .multilineTextAlignment(.trailing)
                         .focused($focusedField, equals: .street)
                 }
-                .contentShape(Rectangle())
-                .onTapGesture { focusedField = .street }
+                .tapToFocus { focusedField = .street }
 
                 LabeledContent(Strings.Settings.number) {
                     TextField("", text: $viewModel.creditorInfo.buildingNumber)
@@ -151,8 +148,7 @@ struct QRBillSettings: View {
                         .multilineTextAlignment(.trailing)
                         .focused($focusedField, equals: .number)
                 }
-                .contentShape(Rectangle())
-                .onTapGesture { focusedField = .number }
+                .tapToFocus { focusedField = .number }
 
                 LabeledContent(Strings.Settings.zip) {
                     TextField("", text: $viewModel.creditorInfo.postalCode)
@@ -160,16 +156,14 @@ struct QRBillSettings: View {
                         .multilineTextAlignment(.trailing)
                         .focused($focusedField, equals: .zip)
                 }
-                .contentShape(Rectangle())
-                .onTapGesture { focusedField = .zip }
+                .tapToFocus { focusedField = .zip }
 
                 LabeledContent(Strings.Settings.city) {
                     TextField("", text: $viewModel.creditorInfo.town)
                         .multilineTextAlignment(.trailing)
                         .focused($focusedField, equals: .city)
                 }
-                .contentShape(Rectangle())
-                .onTapGesture { focusedField = .city }
+                .tapToFocus { focusedField = .city }
 
                 LabeledContent(Strings.Settings.country) {
                     TextField("", text: $viewModel.creditorInfo.country)
@@ -177,8 +171,7 @@ struct QRBillSettings: View {
                         .multilineTextAlignment(.trailing)
                         .focused($focusedField, equals: .country)
                 }
-                .contentShape(Rectangle())
-                .onTapGesture { focusedField = .country }
+                .tapToFocus { focusedField = .country }
             }
 
             Section {
@@ -474,6 +467,15 @@ struct FeedbackSettings: View {
             }
         }
         .formStyle(.grouped)
+    }
+}
+
+// MARK: - Helpers
+
+private extension View {
+    func tapToFocus(_ action: @escaping () -> Void) -> some View {
+        contentShape(Rectangle())
+            .onTapGesture(perform: action)
     }
 }
 

@@ -53,8 +53,8 @@ private final class MoneyRainWindowController {
     }()
 
     func show() {
-        guard !Self.gifData.isEmpty else {
-            MoneyRainState.shared.trigger = false
+        guard window == nil, !Self.gifData.isEmpty else {
+            if Self.gifData.isEmpty { MoneyRainState.shared.trigger = false }
             return
         }
 
@@ -81,7 +81,6 @@ private final class MoneyRainWindowController {
 
         window = win
         win.orderFrontRegardless()
-
     }
 
     private func dismiss() {
@@ -154,10 +153,8 @@ private struct MoneyRainContentView: View {
             )
         }
 
-        DispatchQueue.main.async {
-            visible = true
-            falling = true
-        }
+        visible = true
+        falling = true
 
         // Fade out after fall + linger
         let fadeStart = Self.fallDuration + Self.maxDelay + Self.lingerTime
