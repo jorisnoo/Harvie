@@ -12,6 +12,7 @@ struct MultiSelectionView: View {
     @State private var showChangeDateSheet = false
     @State private var showMarkAsSentSheet = false
     @State private var showMarkAsDraftSheet = false
+    @State private var showConfirmDateSheet = false
 
     private var selectedInvoices: [Invoice] {
         viewModel.selectedInvoices
@@ -35,8 +36,12 @@ struct MultiSelectionView: View {
             summaryStats
             actionButtons
 
+            if viewModel.allSelectedAreDrafts || viewModel.allSelectedAreOpen {
+                changeDateButton
+            }
+
             if viewModel.allSelectedAreDrafts {
-                draftActionsSection
+                markAsSentButton
             }
 
             if viewModel.allSelectedAreOpen {
@@ -121,29 +126,63 @@ struct MultiSelectionView: View {
                 }
             }
         }
+        .sheet(isPresented: $showConfirmDateSheet) {
+            ConfirmationSheet(
+                title: Strings.InvoiceDetail.updateIssueDateTitle,
+                message: Strings.MultiSelection.updateIssueDateMessage(selectedInvoices.count),
+                detail: Strings.InvoiceDetail.keepCurrentDate,
+                confirmLabel: Strings.InvoiceDetail.setToToday,
+                isProcessing: viewModel.isUpdating,
+                onConfirm: {
+                    Task {
+                        await viewModel.updateIssueDateForSelected(to: Date())
+                        if viewModel.showUpdateSuccess {
+                            showConfirmDateSheet = false
+                            showMarkAsSentSheet = true
+                        }
+                    }
+                },
+                onCancel: {
+                    showConfirmDateSheet = false
+                    showMarkAsSentSheet = true
+                }
+            ) {
+                if viewModel.isUpdating {
+                    batchProgressView
+                }
+            }
+        }
     }
 
-    private var draftActionsSection: some View {
-        HStack(spacing: 12) {
-            Button {
-                batchIssueDate = Date()
-                showChangeDateSheet = true
-            } label: {
-                Label(Strings.InvoiceDetail.changeDate, systemImage: "calendar")
-                    .frame(maxWidth: 150)
-            }
-            .buttonStyle(.bordered)
-            .disabled(viewModel.isUpdating)
+    private var anySelectedHasNonTodayDate: Bool {
+        selectedInvoices.contains { !Calendar.current.isDateInToday($0.issueDate) }
+    }
 
-            Button {
-                showMarkAsSentSheet = true
-            } label: {
-                Label(Strings.InvoiceDetail.markAsSent, systemImage: "paperplane")
-                    .frame(maxWidth: 150)
-            }
-            .buttonStyle(.bordered)
-            .disabled(viewModel.isUpdating)
+    private var changeDateButton: some View {
+        Button {
+            batchIssueDate = Date()
+            showChangeDateSheet = true
+        } label: {
+            Label(Strings.InvoiceDetail.changeDate, systemImage: "calendar")
+                .frame(maxWidth: 150)
         }
+        .buttonStyle(.bordered)
+        .disabled(viewModel.isUpdating)
+    }
+
+    private var markAsSentButton: some View {
+        Button {
+            if anySelectedHasNonTodayDate {
+                showConfirmDateSheet = true
+            } else {
+                showMarkAsSentSheet = true
+            }
+        } label: {
+            Label(Strings.InvoiceDetail.markAsSent, systemImage: "paperplane")
+                .frame(maxWidth: 150)
+        }
+        .buttonStyle(.bordered)
+        .disabled(viewModel.isUpdating)
     }
 
     private var openActionsSection: some View {

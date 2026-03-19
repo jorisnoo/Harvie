@@ -233,7 +233,7 @@ struct InvoiceDetailView: View {
                 }
             }
 
-            if invoice.state == .draft {
+            if invoice.state == .draft || invoice.state == .open {
                 ToolbarItem(placement: .primaryAction) {
                     Button {
                         issueDate.current = invoice.issueDate
@@ -243,11 +243,13 @@ struct InvoiceDetailView: View {
                     }
                     .help(Strings.InvoiceDetail.changeDate)
                 }
+            }
 
+            if invoice.state == .draft {
                 ToolbarItem(placement: .primaryAction) {
                     Menu {
                         Button {
-                            Task { await sendViaEmail() }
+                            initiateAction(.sendViaEmail)
                         } label: {
                             Label(Strings.InvoiceDetail.sendViaEmail, systemImage: "envelope")
                         }
@@ -256,7 +258,7 @@ struct InvoiceDetailView: View {
                         Divider()
 
                         Button {
-                            activeSheet = .markAsSent
+                            initiateAction(.markAsSent)
                         } label: {
                             Label(Strings.InvoiceDetail.markAsSent, systemImage: "text.badge.checkmark")
                         }
@@ -365,6 +367,23 @@ struct InvoiceDetailView: View {
                         }
                     },
                     onCancel: { activeSheet = nil }
+                )
+            case .confirmDateBeforeSend(let action):
+                ConfirmationSheet(
+                    title: Strings.InvoiceDetail.updateIssueDateTitle,
+                    message: Strings.InvoiceDetail.updateIssueDateMessage(
+                        invoice.issueDate.formatted(date: .long, time: .omitted)),
+                    detail: Strings.InvoiceDetail.keepCurrentDate,
+                    confirmLabel: Strings.InvoiceDetail.setToToday,
+                    isProcessing: issueDate.isSaving,
+                    onConfirm: {
+                        Task {
+                            issueDate.current = Date()
+                            await saveIssueDate()
+                            if issueDate.showSaved { activeSheet = nil; performAction(action) }
+                        }
+                    },
+                    onCancel: { activeSheet = nil; performAction(action) }
                 )
             }
         }
@@ -811,6 +830,20 @@ struct InvoiceDetailView: View {
         }
     }
 
+    private func initiateAction(_ action: SendAction) {
+        guard Calendar.current.isDateInToday(invoice.issueDate) else {
+            activeSheet = .confirmDateBeforeSend(action); return
+        }
+        performAction(action)
+    }
+
+    private func performAction(_ action: SendAction) {
+        switch action {
+        case .sendViaEmail: Task { await sendViaEmail() }
+        case .markAsSent: activeSheet = .markAsSent
+        }
+    }
+
     private func markAsSent() async {
         isPerformingSheetAction = true
         let success = await performAPIAction(label: "mark as sent") { credentials in
@@ -1038,8 +1071,19 @@ struct InvoiceDetailView: View {
     }
 
     private enum ActiveSheet: Identifiable {
-        case changeDate, markAsSent, markAsDraft
-        var id: Self { self }
+        case changeDate, markAsSent, markAsDraft, confirmDateBeforeSend(SendAction)
+        var id: String {
+            switch self {
+            case .changeDate: "changeDate"
+            case .markAsSent: "markAsSent"
+            case .markAsDraft: "markAsDraft"
+            case .confirmDateBeforeSend: "confirmDateBeforeSend"
+            }
+        }
+    }
+
+    private enum SendAction {
+        case sendViaEmail, markAsSent
     }
 
     private enum CompletedAction: Identifiable {
@@ -1129,45 +1173,19 @@ extension View {
 
 #Preview {
     InvoiceDetailView(invoice: Invoice(
-        id: 1,
-        clientKey: "abc123",
-        number: "INV-2024-001",
-        purchaseOrder: nil,
-        amount: 1500.00,
-        dueAmount: 1500.00,
-        tax: 7.7,
-        taxAmount: 115.50,
-        tax2: nil,
-        tax2Amount: nil,
-        discount: nil,
-        discountAmount: nil,
-        subject: "Web Development Services",
-        notes: "Thank you for your business!",
-        currency: "CHF",
-        state: .open,
-        periodStart: nil,
-        periodEnd: nil,
-        issueDate: Date(),
-        dueDate: Date().addingTimeInterval(86400 * 30),
-        sentAt: Date(),
-        paidAt: nil,
-        paidDate: nil,
-        closedAt: nil,
-        createdAt: Date(),
-        updatedAt: Date(),
+        id: 1, clientKey: "abc123", number: "INV-2024-001", purchaseOrder: nil,
+        amount: 1500.00, dueAmount: 1500.00, tax: 7.7, taxAmount: 115.50,
+        tax2: nil, tax2Amount: nil, discount: nil, discountAmount: nil,
+        subject: "Web Development Services", notes: "Thank you for your business!",
+        currency: "CHF", state: .open, periodStart: nil, periodEnd: nil,
+        issueDate: Date(), dueDate: Date().addingTimeInterval(86400 * 30),
+        sentAt: Date(), paidAt: nil, paidDate: nil, closedAt: nil,
+        createdAt: Date(), updatedAt: Date(),
         client: ClientReference(id: 1, name: "Acme Corp"),
-        lineItems: [
-            LineItem(
-                id: 1,
-                kind: "Service",
-                description: "Frontend development",
-                quantity: 10,
-                unitPrice: 150.00,
-                amount: 1500.00,
-                taxed: true,
-                taxed2: false,
-                project: nil
-            )
-        ]
+        lineItems: [LineItem(
+            id: 1, kind: "Service", description: "Frontend development",
+            quantity: 10, unitPrice: 150.00, amount: 1500.00,
+            taxed: true, taxed2: false, project: nil
+        )]
     ), creditorInfo: .empty, appSettings: .default)
 }

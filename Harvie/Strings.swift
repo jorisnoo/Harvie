@@ -91,6 +91,13 @@ enum Strings {
         static let price = "Price"
         static let changeIssueDate = "Change Issue Date"
         static let issueDate = "Issue Date"
+        static let updateIssueDateTitle = "Update Issue Date?"
+        static let setToToday = "Set to Today"
+        static let keepCurrentDate = "Press Cancel to keep the current date."
+
+        static func updateIssueDateMessage(_ date: String) -> String {
+            "The issue date is set to \(date). Do you want to update it to today?"
+        }
         static let invoiceSent = "Invoice Sent"
         static let invoiceReverted = "Invoice Reverted"
         static let selectAnInvoice = "Select an Invoice"
@@ -195,6 +202,10 @@ enum Strings {
         }
 
         static let sentDateDetail = "The sent date will be set to the current time."
+
+        static func updateIssueDateMessage(_ count: Int) -> String {
+            "Some of the \(count) selected invoice(s) have an issue date that is not today. Do you want to update them to today?"
+        }
 
         static func markAsDraftMessage(_ count: Int) -> String {
             "Revert \(count) invoice(s) to draft?"
