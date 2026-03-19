@@ -263,6 +263,14 @@ enum Strings {
         static let dateFormatComponents = "Date format components:"
         static let dateFormatHelp = "YYYY (4-digit year), YY (2-digit year), MM (month), DD (day)"
 
+        // Email Subject
+        static let emailSubject = "Email Subject"
+        static let emailPlaceholderInvoice = "{invoice} - Localized invoice label"
+        static let emailPlaceholderNumber = "{number} - Invoice number"
+        static let emailPlaceholderTitle = "{title} - Invoice title"
+        static let emailPlaceholderClient = "{client} - Client name"
+        static let emailPlaceholderCreditor = "{creditor} - Your company name"
+
         // Paid Mark
         static let paidMark = "Paid Mark"
         static let showWatermark = "Show watermark on paid invoices"

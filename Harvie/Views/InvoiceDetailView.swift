@@ -897,8 +897,13 @@ struct InvoiceDetailView: View {
             }
 
             emailService.recipients = recipientEmails
-            let invoiceLabel = appSettings.templateLanguage.labels["invoice"]!
-            emailService.subject = Strings.InvoiceDetail.emailSubject(label: invoiceLabel, number: invoice.number, title: invoice.subject)
+            emailService.subject = appSettings.generateEmailSubject(
+                invoiceLabel: appSettings.templateLanguage.labels["invoice"]!,
+                invoiceNumber: invoice.number,
+                title: invoice.subject,
+                clientName: invoice.client.name,
+                creditorName: creditorName
+            )
             emailService.perform(withItems: [tempURL])
 
             // Mark as sent in Harvest (only for drafts)

@@ -189,6 +189,16 @@ struct QRBillSettings: View {
 struct DownloadsSettings: View {
     @Bindable var viewModel: SettingsViewModel
 
+    private var emailSubjectPreview: String {
+        viewModel.appSettings.generateEmailSubject(
+            invoiceLabel: viewModel.appSettings.templateLanguage.labels["invoice"]!,
+            invoiceNumber: "2024-001",
+            title: "Web Development",
+            clientName: "Example Client",
+            creditorName: viewModel.creditorInfo.name.isEmpty ? "Company" : viewModel.creditorInfo.name
+        )
+    }
+
     private var filenamePreview: String {
         viewModel.appSettings.generateFilename(
             invoiceNumber: "2024-001",
@@ -263,6 +273,35 @@ struct DownloadsSettings: View {
                         .fontWeight(.medium)
                         .padding(.top, 4)
                     Text(Strings.Settings.dateFormatHelp)
+                }
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .textSelection(.enabled)
+            }
+
+            Section(Strings.Settings.emailSubject) {
+                LabeledContent(Strings.Settings.pattern) {
+                    TextField("", text: $viewModel.appSettings.emailSubjectPattern)
+                        .font(.system(.body, design: .monospaced))
+                        .multilineTextAlignment(.trailing)
+                }
+
+                LabeledContent(Strings.Common.preview) {
+                    Text(emailSubjectPreview)
+                        .foregroundStyle(.secondary)
+                        .font(.system(.body, design: .monospaced))
+                }
+            }
+
+            Section {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(Strings.Settings.availablePlaceholders)
+                        .fontWeight(.medium)
+                    Text(Strings.Settings.emailPlaceholderInvoice)
+                    Text(Strings.Settings.emailPlaceholderNumber)
+                    Text(Strings.Settings.emailPlaceholderTitle)
+                    Text(Strings.Settings.emailPlaceholderClient)
+                    Text(Strings.Settings.emailPlaceholderCreditor)
                 }
                 .font(.caption)
                 .foregroundStyle(.secondary)

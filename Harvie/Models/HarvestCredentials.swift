@@ -184,6 +184,7 @@ struct AppSettings: Codable, Sendable, Equatable {
     var defaultDownloadPath: String?
     var downloadBookmarkData: Data?
     var filenamePattern: String
+    var emailSubjectPattern: String
     var dateFormat: String
     var isDemoMode: Bool
 
@@ -210,6 +211,7 @@ struct AppSettings: Codable, Sendable, Equatable {
     var lastStateFilter: String?
 
     static let defaultFilenamePattern = "{date}_{number}_{creditor}"
+    static let defaultEmailSubjectPattern = "{invoice} {number} {title}"
     static let defaultDateFormat = "YYMMDD"
 
     static var `default`: AppSettings {
@@ -218,6 +220,7 @@ struct AppSettings: Codable, Sendable, Equatable {
             defaultDownloadPath: NSSearchPathForDirectoriesInDomains(.downloadsDirectory, .userDomainMask, true).first,
             downloadBookmarkData: nil,
             filenamePattern: defaultFilenamePattern,
+            emailSubjectPattern: defaultEmailSubjectPattern,
             dateFormat: defaultDateFormat,
             isDemoMode: false,
             pdfSource: .harvestPDF,
@@ -229,11 +232,12 @@ struct AppSettings: Codable, Sendable, Equatable {
     }
 
     // swiftlint:disable:next line_length
-    init(downloadBehavior: DownloadBehavior, defaultDownloadPath: String?, downloadBookmarkData: Data?, filenamePattern: String = defaultFilenamePattern, dateFormat: String = defaultDateFormat, isDemoMode: Bool = false, pdfSource: InvoicePDFSource = .harvestPDF, selectedTemplateId: UUID? = nil, templateLanguage: TemplateLanguage = .en, paidMarkStyle: PaidMarkStyle = .default, columnVisibility: ColumnVisibility = .default, labelOverrides: [String: [String: String]]? = nil) {
+    init(downloadBehavior: DownloadBehavior, defaultDownloadPath: String?, downloadBookmarkData: Data?, filenamePattern: String = defaultFilenamePattern, emailSubjectPattern: String = defaultEmailSubjectPattern, dateFormat: String = defaultDateFormat, isDemoMode: Bool = false, pdfSource: InvoicePDFSource = .harvestPDF, selectedTemplateId: UUID? = nil, templateLanguage: TemplateLanguage = .en, paidMarkStyle: PaidMarkStyle = .default, columnVisibility: ColumnVisibility = .default, labelOverrides: [String: [String: String]]? = nil) {
         self.downloadBehavior = downloadBehavior
         self.defaultDownloadPath = defaultDownloadPath
         self.downloadBookmarkData = downloadBookmarkData
         self.filenamePattern = filenamePattern
+        self.emailSubjectPattern = emailSubjectPattern
         self.dateFormat = dateFormat
         self.isDemoMode = isDemoMode
         self.pdfSource = pdfSource
@@ -250,6 +254,7 @@ struct AppSettings: Codable, Sendable, Equatable {
         defaultDownloadPath = try container.decodeIfPresent(String.self, forKey: .defaultDownloadPath)
         downloadBookmarkData = try container.decodeIfPresent(Data.self, forKey: .downloadBookmarkData)
         filenamePattern = try container.decodeIfPresent(String.self, forKey: .filenamePattern) ?? Self.defaultFilenamePattern
+        emailSubjectPattern = try container.decodeIfPresent(String.self, forKey: .emailSubjectPattern) ?? Self.defaultEmailSubjectPattern
         dateFormat = try container.decodeIfPresent(String.self, forKey: .dateFormat) ?? Self.defaultDateFormat
         isDemoMode = try container.decodeIfPresent(Bool.self, forKey: .isDemoMode) ?? false
         pdfSource = try container.decodeIfPresent(InvoicePDFSource.self, forKey: .pdfSource) ?? .harvestPDF
@@ -333,5 +338,22 @@ struct AppSettings: Codable, Sendable, Equatable {
         filename = filename.replacingOccurrences(of: "{paidDate}", with: paidDate.map { formatDate($0) } ?? "")
 
         return filename + ".pdf"
+    }
+
+    func generateEmailSubject(
+        invoiceLabel: String,
+        invoiceNumber: String,
+        title: String?,
+        clientName: String,
+        creditorName: String
+    ) -> String {
+        var subject = emailSubjectPattern
+        subject = subject.replacingOccurrences(of: "{invoice}", with: invoiceLabel)
+        subject = subject.replacingOccurrences(of: "{number}", with: invoiceNumber)
+        subject = subject.replacingOccurrences(of: "{title}", with: title ?? "")
+        subject = subject.replacingOccurrences(of: "{client}", with: clientName)
+        subject = subject.replacingOccurrences(of: "{creditor}", with: creditorName)
+        // Collapse multiple spaces from empty placeholders
+        return subject.replacingOccurrences(of: "  +", with: " ", options: .regularExpression).trimmingCharacters(in: .whitespaces)
     }
 }
