@@ -217,26 +217,7 @@ struct InvoiceDetailView: View {
                 .help(canExportWithQRBill ? Strings.InvoiceDetail.exportTooltip : Strings.InvoiceDetail.creditorRequiredTooltip)
             }
 
-            if invoice.state == .open {
-                ToolbarItem(placement: .primaryAction) {
-                    Button {
-                        Task { await sendViaEmail() }
-                    } label: {
-                        Label(Strings.InvoiceDetail.sendViaEmail, systemImage: "envelope")
-                            .opacity(isSendingEmail ? 0 : 1)
-                            .overlay {
-                                if isSendingEmail {
-                                    ProgressView()
-                                        .controlSize(.small)
-                                }
-                            }
-                    }
-                    .disabled(isProcessing || isPreviewing || isSendingEmail || !canExportWithQRBill)
-                    .help(Strings.InvoiceDetail.sendViaEmail)
-                }
-            }
-
-            if invoice.state == .draft || invoice.state == .open {
+            if invoice.state == .draft {
                 ToolbarItem(placement: .primaryAction) {
                     Button {
                         issueDate.current = invoice.issueDate
@@ -293,13 +274,32 @@ struct InvoiceDetailView: View {
                 }
 
                 ToolbarItem(placement: .primaryAction) {
-                    Button {
-                        activeSheet = .markAsDraft
+                    Menu {
+                        Button {
+                            Task { await sendViaEmail() }
+                        } label: {
+                            Label(Strings.InvoiceDetail.sendViaEmail, systemImage: "envelope")
+                        }
+                        .disabled(isProcessing || isPreviewing || isSendingEmail || !canExportWithQRBill)
+
+                        Button {
+                            issueDate.current = invoice.issueDate
+                            activeSheet = .changeDate
+                        } label: {
+                            Label(Strings.InvoiceDetail.changeDate, systemImage: "calendar")
+                        }
+
+                        Divider()
+
+                        Button {
+                            activeSheet = .markAsDraft
+                        } label: {
+                            Label(Strings.InvoiceDetail.markAsDraft, systemImage: "arrow.uturn.backward")
+                        }
                     } label: {
-                        Label(Strings.InvoiceDetail.markAsDraft, systemImage: "arrow.uturn.backward")
+                        Label(Strings.Common.more, systemImage: "ellipsis.circle")
                     }
                     .disabled(isPerformingSheetAction)
-                    .help(Strings.InvoiceDetail.markAsDraft)
                 }
             }
 

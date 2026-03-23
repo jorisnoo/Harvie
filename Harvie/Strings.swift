@@ -26,6 +26,7 @@ enum Strings {
         static let settings = "Settings"
         static let refresh = "Refresh"
         static let find = "Find"
+        static let more = "More"
     }
 
     // MARK: - App
