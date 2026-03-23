@@ -34,6 +34,7 @@ struct InvoiceDetailView: View {
     var subject = EditableField("")
     var notes = EditableField("")
     var issueDate = EditableField(Date())
+    @State private var paymentTerm: PaymentTerm = .net30
 
     // Line item editing
     @State private var editedDescriptions: [Int: String] = [:]
@@ -164,6 +165,7 @@ struct InvoiceDetailView: View {
             subject.reset(to: invoice.subject ?? "")
             notes.reset(to: invoice.notes ?? "")
             issueDate.reset(to: invoice.issueDate)
+            paymentTerm = PaymentTerm.from(issueDate: invoice.issueDate, dueDate: invoice.dueDate)
             editedDescriptions = [:]
             editedQuantities = [:]
             editedUnitPrices = [:]
@@ -338,6 +340,19 @@ struct InvoiceDetailView: View {
                     DatePicker(Strings.InvoiceDetail.issueDate, selection: issueDate.binding, displayedComponents: .date)
                         .datePickerStyle(.graphical)
                         .labelsHidden()
+
+                    Picker(Strings.InvoiceDetail.dueDate, selection: $paymentTerm) {
+                        ForEach(PaymentTerm.pickerCases(including: paymentTerm), id: \.self) { term in
+                            Text(term.label).tag(term)
+                        }
+                    }
+
+                    Text(Strings.InvoiceDetail.due(
+                        paymentTerm.dueDate(from: issueDate.current)
+                            .formatted(date: .long, time: .omitted)
+                    ))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
                 }
             case .markAsSent:
                 ConfirmationSheet(
@@ -817,9 +832,10 @@ struct InvoiceDetailView: View {
 
     private func saveIssueDate() async {
         issueDate.markSaving()
+        let newDueDate = paymentTerm.dueDate(from: issueDate.current)
         let success = await performAPIAction(label: "save issue date") { credentials in
-            try await apiService.updateInvoiceIssueDate(
-                invoiceId: invoice.id, issueDate: issueDate.current, credentials: credentials
+            try await apiService.updateInvoiceDates(
+                invoiceId: invoice.id, issueDate: issueDate.current, dueDate: newDueDate, credentials: credentials
             )
         }
         if success {
@@ -1134,47 +1150,6 @@ private extension String {
     }
 }
 
-private struct ClickOutsideTextFieldsModifier: ViewModifier {
-    let action: () -> Void
-
-    @State private var monitor: Any?
-
-    func body(content: Content) -> some View {
-        content
-            .onAppear {
-                monitor = NSEvent.addLocalMonitorForEvents(matching: .leftMouseDown) { event in
-                    // If a text view is already the first responder, check whether
-                    // the click lands inside it — if so, leave editing alone.
-                    if let responder = event.window?.firstResponder as? NSView,
-                       responder is NSTextView || responder is NSTextField
-                    {
-                        let loc = responder.convert(event.locationInWindow, from: nil)
-                        if responder.bounds.contains(loc) {
-                            return event
-                        }
-                    }
-
-                    guard let contentView = event.window?.contentView else { return event }
-                    let location = contentView.convert(event.locationInWindow, from: nil)
-                    let hitView = contentView.hitTest(location)
-                    if !(hitView is NSTextField || hitView is NSTextView) {
-                        action()
-                    }
-                    return event
-                }
-            }
-            .onDisappear {
-                if let monitor { NSEvent.removeMonitor(monitor) }
-                monitor = nil
-            }
-    }
-}
-
-extension View {
-    func onClickOutsideTextFields(perform action: @escaping () -> Void) -> some View {
-        modifier(ClickOutsideTextFieldsModifier(action: action))
-    }
-}
 
 #Preview {
     InvoiceDetailView(invoice: Invoice(

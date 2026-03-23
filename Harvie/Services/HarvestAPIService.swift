@@ -281,13 +281,18 @@ actor HarvestAPIService {
         try await updateInvoice(id: invoiceId, fields: ["subject": subject], credentials: credentials)
     }
 
-    func updateInvoiceIssueDate(
+    func updateInvoiceDates(
         invoiceId: Int,
         issueDate: Date,
+        dueDate: Date,
         credentials: HarvestCredentials
     ) async throws {
-        let dateString = Self.dateOnlyFormatter.string(from: issueDate)
-        try await updateInvoice(id: invoiceId, fields: ["issue_date": dateString], credentials: credentials)
+        let issueDateString = Self.dateOnlyFormatter.string(from: issueDate)
+        let dueDateString = Self.dateOnlyFormatter.string(from: dueDate)
+        try await updateInvoice(id: invoiceId, fields: [
+            "issue_date": issueDateString,
+            "due_date": dueDateString,
+        ], credentials: credentials)
     }
 
     func markInvoiceAsSent(

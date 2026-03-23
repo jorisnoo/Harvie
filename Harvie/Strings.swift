@@ -128,6 +128,13 @@ enum Strings {
             "Due \(date)"
         }
 
+        static let dueDate = "Due Date"
+        static let uponReceipt = "Upon Receipt"
+
+        static func customDays(_ days: Int) -> String {
+            "Custom (\(days) days)"
+        }
+
         static func inclTax(_ rate: String, _ amount: String) -> String {
             "Incl. \(rate)% tax (\(amount))"
         }

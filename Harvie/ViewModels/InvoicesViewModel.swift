@@ -475,15 +475,16 @@ final class InvoicesViewModel {
         }
     }
 
-    func updateIssueDate(for invoiceId: Int, to date: Date) async throws {
+    func updateDates(for invoiceId: Int, issueDate: Date, dueDate: Date) async throws {
         #if DEBUG
         if appSettings.isDemoMode { return }
         #endif
 
         let credentials = try await keychainService.loadHarvestCredentials()
-        try await apiService.updateInvoiceIssueDate(
+        try await apiService.updateInvoiceDates(
             invoiceId: invoiceId,
-            issueDate: date,
+            issueDate: issueDate,
+            dueDate: dueDate,
             credentials: credentials
         )
     }
@@ -526,8 +527,16 @@ final class InvoicesViewModel {
     }
 
     func updateIssueDateForSelected(to date: Date) async {
-        await performBatchOperation(on: selectedInvoices.filter { $0.state == .draft }) { id, credentials in
-            try await self.apiService.updateInvoiceIssueDate(invoiceId: id, issueDate: date, credentials: credentials)
+        let invoices = selectedInvoices.filter { $0.state == .draft }
+        let calendar = Calendar.current
+        let dueDates: [Int: Date] = Dictionary(uniqueKeysWithValues: invoices.map { invoice in
+            let dayOffset = calendar.dateComponents([.day], from: invoice.issueDate, to: invoice.dueDate).day ?? 0
+            let newDueDate = calendar.date(byAdding: .day, value: dayOffset, to: date) ?? date
+            return (invoice.id, newDueDate)
+        })
+        await performBatchOperation(on: invoices) { id, credentials in
+            let dueDate = dueDates[id] ?? date
+            try await self.apiService.updateInvoiceDates(invoiceId: id, issueDate: date, dueDate: dueDate, credentials: credentials)
         }
     }
 
