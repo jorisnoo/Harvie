@@ -35,6 +35,7 @@ struct InvoiceDetailView: View {
     var notes = EditableField("")
     var issueDate = EditableField(Date())
     @State private var paymentTerm: PaymentTerm = .net30
+    @State private var paymentDate = Date()
 
     // Line item editing
     @State private var editedDescriptions: [Int: String] = [:]
@@ -282,12 +283,35 @@ struct InvoiceDetailView: View {
             if invoice.state == .open {
                 ToolbarItem(placement: .primaryAction) {
                     Button {
+                        paymentDate = Date()
+                        activeSheet = .markAsPaid
+                    } label: {
+                        Label(Strings.InvoiceDetail.markAsPaid, systemImage: "banknote")
+                    }
+                    .disabled(isPerformingSheetAction)
+                    .help(Strings.InvoiceDetail.markAsPaid)
+                }
+
+                ToolbarItem(placement: .primaryAction) {
+                    Button {
                         activeSheet = .markAsDraft
                     } label: {
                         Label(Strings.InvoiceDetail.markAsDraft, systemImage: "arrow.uturn.backward")
                     }
                     .disabled(isPerformingSheetAction)
                     .help(Strings.InvoiceDetail.markAsDraft)
+                }
+            }
+
+            if invoice.state == .paid {
+                ToolbarItem(placement: .primaryAction) {
+                    Button {
+                        activeSheet = .markAsOpen
+                    } label: {
+                        Label(Strings.InvoiceDetail.markAsOpen, systemImage: "arrow.uturn.backward")
+                    }
+                    .disabled(isPerformingSheetAction)
+                    .help(Strings.InvoiceDetail.markAsOpen)
                 }
             }
         }
@@ -355,34 +379,43 @@ struct InvoiceDetailView: View {
                     .foregroundStyle(.secondary)
                 }
             case .markAsSent:
-                ConfirmationSheet(
+                stateChangeSheet(
                     title: Strings.InvoiceDetail.markAsSent,
                     message: Strings.InvoiceDetail.markAsSentMessage(invoice.number),
-                    detail: Strings.InvoiceDetail.sentDateDetail,
-                    confirmLabel: Strings.InvoiceDetail.markAsSent,
-                    isProcessing: isPerformingSheetAction,
-                    onConfirm: {
-                        Task {
-                            await markAsSent()
-                            if completedAction == .markedAsSent { activeSheet = nil }
-                        }
-                    },
-                    onCancel: { activeSheet = nil }
-                )
+                    detail: Strings.InvoiceDetail.sentDateDetail
+                ) { await markAsSent() }
             case .markAsDraft:
-                ConfirmationSheet(
+                stateChangeSheet(
                     title: Strings.InvoiceDetail.markAsDraft,
-                    message: Strings.InvoiceDetail.markAsDraftMessage(invoice.number),
-                    confirmLabel: Strings.InvoiceDetail.markAsDraft,
+                    message: Strings.InvoiceDetail.markAsDraftMessage(invoice.number)
+                ) { await markAsDraft() }
+            case .markAsPaid:
+                ConfirmationSheet(
+                    title: Strings.InvoiceDetail.markAsPaid,
+                    message: Strings.InvoiceDetail.markAsPaidMessage(invoice.number),
+                    confirmLabel: Strings.InvoiceDetail.markAsPaid,
                     isProcessing: isPerformingSheetAction,
-                    onConfirm: {
-                        Task {
-                            await markAsDraft()
-                            if completedAction == .markedAsDraft { activeSheet = nil }
-                        }
-                    },
-                    onCancel: { activeSheet = nil }
-                )
+                    onConfirm: { Task { await markAsPaid() } },
+                    onCancel: { activeSheet = nil },
+                    width: 300
+                ) {
+                    HStack {
+                        Spacer()
+                        Button(Strings.Common.today) { paymentDate = Date() }
+                            .buttonStyle(.bordered)
+                            .controlSize(.small)
+                            .disabled(Calendar.current.isDateInToday(paymentDate))
+                    }
+                    DatePicker(Strings.InvoiceDetail.paymentDate, selection: $paymentDate, displayedComponents: .date)
+                        .datePickerStyle(.graphical)
+                        .labelsHidden()
+                }
+            case .markAsOpen:
+                stateChangeSheet(
+                    title: Strings.InvoiceDetail.markAsOpen,
+                    message: Strings.InvoiceDetail.markAsOpenMessage(invoice.number),
+                    detail: Strings.InvoiceDetail.reopenDetail
+                ) { await markAsOpen() }
             case .confirmDateBeforeSend(let action):
                 ConfirmationSheet(
                     title: Strings.InvoiceDetail.updateIssueDateTitle,
@@ -403,18 +436,8 @@ struct InvoiceDetailView: View {
             }
         }
         .alert(item: $completedAction) { action in
-            switch action {
-            case .markedAsSent:
-                Alert(
-                    title: Text(Strings.InvoiceDetail.invoiceSent),
-                    message: Text(Strings.InvoiceDetail.invoiceSentMessage(invoice.number))
-                )
-            case .markedAsDraft:
-                Alert(
-                    title: Text(Strings.InvoiceDetail.invoiceReverted),
-                    message: Text(Strings.InvoiceDetail.invoiceRevertedMessage(invoice.number))
-                )
-            }
+            let (title, message) = action.strings(for: invoice.number)
+            return Alert(title: Text(title), message: Text(message))
         }
     }
 
@@ -861,27 +884,54 @@ struct InvoiceDetailView: View {
     }
 
     private func markAsSent() async {
-        isPerformingSheetAction = true
-        let success = await performAPIAction(label: "mark as sent") { credentials in
+        await performStateChange(label: "mark as sent", completed: .markedAsSent, newState: .open) { credentials in
             try await apiService.markInvoiceAsSent(invoiceId: invoice.id, credentials: credentials)
         }
-        if success {
-            completedAction = .markedAsSent
-            onStateChanged?(invoice.id, .open)
-        }
-        isPerformingSheetAction = false
     }
 
     private func markAsDraft() async {
-        isPerformingSheetAction = true
-        let success = await performAPIAction(label: "mark as draft") { credentials in
+        await performStateChange(label: "mark as draft", completed: .markedAsDraft, newState: .draft) { credentials in
             try await apiService.markInvoiceAsDraft(invoiceId: invoice.id, credentials: credentials)
         }
-        if success {
-            completedAction = .markedAsDraft
-            onStateChanged?(invoice.id, .draft)
+    }
+
+    private func markAsPaid() async {
+        let amount = invoice.dueAmount > 0 ? invoice.dueAmount : invoice.amount
+        let date = paymentDate
+        await performStateChange(label: "mark as paid", completed: .markedAsPaid, newState: .paid) { credentials in
+            try await apiService.createPayment(invoiceId: invoice.id, amount: amount, paidAt: date, credentials: credentials)
         }
+    }
+
+    private func markAsOpen() async {
+        await performStateChange(label: "reopen invoice", completed: .markedAsOpen, newState: .open) { credentials in
+            let payments = try await apiService.listPayments(invoiceId: invoice.id, credentials: credentials)
+            for payment in payments {
+                try await apiService.deletePayment(invoiceId: invoice.id, paymentId: payment.id, credentials: credentials)
+            }
+        }
+    }
+
+    private func performStateChange(
+        label: String, completed: CompletedAction, newState: InvoiceState,
+        action: (HarvestCredentials) async throws -> Void
+    ) async {
+        isPerformingSheetAction = true
+        let success = await performAPIAction(label: label, action: action)
+        if success { completedAction = completed; activeSheet = nil; onStateChanged?(invoice.id, newState) }
         isPerformingSheetAction = false
+    }
+
+    private func stateChangeSheet(
+        title: String, message: String, detail: String? = nil,
+        action: @escaping () async -> Void
+    ) -> some View {
+        ConfirmationSheet(
+            title: title, message: message, detail: detail, confirmLabel: title,
+            isProcessing: isPerformingSheetAction,
+            onConfirm: { Task { await action() } },
+            onCancel: { activeSheet = nil }
+        )
     }
 
     // MARK: - Send via Email
@@ -924,7 +974,10 @@ struct InvoiceDetailView: View {
 
             // Mark as sent in Harvest (only for drafts)
             if invoice.state == .draft {
-                await markAsSent()
+                let success = await performAPIAction(label: "mark as sent") { credentials in
+                    try await apiService.markInvoiceAsSent(invoiceId: invoice.id, credentials: credentials)
+                }
+                if success { onStateChanged?(invoice.id, .open) }
             }
         } catch {
             handlePDFError(error, context: "Send via email")
@@ -933,9 +986,12 @@ struct InvoiceDetailView: View {
         isSendingEmail = false
     }
 
-    // MARK: - PDF Generation
+}
 
-    private func generatePDF() async throws -> (pdf: PDFDocument, settings: AppSettings) {
+// MARK: - PDF Generation
+
+private extension InvoiceDetailView {
+    func generatePDF() async throws -> (pdf: PDFDocument, settings: AppSettings) {
         #if DEBUG
         let effectiveCreditorInfo = creditorInfo.isValid ? creditorInfo : DemoDataProvider.defaultCreditorInfo
         #else
@@ -984,7 +1040,7 @@ struct InvoiceDetailView: View {
         return (pdf, appSettings)
     }
 
-    private func previewWithQRBill() async {
+    func previewWithQRBill() async {
         isPreviewing = true
         error = nil
 
@@ -1002,7 +1058,7 @@ struct InvoiceDetailView: View {
         isPreviewing = false
     }
 
-    private func downloadWithQRBill() async {
+    func downloadWithQRBill() async {
         isProcessing = true
         error = nil
         savedFilePath = nil
@@ -1027,7 +1083,7 @@ struct InvoiceDetailView: View {
         isProcessing = false
     }
 
-    private func handlePDFError(_ error: Error, context: String) {
+    func handlePDFError(_ error: Error, context: String) {
         if let apiError = error as? HarvestAPIService.APIError {
             self.error = apiError.localizedDescription
         } else if let pdfError = error as? PDFService.PDFError {
@@ -1040,27 +1096,25 @@ struct InvoiceDetailView: View {
         }
     }
 
-    private func loadTemplate(id: UUID) -> InvoiceTemplate? {
+    func loadTemplate(id: UUID) -> InvoiceTemplate? {
         let descriptor = FetchDescriptor<InvoiceTemplate>(
             predicate: #Predicate { $0.id == id }
         )
         return try? modelContext.fetch(descriptor).first
     }
 
-    private func resolveTemplate() -> InvoiceTemplate? {
+    func resolveTemplate() -> InvoiceTemplate? {
         if let templateId = appSettings.selectedTemplateId,
            let template = loadTemplate(id: templateId) {
             return template
         }
-
-        // Fall back to the first available template if the selected one is stale
         let descriptor = FetchDescriptor<InvoiceTemplate>(
             sortBy: [SortDescriptor(\.name)]
         )
         return try? modelContext.fetch(descriptor).first
     }
 
-    private var invoiceFileName: String {
+    var invoiceFileName: String {
         let rawFilename = appSettings.generateFilename(
             invoiceNumber: invoice.number,
             creditorName: creditorName,
@@ -1073,99 +1127,51 @@ struct InvoiceDetailView: View {
         return InvoiceFileSaver.sanitizeFilename(rawFilename)
     }
 
-    private enum GenerationError: LocalizedError {
+    enum GenerationError: LocalizedError {
         case invalidCreditor
         case templateNotFound
 
         var errorDescription: String? {
             switch self {
-            case .invalidCreditor:
-                Strings.Errors.configureCreditor
-            case .templateNotFound:
-                Strings.Errors.noTemplateSelected
+            case .invalidCreditor: Strings.Errors.configureCreditor
+            case .templateNotFound: Strings.Errors.noTemplateSelected
             }
         }
     }
 
-    private enum FocusedField: Hashable {
+    enum FocusedField: Hashable {
         case subject, notes, lineItem(Int), quantity(Int), unitPrice(Int)
     }
 
-    private enum ActiveSheet: Identifiable {
-        case changeDate, markAsSent, markAsDraft, confirmDateBeforeSend(SendAction)
+    enum ActiveSheet: Identifiable {
+        case changeDate, markAsSent, markAsDraft, markAsPaid, markAsOpen, confirmDateBeforeSend(SendAction)
         var id: String {
             switch self {
             case .changeDate: "changeDate"
             case .markAsSent: "markAsSent"
             case .markAsDraft: "markAsDraft"
+            case .markAsPaid: "markAsPaid"
+            case .markAsOpen: "markAsOpen"
             case .confirmDateBeforeSend: "confirmDateBeforeSend"
             }
         }
     }
 
-    private enum SendAction {
+    enum SendAction {
         case sendViaEmail, markAsSent
     }
 
-    private enum CompletedAction: Identifiable {
-        case markedAsSent, markedAsDraft
+    enum CompletedAction: Identifiable {
+        case markedAsSent, markedAsDraft, markedAsPaid, markedAsOpen
         var id: Self { self }
-    }
-}
 
-private extension String {
-    /// Renders Harvest-flavored markdown as an `AttributedString`.
-    /// Harvest treats both `*text*` and `**text**` as bold; `- item` as list bullets.
-    var harvestMarkdown: AttributedString {
-        // Normalize line endings, then convert list markers to bullet points
-        let normalized = self
-            .replacingOccurrences(of: "\r\n", with: "\n")
-            .replacingOccurrences(of: "\r", with: "\n")
-        let preprocessed = normalized
-            .split(separator: "\n", omittingEmptySubsequences: false)
-            .map { line -> String in
-                let trimmed = line.drop(while: { $0 == " " })
-                if trimmed.hasPrefix("- ") {
-                    return "• " + trimmed.dropFirst(2)
-                }
-                return String(line)
-            }
-            .joined(separator: "\n")
-
-        var result = (try? AttributedString(
-            markdown: preprocessed,
-            options: .init(interpretedSyntax: .inlineOnlyPreservingWhitespace)
-        )) ?? AttributedString(preprocessed)
-
-        // Harvest: both *text* and **text** render as bold only (no italic)
-        for run in result.runs {
-            guard let intent = run.inlinePresentationIntent else { continue }
-            if intent.contains(.stronglyEmphasized) || intent.contains(.emphasized) {
-                result[run.range].font = Font.body.bold()
-                result[run.range].inlinePresentationIntent = .stronglyEmphasized
+        func strings(for number: String) -> (title: String, message: String) {
+            switch self {
+            case .markedAsSent: (Strings.InvoiceDetail.invoiceSent, Strings.InvoiceDetail.invoiceSentMessage(number))
+            case .markedAsDraft: (Strings.InvoiceDetail.invoiceReverted, Strings.InvoiceDetail.invoiceRevertedMessage(number))
+            case .markedAsPaid: (Strings.InvoiceDetail.invoiceMarkedPaid, Strings.InvoiceDetail.invoiceMarkedPaidMessage(number))
+            case .markedAsOpen: (Strings.InvoiceDetail.invoiceReopened, Strings.InvoiceDetail.invoiceReopenedMessage(number))
             }
         }
-
-        return result
     }
-}
-
-
-#Preview {
-    InvoiceDetailView(invoice: Invoice(
-        id: 1, clientKey: "abc123", number: "INV-2024-001", purchaseOrder: nil,
-        amount: 1500.00, dueAmount: 1500.00, tax: 7.7, taxAmount: 115.50,
-        tax2: nil, tax2Amount: nil, discount: nil, discountAmount: nil,
-        subject: "Web Development Services", notes: "Thank you for your business!",
-        currency: "CHF", state: .open, periodStart: nil, periodEnd: nil,
-        issueDate: Date(), dueDate: Date().addingTimeInterval(86400 * 30),
-        sentAt: Date(), paidAt: nil, paidDate: nil, closedAt: nil,
-        createdAt: Date(), updatedAt: Date(),
-        client: ClientReference(id: 1, name: "Acme Corp"),
-        lineItems: [LineItem(
-            id: 1, kind: "Service", description: "Frontend development",
-            quantity: 10, unitPrice: 150.00, amount: 1500.00,
-            taxed: true, taxed2: false, project: nil
-        )]
-    ), creditorInfo: .empty, appSettings: .default)
 }

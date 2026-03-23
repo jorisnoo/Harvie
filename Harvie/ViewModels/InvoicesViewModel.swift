@@ -103,6 +103,12 @@ final class InvoicesViewModel {
         return selectedInvoices.allSatisfy { $0.state == .open }
     }
 
+    var allSelectedArePaid: Bool {
+        guard !selectedInvoiceIDs.isEmpty else { return false }
+
+        return selectedInvoices.allSatisfy { $0.state == .paid }
+    }
+
     @ObservationIgnored var modelContext: ModelContext?
 
     private let apiService = HarvestAPIService.shared
@@ -574,6 +580,102 @@ final class InvoicesViewModel {
         await performBatchOperation(on: selectedInvoices.filter { $0.state == .open }) { id, credentials in
             try await self.apiService.markInvoiceAsDraft(invoiceId: id, credentials: credentials)
         }
+    }
+
+    func markAsPaid(invoiceId: Int, amount: Decimal, paidAt: Date = Date()) async throws {
+        #if DEBUG
+        if appSettings.isDemoMode { return }
+        #endif
+
+        let credentials = try await keychainService.loadHarvestCredentials()
+        try await apiService.createPayment(
+            invoiceId: invoiceId,
+            amount: amount,
+            paidAt: paidAt,
+            credentials: credentials
+        )
+    }
+
+    func markSelectedAsPaid(paidAt: Date = Date()) async {
+        let invoices = selectedInvoices.filter { $0.state == .open }
+        guard !invoices.isEmpty else { return }
+
+        #if DEBUG
+        if appSettings.isDemoMode {
+            showUpdateSuccess = true
+            return
+        }
+        #endif
+
+        isUpdating = true
+        updateError = nil
+        updatedCount = 0
+        updateTotalCount = invoices.count
+
+        do {
+            let credentials = try await keychainService.loadHarvestCredentials()
+
+            for invoice in invoices {
+                let amount = invoice.dueAmount > 0 ? invoice.dueAmount : invoice.amount
+                try await apiService.createPayment(invoiceId: invoice.id, amount: amount, paidAt: paidAt, credentials: credentials)
+                updatedCount += 1
+            }
+
+            showUpdateSuccess = true
+            await performRefreshInvoices(ids: Set(invoices.map(\.id)))
+        } catch {
+            updateError = error.localizedDescription
+        }
+
+        isUpdating = false
+    }
+
+    func markAsOpen(invoiceId: Int) async throws {
+        #if DEBUG
+        if appSettings.isDemoMode { return }
+        #endif
+
+        let credentials = try await keychainService.loadHarvestCredentials()
+        let payments = try await apiService.listPayments(invoiceId: invoiceId, credentials: credentials)
+        for payment in payments {
+            try await apiService.deletePayment(invoiceId: invoiceId, paymentId: payment.id, credentials: credentials)
+        }
+    }
+
+    func markSelectedAsOpen() async {
+        let invoices = selectedInvoices.filter { $0.state == .paid }
+        guard !invoices.isEmpty else { return }
+
+        #if DEBUG
+        if appSettings.isDemoMode {
+            showUpdateSuccess = true
+            return
+        }
+        #endif
+
+        isUpdating = true
+        updateError = nil
+        updatedCount = 0
+        updateTotalCount = invoices.count
+
+        do {
+            let credentials = try await keychainService.loadHarvestCredentials()
+
+            for invoice in invoices {
+                let payments = try await apiService.listPayments(invoiceId: invoice.id, credentials: credentials)
+                for payment in payments {
+                    try await apiService.deletePayment(invoiceId: invoice.id, paymentId: payment.id, credentials: credentials)
+                }
+                updatedCount += 1
+            }
+
+            showUpdateSuccess = true
+            await performRefreshInvoices(ids: Set(invoices.map(\.id)))
+        } catch {
+            updateError = error.localizedDescription
+        }
+
+        isUpdating = false
     }
 
 }

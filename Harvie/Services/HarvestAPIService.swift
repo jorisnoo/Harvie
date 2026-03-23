@@ -309,6 +309,42 @@ actor HarvestAPIService {
         try await sendInvoiceEvent(invoiceId: invoiceId, eventType: "draft", credentials: credentials)
     }
 
+    func createPayment(
+        invoiceId: Int,
+        amount: Decimal,
+        paidAt: Date = Date(),
+        credentials: HarvestCredentials
+    ) async throws {
+        var request = try makeRequest(path: "invoices/\(invoiceId)/payments", credentials: credentials)
+        request.httpMethod = "POST"
+        let body = CreatePaymentBody(
+            amount: amount,
+            paidAt: Self.iso8601Formatter.string(from: paidAt),
+            paidDate: Self.dateOnlyFormatter.string(from: paidAt)
+        )
+        request.httpBody = try JSONEncoder().encode(body)
+        try await performMutation(request)
+    }
+
+    func listPayments(
+        invoiceId: Int,
+        credentials: HarvestCredentials
+    ) async throws -> [InvoicePayment] {
+        let request = try makeRequest(path: "invoices/\(invoiceId)/payments", credentials: credentials)
+        let response: InvoicePaymentsResponse = try await perform(request)
+        return response.invoicePayments
+    }
+
+    func deletePayment(
+        invoiceId: Int,
+        paymentId: Int,
+        credentials: HarvestCredentials
+    ) async throws {
+        var request = try makeRequest(path: "invoices/\(invoiceId)/payments/\(paymentId)", credentials: credentials)
+        request.httpMethod = "DELETE"
+        try await performMutation(request)
+    }
+
     func fetchClientContacts(
         clientId: Int,
         credentials: HarvestCredentials
@@ -369,6 +405,18 @@ actor HarvestAPIService {
         request.httpMethod = "PATCH"
         request.httpBody = try JSONEncoder().encode(fields)
         try await performMutation(request)
+    }
+
+    private struct CreatePaymentBody: Encodable {
+        let amount: Decimal
+        let paidAt: String
+        let paidDate: String
+
+        enum CodingKeys: String, CodingKey {
+            case amount
+            case paidAt = "paid_at"
+            case paidDate = "paid_date"
+        }
     }
 
     private struct LineItemUpdatePayload: Encodable {
@@ -444,5 +492,22 @@ struct Company: Decodable, Sendable {
         baseUri = try container.decode(String.self, forKey: .baseUri)
         fullDomain = try container.decode(String.self, forKey: .fullDomain)
         name = try container.decode(String.self, forKey: .name)
+    }
+}
+
+struct InvoicePayment: Decodable, Identifiable, Sendable {
+    let id: Int
+}
+
+struct InvoicePaymentsResponse: Decodable, Sendable {
+    let invoicePayments: [InvoicePayment]
+
+    private enum CodingKeys: String, CodingKey {
+        case invoicePayments = "invoice_payments"
+    }
+
+    nonisolated init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        invoicePayments = try container.decode([InvoicePayment].self, forKey: .invoicePayments)
     }
 }

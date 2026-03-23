@@ -83,6 +83,8 @@ enum Strings {
         static let send = "Send"
         static let markAsSent = "Mark as Sent"
         static let markAsDraft = "Mark as Draft"
+        static let markAsPaid = "Mark as Paid"
+        static let markAsOpen = "Mark as Open"
         static let showInFinder = "Show in Finder"
         static let invoiceTitle = "Invoice title"
         static let saveTitle = "Save title"
@@ -100,6 +102,8 @@ enum Strings {
         }
         static let invoiceSent = "Invoice Sent"
         static let invoiceReverted = "Invoice Reverted"
+        static let invoiceMarkedPaid = "Invoice Paid"
+        static let invoiceReopened = "Invoice Reopened"
         static let selectAnInvoice = "Select an Invoice"
         static let selectAnInvoiceDescription = "Choose an invoice from the list to view details and generate a QR bill."
 
@@ -157,12 +161,33 @@ enum Strings {
             "Revert invoice \(number) to draft?"
         }
 
+        static func markAsPaidMessage(_ number: String) -> String {
+            "Mark invoice \(number) as paid?"
+        }
+
+        static let paymentDate = "Payment Date"
+        static let paidDateDetail = "A payment for the full amount will be recorded."
+
+        static func markAsOpenMessage(_ number: String) -> String {
+            "Reopen invoice \(number)?"
+        }
+
+        static let reopenDetail = "All payment records will be removed."
+
         static func invoiceSentMessage(_ number: String) -> String {
             "Invoice \(number) has been marked as sent."
         }
 
         static func invoiceRevertedMessage(_ number: String) -> String {
             "Invoice \(number) has been reverted to draft."
+        }
+
+        static func invoiceMarkedPaidMessage(_ number: String) -> String {
+            "Invoice \(number) has been marked as paid."
+        }
+
+        static func invoiceReopenedMessage(_ number: String) -> String {
+            "Invoice \(number) has been reopened."
         }
 
         static func savedToPath(_ path: String) -> String {
@@ -216,6 +241,14 @@ enum Strings {
 
         static func markAsDraftMessage(_ count: Int) -> String {
             "Revert \(count) invoice(s) to draft?"
+        }
+
+        static func markAsPaidMessage(_ count: Int) -> String {
+            "Mark \(count) invoice(s) as paid?"
+        }
+
+        static func markAsOpenMessage(_ count: Int) -> String {
+            "Reopen \(count) invoice(s)?"
         }
     }
 

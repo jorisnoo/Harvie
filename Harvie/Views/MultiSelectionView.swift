@@ -9,9 +9,12 @@ struct MultiSelectionView: View {
     @Bindable var viewModel: InvoicesViewModel
 
     @State private var batchIssueDate = Date()
+    @State private var batchPaymentDate = Date()
     @State private var showChangeDateSheet = false
     @State private var showMarkAsSentSheet = false
     @State private var showMarkAsDraftSheet = false
+    @State private var showMarkAsPaidSheet = false
+    @State private var showMarkAsOpenSheet = false
     @State private var showConfirmDateSheet = false
 
     private var selectedInvoices: [Invoice] {
@@ -46,6 +49,10 @@ struct MultiSelectionView: View {
 
             if viewModel.allSelectedAreOpen {
                 openActionsSection
+            }
+
+            if viewModel.allSelectedArePaid {
+                markAsOpenButton
             }
 
             Divider()
@@ -126,6 +133,56 @@ struct MultiSelectionView: View {
                 }
             }
         }
+        .sheet(isPresented: $showMarkAsPaidSheet) {
+            ConfirmationSheet(
+                title: Strings.InvoiceDetail.markAsPaid,
+                message: Strings.MultiSelection.markAsPaidMessage(selectedInvoices.count),
+                confirmLabel: Strings.InvoiceDetail.markAsPaid,
+                isProcessing: viewModel.isUpdating,
+                onConfirm: {
+                    Task {
+                        await viewModel.markSelectedAsPaid(paidAt: batchPaymentDate)
+                        if viewModel.showUpdateSuccess { showMarkAsPaidSheet = false }
+                    }
+                },
+                onCancel: { showMarkAsPaidSheet = false },
+                width: 300
+            ) {
+                HStack {
+                    Spacer()
+                    Button(Strings.Common.today) { batchPaymentDate = Date() }
+                        .buttonStyle(.bordered)
+                        .controlSize(.small)
+                        .disabled(Calendar.current.isDateInToday(batchPaymentDate))
+                }
+                DatePicker(Strings.InvoiceDetail.paymentDate, selection: $batchPaymentDate, displayedComponents: .date)
+                    .datePickerStyle(.graphical)
+                    .labelsHidden()
+                if viewModel.isUpdating {
+                    batchProgressView
+                }
+            }
+        }
+        .sheet(isPresented: $showMarkAsOpenSheet) {
+            ConfirmationSheet(
+                title: Strings.InvoiceDetail.markAsOpen,
+                message: Strings.MultiSelection.markAsOpenMessage(selectedInvoices.count),
+                detail: Strings.InvoiceDetail.reopenDetail,
+                confirmLabel: Strings.InvoiceDetail.markAsOpen,
+                isProcessing: viewModel.isUpdating,
+                onConfirm: {
+                    Task {
+                        await viewModel.markSelectedAsOpen()
+                        if viewModel.showUpdateSuccess { showMarkAsOpenSheet = false }
+                    }
+                },
+                onCancel: { showMarkAsOpenSheet = false }
+            ) {
+                if viewModel.isUpdating {
+                    batchProgressView
+                }
+            }
+        }
         .sheet(isPresented: $showConfirmDateSheet) {
             ConfirmationSheet(
                 title: Strings.InvoiceDetail.updateIssueDateTitle,
@@ -186,10 +243,33 @@ struct MultiSelectionView: View {
     }
 
     private var openActionsSection: some View {
+        VStack(spacing: 12) {
+            Button {
+                batchPaymentDate = Date()
+                showMarkAsPaidSheet = true
+            } label: {
+                Label(Strings.InvoiceDetail.markAsPaid, systemImage: "banknote")
+                    .frame(maxWidth: 150)
+            }
+            .buttonStyle(.bordered)
+            .disabled(viewModel.isUpdating)
+
+            Button {
+                showMarkAsDraftSheet = true
+            } label: {
+                Label(Strings.InvoiceDetail.markAsDraft, systemImage: "arrow.uturn.backward")
+                    .frame(maxWidth: 150)
+            }
+            .buttonStyle(.bordered)
+            .disabled(viewModel.isUpdating)
+        }
+    }
+
+    private var markAsOpenButton: some View {
         Button {
-            showMarkAsDraftSheet = true
+            showMarkAsOpenSheet = true
         } label: {
-            Label(Strings.InvoiceDetail.markAsDraft, systemImage: "arrow.uturn.backward")
+            Label(Strings.InvoiceDetail.markAsOpen, systemImage: "arrow.uturn.backward")
                 .frame(maxWidth: 150)
         }
         .buttonStyle(.bordered)
