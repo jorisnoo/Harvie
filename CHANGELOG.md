@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.7.0](https://github.com/jorisnoo/Harvie/releases/tag/v0.7.0) (2026-03-23)
+
+### Features
+
+- streamline open invoice toolbar and stay on open tab after marking paid ([d61b9a8](https://github.com/jorisnoo/Harvie/commit/d61b9a85dab997bc3c456390094dd6eb5ee27650))
+- add mark as paid/unpaid actions with selectable payment date ([736280d](https://github.com/jorisnoo/Harvie/commit/736280d025d5ac786a70715441cee0eb55fb83f9))
+- add payment terms with automatic due date calculation ([f795791](https://github.com/jorisnoo/Harvie/commit/f7957917d3ec6e10b9d16869b03d74d8bdf7ed69))
+- make email subject configurable in settings ([ab26058](https://github.com/jorisnoo/Harvie/commit/ab26058a39c0cdd352f258830a9a9e7b2def9555))
+- allow date changes on sent invoices and prompt before sending ([35b2d67](https://github.com/jorisnoo/Harvie/commit/35b2d670dd3086df3cb4cd717d6d8e0a9e0ee0e5))
 ## [0.6.0](https://github.com/jorisnoo/Harvie/releases/tag/v0.6.0) (2026-03-16)
 
 ### Features
