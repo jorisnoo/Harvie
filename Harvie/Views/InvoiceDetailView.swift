@@ -220,8 +220,7 @@ struct InvoiceDetailView: View {
             if invoice.state == .draft {
                 ToolbarItem(placement: .primaryAction) {
                     Button {
-                        issueDate.current = invoice.issueDate
-                        activeSheet = .changeDate
+                        openChangeDate()
                     } label: {
                         Label(Strings.InvoiceDetail.changeDate, systemImage: "calendar")
                     }
@@ -283,8 +282,7 @@ struct InvoiceDetailView: View {
                         .disabled(isProcessing || isPreviewing || isSendingEmail || !canExportWithQRBill)
 
                         Button {
-                            issueDate.current = invoice.issueDate
-                            activeSheet = .changeDate
+                            openChangeDate()
                         } label: {
                             Label(Strings.InvoiceDetail.changeDate, systemImage: "calendar")
                         }
@@ -519,6 +517,12 @@ struct InvoiceDetailView: View {
                 Text(Strings.InvoiceDetail.issued(invoice.issueDate.formatted(date: .long, time: .omitted)))
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
+                    .underline(invoice.state == .draft, pattern: .dash, color: .secondary.opacity(0.5))
+                    .onTapGesture { if invoice.state == .draft { openChangeDate() } }
+                    .onHover { hovering in
+                        guard invoice.state == .draft else { return }
+                        if hovering { NSCursor.pointingHand.push() } else { NSCursor.pop() }
+                    }
 
                 if let sentAt = invoice.sentAt {
                     Text(Strings.InvoiceDetail.sent(sentAt.formatted(date: .long, time: .shortened)))
@@ -530,6 +534,12 @@ struct InvoiceDetailView: View {
             Text(Strings.InvoiceDetail.due(invoice.dueDate.formatted(date: .long, time: .omitted)))
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
+                .underline(invoice.state == .draft, pattern: .dash, color: .secondary.opacity(0.5))
+                .onTapGesture { if invoice.state == .draft { openChangeDate() } }
+                .onHover { hovering in
+                    guard invoice.state == .draft else { return }
+                    if hovering { NSCursor.pointingHand.push() } else { NSCursor.pop() }
+                }
 
             if let tax = invoice.tax, invoice.taxAmount != nil {
                 Text(Strings.InvoiceDetail.inclTax(tax.formatted(), CurrencyFormatter.format(liveTaxAmount, currency: invoice.currency)))
@@ -853,6 +863,11 @@ struct InvoiceDetailView: View {
         }
     }
 
+    private func openChangeDate() {
+        issueDate.current = invoice.issueDate
+        activeSheet = .changeDate
+    }
+
     private func saveIssueDate() async {
         issueDate.markSaving()
         let newDueDate = paymentTerm.dueDate(from: issueDate.current)
@@ -963,8 +978,11 @@ struct InvoiceDetailView: View {
             }
 
             emailService.recipients = recipientEmails
-            emailService.subject = appSettings.generateEmailSubject(
-                invoiceLabel: appSettings.templateLanguage.labels["invoice"]!,
+            let cId = invoice.client.id
+            let desc = FetchDescriptor<ClientOverride>(predicate: #Predicate { $0.clientId == cId })
+            let emailSettings = appSettings.resolved(with: try? modelContext.fetch(desc).first)
+            emailService.subject = emailSettings.generateEmailSubject(
+                invoiceLabel: emailSettings.templateLanguage.labels["invoice"]!,
                 invoiceNumber: invoice.number,
                 title: invoice.subject,
                 clientName: invoice.client.name,
@@ -992,6 +1010,10 @@ struct InvoiceDetailView: View {
 
 private extension InvoiceDetailView {
     func generatePDF() async throws -> (pdf: PDFDocument, settings: AppSettings) {
+        let clientId = invoice.client.id
+        let descriptor = FetchDescriptor<ClientOverride>(predicate: #Predicate { $0.clientId == clientId })
+        let settings = appSettings.resolved(with: try? modelContext.fetch(descriptor).first)
+
         #if DEBUG
         let effectiveCreditorInfo = creditorInfo.isValid ? creditorInfo : DemoDataProvider.defaultCreditorInfo
         #else
@@ -1002,7 +1024,7 @@ private extension InvoiceDetailView {
             throw GenerationError.invalidCreditor
         }
 
-        if appSettings.effectivePDFSource == .template {
+        if settings.effectivePDFSource == .template {
             guard let template = resolveTemplate() else {
                 throw GenerationError.templateNotFound
             }
@@ -1012,32 +1034,32 @@ private extension InvoiceDetailView {
                 template: template,
                 creditorInfo: effectiveCreditorInfo,
                 credentials: credentials,
-                language: appSettings.templateLanguage,
-                labelOverrides: appSettings.labelOverrides,
-                paidMarkStyle: appSettings.paidMarkStyle,
-                columnVisibility: appSettings.columnVisibility
+                language: settings.templateLanguage,
+                labelOverrides: settings.labelOverrides,
+                paidMarkStyle: settings.paidMarkStyle,
+                columnVisibility: settings.columnVisibility
             )
-            return (pdf, appSettings)
+            return (pdf, settings)
         }
 
         #if DEBUG
-        if appSettings.isDemoMode {
+        if settings.isDemoMode {
             let pdf = try await pdfService.createDemoInvoiceWithQRBill(
                 invoice: invoice, creditorInfo: effectiveCreditorInfo,
-                paidMarkStyle: appSettings.paidMarkStyle
+                paidMarkStyle: settings.paidMarkStyle
             )
-            return (pdf, appSettings)
+            return (pdf, settings)
         }
         #endif
 
         let credentials = try await keychainService.loadHarvestCredentials()
         let pdf = try await pdfService.createInvoiceWithQRBill(
             invoice: invoice, credentials: credentials, creditorInfo: effectiveCreditorInfo,
-            language: appSettings.templateLanguage,
-            labelOverrides: appSettings.labelOverrides,
-            paidMarkStyle: appSettings.paidMarkStyle
+            language: settings.templateLanguage,
+            labelOverrides: settings.labelOverrides,
+            paidMarkStyle: settings.paidMarkStyle
         )
-        return (pdf, appSettings)
+        return (pdf, settings)
     }
 
     func previewWithQRBill() async {

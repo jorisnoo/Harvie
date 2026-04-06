@@ -350,6 +350,22 @@ enum Strings {
         static let openGitHubIssues = "Open GitHub Issues"
         static let reportHint = "Report bugs or request features on GitHub."
 
+        // Clients
+        static let clients = "Clients"
+        static let clientOverrides = "Client Overrides"
+        static let addOverride = "Add Override"
+        static let removeOverride = "Remove Override"
+        static let overrideLanguage = "Override language"
+        static let overrideColumnVisibility = "Override column visibility"
+        static let overrideLabels = "Override labels"
+        static let noOverridesHint = "Add per-client overrides to use different settings for specific clients. Unchecked fields use the global default."
+        static let noClientsHint = "Clients will appear here once invoices have been loaded."
+        static let selectClient = "Select a client..."
+
+        static func settingsFor(_ name: String) -> String {
+            "Settings for \(name)"
+        }
+
         // Debug
         static let demo = "Demo"
         static let demoMode = "Demo Mode"

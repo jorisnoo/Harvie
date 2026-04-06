@@ -18,7 +18,7 @@ struct HarvieApp: App {
         LegacyMigration.migrateIfNeeded()
 
         do {
-            modelContainer = try ModelContainer(for: CachedInvoice.self, InvoiceTemplate.self)
+            modelContainer = try ModelContainer(for: CachedInvoice.self, InvoiceTemplate.self, ClientOverride.self)
         } catch {
             fatalError("Failed to create ModelContainer: \(error)")
         }

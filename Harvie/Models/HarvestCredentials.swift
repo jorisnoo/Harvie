@@ -270,6 +270,15 @@ struct AppSettings: Codable, Sendable, Equatable {
         labelOverrides = try container.decodeIfPresent([String: [String: String]].self, forKey: .labelOverrides)
     }
 
+    func resolved(with override: ClientOverride?) -> AppSettings {
+        guard let o = override else { return self }
+        var s = self
+        if let lang = o.templateLanguage { s.templateLanguage = lang }
+        if let cv = o.columnVisibility { s.columnVisibility = cv }
+        if let lo = o.labelOverrides { s.labelOverrides = lo }
+        return s
+    }
+
     var effectivePDFSource: InvoicePDFSource {
         FeatureFlags.customPDFTemplates ? pdfSource : .harvestPDF
     }

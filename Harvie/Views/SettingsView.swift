@@ -20,6 +20,9 @@ struct SettingsView: View {
             DownloadsSettings(viewModel: viewModel)
                 .tabItem { Label(Strings.Settings.downloads, systemImage: "folder") }
 
+            ClientOverridesSettings()
+                .tabItem { Label(Strings.Settings.clients, systemImage: "person.2") }
+
             if FeatureFlags.customPDFTemplates {
                 TemplatesSettings(viewModel: viewModel)
                     .tabItem { Label(Strings.Settings.templatesBeta, systemImage: "doc.richtext") }
