@@ -156,7 +156,7 @@ enum Strings {
             "Mark invoice \(number) as sent?"
         }
 
-        static let sentDateDetail = "The sent date will be set to now."
+        static let sentDate = "Sent Date"
 
         static func markAsDraftMessage(_ number: String) -> String {
             "Revert invoice \(number) to draft?"
@@ -232,12 +232,6 @@ enum Strings {
 
         static func markAsSentMessage(_ count: Int) -> String {
             "Mark \(count) invoice(s) as sent?"
-        }
-
-        static let sentDateDetail = "The sent date will be set to the current time."
-
-        static func updateIssueDateMessage(_ count: Int) -> String {
-            "Some of the \(count) selected invoice(s) have an issue date that is not today. Do you want to update them to today?"
         }
 
         static func markAsDraftMessage(_ count: Int) -> String {

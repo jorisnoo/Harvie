@@ -302,6 +302,15 @@ actor HarvestAPIService {
         try await sendInvoiceEvent(invoiceId: invoiceId, eventType: "send", credentials: credentials)
     }
 
+    func updateInvoiceSentAt(
+        invoiceId: Int,
+        sentAt: Date,
+        credentials: HarvestCredentials
+    ) async throws {
+        let sentAtString = Self.iso8601Formatter.string(from: sentAt)
+        try await updateInvoice(id: invoiceId, fields: ["sent_at": sentAtString], credentials: credentials)
+    }
+
     func markInvoiceAsDraft(
         invoiceId: Int,
         credentials: HarvestCredentials

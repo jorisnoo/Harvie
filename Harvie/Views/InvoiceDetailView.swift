@@ -36,6 +36,7 @@ struct InvoiceDetailView: View {
     var issueDate = EditableField(Date())
     @State private var paymentTerm: PaymentTerm = .net30
     @State private var paymentDate = Date()
+    @State private var sentDate = Date()
 
     // Line item editing
     @State private var editedDescriptions: [Int: String] = [:]
@@ -233,7 +234,7 @@ struct InvoiceDetailView: View {
                 ToolbarItem(placement: .primaryAction) {
                     Menu {
                         Button {
-                            initiateAction(.sendViaEmail)
+                            initiateSendViaEmail()
                         } label: {
                             Label(Strings.InvoiceDetail.sendViaEmail, systemImage: "envelope")
                         }
@@ -242,7 +243,9 @@ struct InvoiceDetailView: View {
                         Divider()
 
                         Button {
-                            initiateAction(.markAsSent)
+                            issueDate.current = invoice.issueDate
+                            sentDate = Date()
+                            activeSheet = .markAsSent
                         } label: {
                             Label(Strings.InvoiceDetail.markAsSent, systemImage: "text.badge.checkmark")
                         }
@@ -352,38 +355,23 @@ struct InvoiceDetailView: View {
                     },
                     onCancel: { activeSheet = nil },
                     width: 300
-                ) {
-                    HStack {
-                        Spacer()
-                        Button(Strings.Common.today) { issueDate.current = Date() }
-                            .buttonStyle(.bordered)
-                            .controlSize(.small)
-                            .disabled(Calendar.current.isDateInToday(issueDate.current))
-                    }
-
-                    DatePicker(Strings.InvoiceDetail.issueDate, selection: issueDate.binding, displayedComponents: .date)
-                        .datePickerStyle(.graphical)
-                        .labelsHidden()
-
-                    Picker(Strings.InvoiceDetail.dueDate, selection: $paymentTerm) {
-                        ForEach(PaymentTerm.pickerCases(including: paymentTerm), id: \.self) { term in
-                            Text(term.label).tag(term)
-                        }
-                    }
-
-                    Text(Strings.InvoiceDetail.due(
-                        paymentTerm.dueDate(from: issueDate.current)
-                            .formatted(date: .long, time: .omitted)
-                    ))
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                }
+                ) { issueDatePicker }
             case .markAsSent:
-                stateChangeSheet(
+                ConfirmationSheet(
                     title: Strings.InvoiceDetail.markAsSent,
                     message: Strings.InvoiceDetail.markAsSentMessage(invoice.number),
-                    detail: Strings.InvoiceDetail.sentDateDetail
-                ) { await markAsSent() }
+                    confirmLabel: Strings.InvoiceDetail.markAsSent,
+                    isProcessing: isPerformingSheetAction,
+                    onConfirm: { Task { await markAsSent() } },
+                    onCancel: { activeSheet = nil },
+                    width: 300
+                ) {
+                    Text(Strings.InvoiceDetail.issueDate).font(.headline)
+                    issueDatePicker
+                    Divider()
+                    Text(Strings.InvoiceDetail.sentDate).font(.headline)
+                    sentDatePicker
+                }
             case .markAsDraft:
                 stateChangeSheet(
                     title: Strings.InvoiceDetail.markAsDraft,
@@ -416,7 +404,7 @@ struct InvoiceDetailView: View {
                     message: Strings.InvoiceDetail.markAsOpenMessage(invoice.number),
                     detail: Strings.InvoiceDetail.reopenDetail
                 ) { await markAsOpen() }
-            case .confirmDateBeforeSend(let action):
+            case .confirmDateBeforeSend:
                 ConfirmationSheet(
                     title: Strings.InvoiceDetail.updateIssueDateTitle,
                     message: Strings.InvoiceDetail.updateIssueDateMessage(
@@ -428,10 +416,10 @@ struct InvoiceDetailView: View {
                         Task {
                             issueDate.current = Date()
                             await saveIssueDate()
-                            if issueDate.showSaved { activeSheet = nil; performAction(action) }
+                            if issueDate.showSaved { activeSheet = nil; Task { await sendViaEmail() } }
                         }
                     },
-                    onCancel: { activeSheet = nil; performAction(action) }
+                    onCancel: { activeSheet = nil; Task { await sendViaEmail() } }
                 )
             }
         }
@@ -869,23 +857,19 @@ struct InvoiceDetailView: View {
         }
     }
 
-    private func initiateAction(_ action: SendAction) {
+    private func initiateSendViaEmail() {
         guard Calendar.current.isDateInToday(invoice.issueDate) else {
-            activeSheet = .confirmDateBeforeSend(action); return
+            activeSheet = .confirmDateBeforeSend; return
         }
-        performAction(action)
-    }
-
-    private func performAction(_ action: SendAction) {
-        switch action {
-        case .sendViaEmail: Task { await sendViaEmail() }
-        case .markAsSent: activeSheet = .markAsSent
-        }
+        Task { await sendViaEmail() }
     }
 
     private func markAsSent() async {
+        let date = issueDate.current, due = paymentTerm.dueDate(from: date), sent = sentDate
         await performStateChange(label: "mark as sent", completed: .markedAsSent, newState: .open) { credentials in
+            try await apiService.updateInvoiceDates(invoiceId: invoice.id, issueDate: date, dueDate: due, credentials: credentials)
             try await apiService.markInvoiceAsSent(invoiceId: invoice.id, credentials: credentials)
+            try await apiService.updateInvoiceSentAt(invoiceId: invoice.id, sentAt: sent, credentials: credentials)
         }
     }
 
@@ -932,6 +916,46 @@ struct InvoiceDetailView: View {
             onConfirm: { Task { await action() } },
             onCancel: { activeSheet = nil }
         )
+    }
+
+    @ViewBuilder private var issueDatePicker: some View {
+        HStack {
+            Spacer()
+            Button(Strings.Common.today) { issueDate.current = Date() }
+                .buttonStyle(.bordered)
+                .controlSize(.small)
+                .disabled(Calendar.current.isDateInToday(issueDate.current))
+        }
+        DatePicker(Strings.InvoiceDetail.issueDate, selection: issueDate.binding, displayedComponents: .date)
+            .datePickerStyle(.graphical)
+            .labelsHidden()
+        Picker(Strings.InvoiceDetail.dueDate, selection: $paymentTerm) {
+            ForEach(PaymentTerm.pickerCases(including: paymentTerm), id: \.self) { term in
+                Text(term.label).tag(term)
+            }
+        }
+        Text(Strings.InvoiceDetail.due(
+            paymentTerm.dueDate(from: issueDate.current)
+                .formatted(date: .long, time: .omitted)
+        ))
+        .font(.caption)
+        .foregroundStyle(.secondary)
+    }
+
+    @ViewBuilder private var sentDatePicker: some View {
+        HStack {
+            Spacer()
+            Button(Strings.Common.today) { sentDate = Date() }
+                .buttonStyle(.bordered)
+                .controlSize(.small)
+                .disabled(Calendar.current.isDateInToday(sentDate))
+        }
+        DatePicker(Strings.InvoiceDetail.sentDate, selection: $sentDate, displayedComponents: .date)
+            .datePickerStyle(.graphical)
+            .labelsHidden()
+            .onChange(of: issueDate.current) { _, newDate in
+                sentDate = newDate
+            }
     }
 
     // MARK: - Send via Email
@@ -1144,7 +1168,7 @@ private extension InvoiceDetailView {
     }
 
     enum ActiveSheet: Identifiable {
-        case changeDate, markAsSent, markAsDraft, markAsPaid, markAsOpen, confirmDateBeforeSend(SendAction)
+        case changeDate, markAsSent, markAsDraft, markAsPaid, markAsOpen, confirmDateBeforeSend
         var id: String {
             switch self {
             case .changeDate: "changeDate"
@@ -1155,10 +1179,6 @@ private extension InvoiceDetailView {
             case .confirmDateBeforeSend: "confirmDateBeforeSend"
             }
         }
-    }
-
-    enum SendAction {
-        case sendViaEmail, markAsSent
     }
 
     enum CompletedAction: Identifiable {

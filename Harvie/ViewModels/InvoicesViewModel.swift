@@ -566,9 +566,19 @@ final class InvoicesViewModel {
         )
     }
 
-    func markSelectedAsSent() async {
-        await performBatchOperation(on: selectedInvoices.filter { $0.state == .draft }) { id, credentials in
+    func markSelectedAsSent(issueDate: Date, sentDate: Date) async {
+        let invoices = selectedInvoices.filter { $0.state == .draft }
+        let calendar = Calendar.current
+        let dueDates: [Int: Date] = Dictionary(uniqueKeysWithValues: invoices.map { invoice in
+            let dayOffset = calendar.dateComponents([.day], from: invoice.issueDate, to: invoice.dueDate).day ?? 0
+            let newDueDate = calendar.date(byAdding: .day, value: dayOffset, to: issueDate) ?? issueDate
+            return (invoice.id, newDueDate)
+        })
+        await performBatchOperation(on: invoices) { id, credentials in
+            let dueDate = dueDates[id] ?? issueDate
+            try await self.apiService.updateInvoiceDates(invoiceId: id, issueDate: issueDate, dueDate: dueDate, credentials: credentials)
             try await self.apiService.markInvoiceAsSent(invoiceId: id, credentials: credentials)
+            try await self.apiService.updateInvoiceSentAt(invoiceId: id, sentAt: sentDate, credentials: credentials)
         }
     }
 
