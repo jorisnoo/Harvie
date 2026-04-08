@@ -358,19 +358,23 @@ struct InvoiceDetailView: View {
                 ) { issueDatePicker }
             case .markAsSent:
                 ConfirmationSheet(
-                    title: Strings.InvoiceDetail.markAsSent,
-                    message: Strings.InvoiceDetail.markAsSentMessage(invoice.number),
+                    title: Strings.InvoiceDetail.markAsSentMessage(invoice.number),
                     confirmLabel: Strings.InvoiceDetail.markAsSent,
                     isProcessing: isPerformingSheetAction,
                     onConfirm: { Task { await markAsSent() } },
                     onCancel: { activeSheet = nil },
-                    width: 300
+                    width: 580
                 ) {
-                    Text(Strings.InvoiceDetail.issueDate).font(.headline)
-                    issueDatePicker
-                    Divider()
-                    Text(Strings.InvoiceDetail.sentDate).font(.headline)
-                    sentDatePicker
+                    HStack(alignment: .top, spacing: 24) {
+                        VStack(spacing: 8) {
+                            Text(Strings.InvoiceDetail.issueDate).font(.headline)
+                            issueDatePicker
+                        }
+                        VStack(spacing: 8) {
+                            Text(Strings.InvoiceDetail.sentDate).font(.headline)
+                            sentDatePicker
+                        }
+                    }
                 }
             case .markAsDraft:
                 stateChangeSheet(
@@ -922,8 +926,7 @@ struct InvoiceDetailView: View {
         HStack {
             Spacer()
             Button(Strings.Common.today) { issueDate.current = Date() }
-                .buttonStyle(.bordered)
-                .controlSize(.small)
+                .buttonStyle(.bordered).controlSize(.small)
                 .disabled(Calendar.current.isDateInToday(issueDate.current))
         }
         DatePicker(Strings.InvoiceDetail.issueDate, selection: issueDate.binding, displayedComponents: .date)
