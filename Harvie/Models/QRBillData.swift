@@ -104,18 +104,27 @@ struct StructuredAddress {
 
     var streetLine: String? {
         guard let street = streetName, !street.isEmpty else { return nil }
-        return [street, buildingNumber].compactMap { $0 }.joined(separator: " ")
+        guard let number = buildingNumber, !number.isEmpty else { return street }
+        // Keep building number on the last line when streetName spans multiple lines.
+        var lines = street.components(separatedBy: "\n")
+        if let last = lines.last {
+            lines[lines.count - 1] = "\(last) \(number)"
+        }
+        return lines.joined(separator: "\n")
     }
 
     var cityLine: String {
-        "\(postalCode) \(town)"
+        "\(postalCode) \(town)".trimmingCharacters(in: .whitespaces)
     }
 
     func toPayloadLines() -> [String] {
-        [
+        // Swiss QR-bill spec: fields are single-line. Flatten embedded newlines.
+        let flatName = name.replacingOccurrences(of: "\n", with: " ")
+        let flatStreet = (streetName ?? "").replacingOccurrences(of: "\n", with: " ")
+        return [
             addressType,
-            String(name.prefix(70)),
-            String((streetName ?? "").prefix(70)),
+            String(flatName.prefix(70)),
+            String(flatStreet.prefix(70)),
             String((buildingNumber ?? "").prefix(16)),
             String(postalCode.prefix(16)),
             String(town.prefix(35)),

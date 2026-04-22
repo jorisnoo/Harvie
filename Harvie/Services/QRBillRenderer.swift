@@ -60,6 +60,13 @@ struct QRBillRenderer {
         return font
     }
 
+    static func sanitizeLines(_ text: String) -> String {
+        text.components(separatedBy: .newlines)
+            .map { $0.trimmingCharacters(in: .whitespaces) }
+            .filter { !$0.isEmpty }
+            .joined(separator: "\n")
+    }
+
     let labels: TemplateLanguage.QRBillLabels
 
     func renderQRBillPage(data: QRBillData, qrImage: CGImage, fillFullPage: Bool = true) -> PDFPage? {
@@ -241,11 +248,11 @@ struct QRBillRenderer {
         var y = y
         y = drawText(context: context, text: labels.accountPayableTo, x: x, y: y, fontSize: labelFontSize, bold: true, maxWidth: maxWidth)
         y = drawText(context: context, text: IBANValidator.format(data.creditorIBAN), x: x, y: y, fontSize: fontSize, bold: false, maxWidth: maxWidth)
-        y = drawText(context: context, text: data.creditorAddress.name, x: x, y: y, fontSize: fontSize, bold: false, maxWidth: maxWidth)
+        y = drawText(context: context, text: Self.sanitizeLines(data.creditorAddress.name), x: x, y: y, fontSize: fontSize, bold: false, maxWidth: maxWidth)
         if let streetLine = data.creditorAddress.streetLine {
-            y = drawText(context: context, text: streetLine, x: x, y: y, fontSize: fontSize, bold: false, maxWidth: maxWidth)
+            y = drawText(context: context, text: Self.sanitizeLines(streetLine), x: x, y: y, fontSize: fontSize, bold: false, maxWidth: maxWidth)
         }
-        y = drawText(context: context, text: data.creditorAddress.cityLine, x: x, y: y, fontSize: fontSize, bold: false, maxWidth: maxWidth)
+        y = drawText(context: context, text: Self.sanitizeLines(data.creditorAddress.cityLine), x: x, y: y, fontSize: fontSize, bold: false, maxWidth: maxWidth)
         return y
     }
 
@@ -259,11 +266,11 @@ struct QRBillRenderer {
         var y = y
         if let debtor = data.debtorAddress {
             y = drawText(context: context, text: labels.payableBy, x: x, y: y, fontSize: labelFontSize, bold: true, maxWidth: maxWidth)
-            y = drawText(context: context, text: debtor.name, x: x, y: y, fontSize: fontSize, bold: false, maxWidth: maxWidth, wrap: true)
+            y = drawText(context: context, text: Self.sanitizeLines(debtor.name), x: x, y: y, fontSize: fontSize, bold: false, maxWidth: maxWidth, wrap: true)
             if let streetLine = debtor.streetLine {
-                y = drawText(context: context, text: streetLine, x: x, y: y, fontSize: fontSize, bold: false, maxWidth: maxWidth, wrap: true)
+                y = drawText(context: context, text: Self.sanitizeLines(streetLine), x: x, y: y, fontSize: fontSize, bold: false, maxWidth: maxWidth, wrap: true)
             }
-            y = drawText(context: context, text: debtor.cityLine, x: x, y: y, fontSize: fontSize, bold: false, maxWidth: maxWidth, wrap: true)
+            y = drawText(context: context, text: Self.sanitizeLines(debtor.cityLine), x: x, y: y, fontSize: fontSize, bold: false, maxWidth: maxWidth, wrap: true)
         } else {
             y = drawText(context: context, text: labels.payableByPlaceholder, x: x, y: y, fontSize: labelFontSize, bold: true, maxWidth: maxWidth)
             drawCornerMarks(
