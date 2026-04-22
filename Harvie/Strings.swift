@@ -358,7 +358,10 @@ enum Strings {
         static let overrideLanguage = "Override language"
         static let overrideColumnVisibility = "Override column visibility"
         static let overrideLabels = "Override labels"
-        static let noOverridesHint = "Add per-client overrides to use different settings for specific clients. Unchecked fields use the global default."
+        static let noOverridesHint = """
+            Add per-client overrides to use different settings for specific clients. \
+            Unchecked fields use the global default.
+            """
         static let noClientsHint = "Clients will appear here once invoices have been loaded."
         static let selectClient = "Select a client..."
 

@@ -11,7 +11,7 @@ private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "app.harv
 
 struct TemplatePreviewView: NSViewRepresentable {
     let html: String
-    var baseURL: URL? = nil
+    var baseURL: URL?
 
     func makeCoordinator() -> Coordinator {
         Coordinator()
