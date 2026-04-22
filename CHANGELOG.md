@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.7.1](https://github.com/jorisnoo/Harvie/releases/tag/v0.7.1) (2026-04-22)
+
+### Features
+
+- add per-client setting overrides for language, columns, and labels ([be04709](https://github.com/jorisnoo/Harvie/commit/be047096096183e7e436c8d42947387aaa6f89e0))
+
+### Code Refactoring
+
+- **qr-bill:** consolidate paragraph styles with dynamic line heights ([c3d0b82](https://github.com/jorisnoo/Harvie/commit/c3d0b828b0b4a337ef4d68b4840be5367301d9c8))
+- **feature-flags:** restructure with enum-based system and runtime overrides ([d4c015e](https://github.com/jorisnoo/Harvie/commit/d4c015ed1d640a335238e110300fcbb6cf5a37db))
+- extract update prompt and improve code formatting ([c35eedd](https://github.com/jorisnoo/Harvie/commit/c35eedd534b65346ab7b9cbfea1154fc35f346c8))
+- **address:** improve parsing and rendering of multi-line addresses ([3ec9995](https://github.com/jorisnoo/Harvie/commit/3ec999526ae93cb3a100568a8f3671c9342261c1))
 ## [0.7.0](https://github.com/jorisnoo/Harvie/releases/tag/v0.7.0) (2026-03-23)
 
 ### Features
