@@ -39,16 +39,16 @@ struct QRBillRenderer {
     }
 
     private static var fontCache: [FontKey: NSFont] = [:]
-    private static let truncatingStyle: NSMutableParagraphStyle = {
+    private static let lineHeightMultiple: CGFloat = 1.2
+
+    private static func paragraphStyle(wrap: Bool, fontSize: CGFloat) -> NSParagraphStyle {
         let s = NSMutableParagraphStyle()
-        s.lineBreakMode = .byTruncatingTail
+        s.lineBreakMode = wrap ? .byWordWrapping : .byTruncatingTail
+        let lineHeight = fontSize * lineHeightMultiple
+        s.minimumLineHeight = lineHeight
+        s.maximumLineHeight = lineHeight
         return s
-    }()
-    private static let wrappingStyle: NSMutableParagraphStyle = {
-        let s = NSMutableParagraphStyle()
-        s.lineBreakMode = .byWordWrapping
-        return s
-    }()
+    }
 
     private static func cachedFont(bold: Bool, size: CGFloat) -> NSFont {
         let key = FontKey(bold: bold, fontSize: size)
@@ -433,7 +433,7 @@ struct QRBillRenderer {
         wrap: Bool = false
     ) -> CGFloat {
         let font = Self.cachedFont(bold: bold, size: fontSize)
-        let paragraphStyle = wrap ? Self.wrappingStyle : Self.truncatingStyle
+        let paragraphStyle = Self.paragraphStyle(wrap: wrap, fontSize: fontSize)
 
         let attributes: [NSAttributedString.Key: Any] = [
             .font: font,
@@ -462,7 +462,7 @@ struct QRBillRenderer {
         CTFrameDraw(frame, context)
         context.restoreGState()
 
-        return y - textHeight - 2
+        return y - textHeight
     }
 
     private func formatAmount(_ amount: Decimal) -> String {
