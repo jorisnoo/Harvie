@@ -9,12 +9,19 @@ enum FeatureFlags {
     enum Flag: String, CaseIterable {
         case customPDFTemplates
         case clientOverrides
+        case estimates
 
         var defaultValue: Bool {
             switch self {
             case .customPDFTemplates:
                 return false
             case .clientOverrides:
+                #if DEBUG
+                return true
+                #else
+                return false
+                #endif
+            case .estimates:
                 #if DEBUG
                 return true
                 #else
@@ -52,4 +59,5 @@ enum FeatureFlags {
 
     static var customPDFTemplates: Bool { isEnabled(.customPDFTemplates) }
     static var clientOverrides: Bool { isEnabled(.clientOverrides) }
+    static var estimates: Bool { isEnabled(.estimates) }
 }

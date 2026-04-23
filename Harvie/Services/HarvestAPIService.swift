@@ -235,6 +235,125 @@ actor HarvestAPIService {
         return try await perform(request)
     }
 
+    // MARK: - Estimates
+
+    func fetchEstimates(
+        credentials: HarvestCredentials,
+        state: EstimateState? = nil,
+        page: Int = 1,
+        perPage: Int = 100
+    ) async throws -> EstimatesResponse {
+        var queryItems = [
+            URLQueryItem(name: "page", value: String(page)),
+            URLQueryItem(name: "per_page", value: String(perPage))
+        ]
+
+        if let state {
+            queryItems.append(URLQueryItem(name: "state", value: state.rawValue))
+        }
+
+        let request = try makeRequest(
+            path: "estimates",
+            credentials: credentials,
+            queryItems: queryItems
+        )
+
+        return try await perform(request)
+    }
+
+    func fetchAllEstimates(
+        credentials: HarvestCredentials,
+        state: EstimateState? = nil
+    ) async throws -> [Estimate] {
+        var all: [Estimate] = []
+        var page = 1
+        var hasMorePages = true
+
+        while hasMorePages {
+            let response = try await fetchEstimates(
+                credentials: credentials,
+                state: state,
+                page: page
+            )
+            all.append(contentsOf: response.estimates)
+
+            hasMorePages = response.nextPage != nil
+            page += 1
+        }
+
+        return all
+    }
+
+    func fetchEstimate(
+        id: Int,
+        credentials: HarvestCredentials
+    ) async throws -> Estimate {
+        let request = try makeRequest(
+            path: "estimates/\(id)",
+            credentials: credentials
+        )
+
+        return try await perform(request)
+    }
+
+    nonisolated func buildEstimatePDFURL(for estimate: Estimate, subdomain: String) throws -> URL {
+        guard isValidSubdomain(subdomain) else {
+            throw APIError.invalidSubdomain
+        }
+
+        guard let url = URL(string: "https://\(subdomain).harvestapp.com/client/estimates/\(estimate.clientKey).pdf") else {
+            throw APIError.invalidURL
+        }
+
+        return url
+    }
+
+    func markEstimateAsSent(
+        estimateId: Int,
+        credentials: HarvestCredentials
+    ) async throws {
+        try await sendDocumentEvent(
+            path: "estimates/\(estimateId)/messages",
+            eventType: "send",
+            credentials: credentials
+        )
+    }
+
+    func markEstimateAsAccepted(
+        estimateId: Int,
+        credentials: HarvestCredentials
+    ) async throws {
+        try await sendDocumentEvent(
+            path: "estimates/\(estimateId)/messages",
+            eventType: "accept",
+            credentials: credentials
+        )
+    }
+
+    func markEstimateAsDeclined(
+        estimateId: Int,
+        credentials: HarvestCredentials
+    ) async throws {
+        try await sendDocumentEvent(
+            path: "estimates/\(estimateId)/messages",
+            eventType: "decline",
+            credentials: credentials
+        )
+    }
+
+    func reopenEstimate(
+        estimateId: Int,
+        credentials: HarvestCredentials
+    ) async throws {
+        try await sendDocumentEvent(
+            path: "estimates/\(estimateId)/messages",
+            eventType: "re-open",
+            credentials: credentials
+        )
+    }
+
+    // MARK: - Client
+
     func fetchClient(
         id: Int,
         credentials: HarvestCredentials
@@ -363,7 +482,15 @@ actor HarvestAPIService {
         eventType: String,
         credentials: HarvestCredentials
     ) async throws {
-        var request = try makeRequest(path: "invoices/\(invoiceId)/messages", credentials: credentials)
+        try await sendDocumentEvent(path: "invoices/\(invoiceId)/messages", eventType: eventType, credentials: credentials)
+    }
+
+    private func sendDocumentEvent(
+        path: String,
+        eventType: String,
+        credentials: HarvestCredentials
+    ) async throws {
+        var request = try makeRequest(path: path, credentials: credentials)
         request.httpMethod = "POST"
         request.httpBody = try JSONEncoder().encode(["event_type": eventType])
         try await performMutation(request)

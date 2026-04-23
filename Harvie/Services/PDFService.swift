@@ -281,6 +281,39 @@ actor PDFService {
         )
     }
 
+    func createEstimateFromTemplate(
+        estimate: Estimate,
+        template: InvoiceTemplate,
+        creditorInfo: CreditorInfo,
+        clientAddress: String? = nil,
+        credentials: HarvestCredentials? = nil,
+        language: TemplateLanguage = .en,
+        labelOverrides: [String: [String: String]]? = nil,
+        columnVisibility: ColumnVisibility = .default
+    ) async throws -> PDFDocument {
+        var resolvedClientAddress = clientAddress
+        if resolvedClientAddress == nil, let credentials {
+            let fetched = try? await HarvestAPIService.shared.fetchClient(id: estimate.client.id, credentials: credentials)
+            resolvedClientAddress = fetched?.address
+        }
+
+        let logoDataURI = await LogoStorage.dataURI()
+
+        var context = TemplateContext.from(
+            estimate: estimate,
+            creditorInfo: creditorInfo,
+            clientAddress: resolvedClientAddress,
+            logoDataURI: logoDataURI
+        ).toDictionary()
+        context["labels"] = language.resolvedLabels(for: .estimate, overrides: labelOverrides)
+
+        return try await TemplatePDFService.shared.renderTemplate(
+            template: template,
+            context: context,
+            columnVisibility: columnVisibility
+        )
+    }
+
     private func attachQRBillAndPaidMark(
         to document: PDFDocument,
         invoice: Invoice,

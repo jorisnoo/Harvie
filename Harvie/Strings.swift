@@ -215,6 +215,77 @@ enum Strings {
         static let emailNotConfigured = "Email is not configured on this Mac."
     }
 
+    // MARK: - Estimates List
+
+    enum EstimatesList {
+        static let title = "Estimates"
+        static let updating = "Updating..."
+        static let loading = "Loading estimates..."
+        static let noEstimates = "No Estimates"
+        static let filterPrompt = "Filter estimates"
+        static let export = "Export"
+        static let markAsSent = "Mark as Sent"
+        static let markAsAccepted = "Mark as Accepted"
+        static let markAsDeclined = "Mark as Declined"
+        static let reopen = "Reopen"
+        static let stateDraft = "Draft"
+        static let stateSent = "Sent"
+        static let stateAccepted = "Accepted"
+        static let stateDeclined = "Declined"
+        static let all = "All"
+        static let exportingEstimates = "Exporting Estimates"
+
+        static func estimateCount(_ count: Int) -> String {
+            "\(count) estimate\(count == 1 ? "" : "s")"
+        }
+
+        static func noEstimatesForState(_ state: String) -> String {
+            "No \(state) estimates found."
+        }
+    }
+
+    // MARK: - Estimate Detail
+
+    enum EstimateDetail {
+        static let export = "Export"
+        static let selectAnEstimate = "Select an Estimate"
+        static let selectAnEstimateDescription = "Choose an estimate from the list to view details and export."
+        static let notes = "Notes"
+        static let exportTooltip = "Download estimate PDF"
+        static let markAsSent = "Mark as Sent"
+        static let markAsAccepted = "Mark as Accepted"
+        static let markAsDeclined = "Mark as Declined"
+        static let reopen = "Reopen"
+        static let estimateSent = "Estimate Sent"
+        static let estimateAccepted = "Estimate Accepted"
+        static let estimateDeclined = "Estimate Declined"
+        static let estimateReopened = "Estimate Reopened"
+
+        static func estimateSentMessage(_ number: String) -> String {
+            "Estimate \(number) has been marked as sent."
+        }
+        static func estimateAcceptedMessage(_ number: String) -> String {
+            "Estimate \(number) has been marked as accepted."
+        }
+        static func estimateDeclinedMessage(_ number: String) -> String {
+            "Estimate \(number) has been marked as declined."
+        }
+        static func estimateReopenedMessage(_ number: String) -> String {
+            "Estimate \(number) has been reopened."
+        }
+        static func issued(_ date: String) -> String { "Issued \(date)" }
+        static func sent(_ date: String) -> String { "Sent \(date)" }
+        static func accepted(_ date: String) -> String { "Accepted \(date)" }
+        static func declined(_ date: String) -> String { "Declined \(date)" }
+    }
+
+    // MARK: - Document Source
+
+    enum DocumentSource {
+        static let invoices = "Invoices"
+        static let estimates = "Estimates"
+    }
+
     // MARK: - Multi Selection
 
     enum MultiSelection {
@@ -440,6 +511,14 @@ enum Strings {
         static func updatedCount(_ count: Int) -> String {
             "Successfully updated \(count) invoice(s)."
         }
+
+        static func exportedEstimateCount(_ count: Int) -> String {
+            "Successfully exported \(count) estimate(s)."
+        }
+
+        static func updatedEstimateCount(_ count: Int) -> String {
+            "Successfully updated \(count) estimate(s)."
+        }
     }
 
     // MARK: - Errors
@@ -491,6 +570,7 @@ enum Strings {
 
     enum Export {
         static let selectFolderMessage = "Select folder to save invoices"
+        static let selectFolderMessageEstimates = "Select folder to save estimates"
         static let exportComplete = "Export complete!"
         static let selectLogoMessage = "Select a company logo image"
         static let choosePrompt = "Choose"
