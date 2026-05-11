@@ -115,6 +115,31 @@ struct ClientOverridesSettings: View {
             Toggle(Strings.Settings.overrideLabels, isOn: labelsBinding(for: override))
 
             if override.labelOverrides != nil {
+                let changes = changedLabels(in: override)
+                if changes.isEmpty {
+                    Text(Strings.Settings.noCustomLabels)
+                        .foregroundStyle(.secondary)
+                        .padding(.leading, 20)
+                } else {
+                    ForEach(changes) { entry in
+                        HStack(spacing: 6) {
+                            Text(entry.languageCode.uppercased())
+                                .font(.caption.monospaced())
+                                .foregroundStyle(.secondary)
+                            Text(entry.originalLabel)
+                                .foregroundStyle(.secondary)
+                            Image(systemName: "arrow.right")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                            Text(entry.customValue)
+                                .lineLimit(1)
+                                .truncationMode(.tail)
+                            Spacer(minLength: 0)
+                        }
+                        .padding(.leading, 20)
+                    }
+                }
+
                 Button(Strings.Settings.customizeLabels) {
                     showLabelEditor = true
                 }
@@ -122,13 +147,53 @@ struct ClientOverridesSettings: View {
             }
         }
         .sheet(isPresented: $showLabelEditor) {
-            LabelEditorSheet(labelOverrides: labelOverridesBinding(for: override))
+            LabelEditorSheet(
+                labelOverrides: labelOverridesBinding(for: override),
+                baselineLabels: appSettings.labelOverrides,
+                keepsEmptyOverrides: true
+            )
         }
 
         Section {
             Button(Strings.Settings.removeOverride(override.clientName), role: .destructive) {
                 removeOverride(override)
             }
+        }
+    }
+
+    // MARK: - Changed labels
+
+    private struct ChangedLabel: Identifiable {
+        let id: String
+        let languageCode: String
+        let originalLabel: String
+        let customValue: String
+    }
+
+    private func changedLabels(in override: ClientOverride) -> [ChangedLabel] {
+        guard let overrides = override.labelOverrides else { return [] }
+        var result: [ChangedLabel] = []
+        let appLabelOverrides = appSettings.labelOverrides
+        for (lang, kv) in overrides {
+            let language = TemplateLanguage(rawValue: lang)
+            for (key, value) in kv where !value.isEmpty {
+                let current = appLabelOverrides?[lang]?[key]
+                    ?? language?.defaultValue(for: key)
+                    ?? key
+                guard value != current else { continue }
+                result.append(ChangedLabel(
+                    id: "\(lang).\(key)",
+                    languageCode: lang,
+                    originalLabel: current,
+                    customValue: value
+                ))
+            }
+        }
+        return result.sorted {
+            if $0.languageCode != $1.languageCode {
+                return $0.languageCode < $1.languageCode
+            }
+            return $0.originalLabel.localizedCaseInsensitiveCompare($1.originalLabel) == .orderedAscending
         }
     }
 
@@ -174,7 +239,7 @@ struct ClientOverridesSettings: View {
         Binding(
             get: { override.labelOverrides != nil },
             set: { enabled in
-                override.labelOverrides = enabled ? (appSettings.labelOverrides ?? [:]) : nil
+                override.labelOverrides = enabled ? [:] : nil
             }
         )
     }

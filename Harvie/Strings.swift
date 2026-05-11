@@ -403,6 +403,7 @@ enum Strings {
         static let pdfSource = "PDF source"
         static let language = "Language"
         static let customizeLabels = "Customize labels"
+        static let noCustomLabels = "No labels customized yet."
         static let showQuantityColumn = "Show Quantity column"
         static let showUnitPriceColumn = "Show Unit Price column"
         static let showTotalHours = "Show Total Hours"
