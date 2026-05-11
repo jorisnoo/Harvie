@@ -1,0 +1,98 @@
+<div class="invoice">
+    <div class="neon-line"></div>
+
+    <header class="invoice-header">
+        <div class="company-info">
+            {{#if creditor.hasLogo}}
+            <img src="{{creditor.logo}}" class="company-logo" alt="">
+            {{/if}}
+            <div class="company-name">{{creditor.name}}</div>
+            <div class="company-address">
+                {{creditor.street}} {{creditor.buildingNumber}}<br>
+                {{creditor.postalCode}} {{creditor.town}}
+            </div>
+        </div>
+        <div class="invoice-meta">
+            <div class="invoice-number">{{invoice.number}}</div>
+            <div class="invoice-date">{{invoice.issueDate | date:"dd.MM.yyyy"}}</div>
+        </div>
+    </header>
+
+    <div class="client-section">
+        <div class="client-label">{{labels.billTo}}</div>
+        <div class="client-name">{{client.name}}</div>
+        <div class="client-address">{{client.address}}</div>
+    </div>
+
+    {{#if invoice.hasSubject}}
+    <div class="invoice-subject">{{invoice.subject}}</div>
+    {{/if}}
+
+    <table class="line-items">
+        <thead>
+            <tr>
+                <th class="description-col">{{labels.description}}</th>
+                <th class="qty-col">{{labels.quantity}}</th>
+                <th class="price-col">{{labels.unitPrice}}</th>
+                <th class="amount-col">{{labels.amount}}</th>
+            </tr>
+        </thead>
+        <tbody>
+            {{#lineItems}}
+            <tr>
+                <td class="description-col">{{description | markdown}}</td>
+                <td class="qty-col">{{quantity | number:1}}</td>
+                <td class="price-col">{{unitPrice | currency}}</td>
+                <td class="amount-col">{{amount | currency}}</td>
+            </tr>
+            {{/lineItems}}
+        </tbody>
+    </table>
+
+    <div class="totals">
+        <div class="totals-row total-hours-row">
+            <span class="totals-label">{{labels.totalHours}}</span>
+            <span class="totals-value">{{invoice.totalHours | number:1}}</span>
+        </div>
+        <div class="totals-row subtotal">
+            <span class="totals-label">{{labels.subtotal}}</span>
+            <span class="totals-value">{{invoice.subtotal | currency}}</span>
+        </div>
+        {{#if invoice.hasTax}}
+        <div class="totals-row tax">
+            <span class="totals-label">{{labels.vat}} {{invoice.tax}}%</span>
+            <span class="totals-value">{{invoice.taxAmount | currency}}</span>
+        </div>
+        {{/if}}
+        {{#if invoice.hasDiscount}}
+        <div class="totals-row discount">
+            <span class="totals-label">{{labels.discount}} {{invoice.discount}}%</span>
+            <span class="totals-value">-{{invoice.discountAmount | currency}}</span>
+        </div>
+        {{/if}}
+        <div class="totals-row total">
+            <span class="totals-label">{{labels.total}} ({{invoice.currency}})</span>
+            <span class="totals-value">{{invoice.amount | currency}}</span>
+        </div>
+    </div>
+
+    <div class="footer-section">
+        <div class="payment-info">
+            <div class="payment-block">
+                <span class="payment-label">{{labels.due}}</span>
+                <span class="payment-value">{{invoice.dueDate | date:"dd.MM.yyyy"}}</span>
+            </div>
+            <div class="payment-block">
+                <span class="payment-label">{{labels.iban}}</span>
+                <span class="payment-value">{{creditor.iban}}</span>
+            </div>
+        </div>
+        {{#if invoice.hasNotes}}
+        <div class="notes">
+            {{invoice.notes | markdown}}
+        </div>
+        {{/if}}
+    </div>
+
+    <div class="neon-line bottom"></div>
+</div>
