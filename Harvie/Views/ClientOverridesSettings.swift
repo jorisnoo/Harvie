@@ -96,6 +96,7 @@ struct ClientOverridesSettings: View {
                         Text(lang.displayName).tag(lang)
                     }
                 }
+                .padding(.leading, 20)
             }
 
             // Column visibility
@@ -103,8 +104,11 @@ struct ClientOverridesSettings: View {
 
             if override.columnVisibility != nil {
                 Toggle(Strings.Settings.showQuantityColumn, isOn: columnFieldBinding(for: override, keyPath: \.showQuantity))
+                    .padding(.leading, 20)
                 Toggle(Strings.Settings.showUnitPriceColumn, isOn: columnFieldBinding(for: override, keyPath: \.showUnitPrice))
+                    .padding(.leading, 20)
                 Toggle(Strings.Settings.showTotalHours, isOn: columnFieldBinding(for: override, keyPath: \.showTotalHours))
+                    .padding(.leading, 20)
             }
 
             // Labels
@@ -114,6 +118,7 @@ struct ClientOverridesSettings: View {
                 Button(Strings.Settings.customizeLabels) {
                     showLabelEditor = true
                 }
+                .padding(.leading, 20)
             }
         }
         .sheet(isPresented: $showLabelEditor) {
@@ -121,7 +126,7 @@ struct ClientOverridesSettings: View {
         }
 
         Section {
-            Button(Strings.Settings.removeOverride, role: .destructive) {
+            Button(Strings.Settings.removeOverride(override.clientName), role: .destructive) {
                 removeOverride(override)
             }
         }

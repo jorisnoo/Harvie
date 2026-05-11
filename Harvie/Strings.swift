@@ -425,7 +425,9 @@ enum Strings {
         static let clients = "Clients"
         static let clientOverrides = "Client Overrides"
         static let addOverride = "Add Override"
-        static let removeOverride = "Remove Override"
+        static func removeOverride(_ name: String) -> String {
+            "Remove Override for \(name)"
+        }
         static let overrideLanguage = "Override language"
         static let overrideColumnVisibility = "Override column visibility"
         static let overrideLabels = "Override labels"
