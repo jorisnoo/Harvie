@@ -330,7 +330,7 @@ enum Strings {
         static let harvest = "Harvest"
         static let qrBill = "QR Bill"
         static let downloads = "Downloads"
-        static let templatesBeta = "Templates (Beta)"
+        static let templates = "Templates"
         static let feedback = "Feedback"
 
         // Harvest
