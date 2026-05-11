@@ -7,7 +7,6 @@ import SwiftUI
 
 struct EstimatesListView: View {
     @Bindable var viewModel: EstimatesViewModel
-    var columnVisibility: NavigationSplitViewVisibility = .all
     @Environment(\.openSettings) private var openSettings
 
     @ViewBuilder
@@ -111,33 +110,7 @@ struct EstimatesListView: View {
         .navigationTitle(Strings.EstimatesList.title)
         .navigationSubtitle(viewModel.isRefreshing ? Strings.EstimatesList.updating : "")
         .modifier(EstimatesAlertsModifier(viewModel: viewModel))
-        .toolbar {
-            EstimatesToolbarContent(viewModel: viewModel, columnVisibility: columnVisibility)
-        }
         .modifier(EstimatesOnChangeModifier(viewModel: viewModel))
-    }
-}
-
-// MARK: - Toolbar
-
-private struct EstimatesToolbarContent: ToolbarContent {
-    @Bindable var viewModel: EstimatesViewModel
-    var columnVisibility: NavigationSplitViewVisibility = .all
-
-    var body: some ToolbarContent {
-        ToolbarItemGroup(placement: .automatic) {
-            if columnVisibility != .detailOnly {
-                Picker("Filter", selection: $viewModel.stateFilter) {
-                    Text(Strings.EstimatesList.stateSent).tag(EstimateState?.some(.sent))
-                    Text(Strings.EstimatesList.stateAccepted).tag(EstimateState?.some(.accepted))
-                    Text(Strings.EstimatesList.stateDraft).tag(EstimateState?.some(.draft))
-                    Text(Strings.EstimatesList.stateDeclined).tag(EstimateState?.some(.declined))
-                    Divider()
-                    Text(Strings.EstimatesList.all).tag(EstimateState?.none)
-                }
-                .pickerStyle(.menu)
-            }
-        }
     }
 }
 
@@ -241,10 +214,6 @@ struct EstimateRowView: View {
         CurrencyFormatter.format(estimate.amount, currency: estimate.currency)
     }
 
-    private var formattedDate: String {
-        estimate.issueDate.formatted(date: .abbreviated, time: .omitted)
-    }
-
     var body: some View {
         HStack {
             VStack(alignment: .leading, spacing: 2) {
@@ -265,12 +234,16 @@ struct EstimateRowView: View {
                     .fontWeight(.medium)
                     .contentTransition(.numericText())
                     .animation(.default, value: estimate.amount)
+                    .fixedSize()
 
-                Text(formattedDate)
-                    .font(.caption2)
-                    .foregroundStyle(.tertiary)
+                ViewThatFits(in: .horizontal) {
+                    Text(Strings.EstimateDetail.issued(estimate.issueDate.formatted(date: .abbreviated, time: .omitted)))
+                    Text(Strings.EstimateDetail.issued(estimate.issueDate.formatted(date: .numeric, time: .omitted)))
+                }
+                .font(.caption2)
+                .foregroundStyle(.tertiary)
+                .lineLimit(1)
             }
-            .fixedSize()
         }
         .padding(.vertical, 4)
     }

@@ -404,7 +404,9 @@ final class InvoicesViewModel {
     }
 
     func switchFilterAndSelect(invoiceId: Int, to newState: InvoiceState) {
-        stateFilter = newState
+        if let current = stateFilter, current != newState {
+            stateFilter = newState
+        }
         loadInvoicesTask?.cancel()
         loadInvoicesTask = Task {
             await performLoadInvoices()

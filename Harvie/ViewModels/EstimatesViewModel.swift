@@ -264,7 +264,9 @@ final class EstimatesViewModel {
     }
 
     func switchFilterAndSelect(estimateId: Int, to newState: EstimateState) {
-        stateFilter = newState
+        if let current = stateFilter, current != newState {
+            stateFilter = newState
+        }
         loadTask?.cancel()
         loadTask = Task {
             await performLoad()

@@ -7,7 +7,6 @@ import SwiftUI
 
 struct InvoicesListView: View {
     @Bindable var viewModel: InvoicesViewModel
-    var columnVisibility: NavigationSplitViewVisibility = .all
     @Environment(\.openSettings) private var openSettings
 
     private var warningBanner: some View {
@@ -129,114 +128,7 @@ struct InvoicesListView: View {
         .navigationTitle(Strings.InvoicesList.title)
         .navigationSubtitle(viewModel.isRefreshing ? Strings.InvoicesList.updating : "")
         .modifier(InvoicesAlertsModifier(viewModel: viewModel))
-        .toolbar {
-            InvoicesToolbarContent(viewModel: viewModel, columnVisibility: columnVisibility)
-        }
         .modifier(InvoicesOnChangeModifier(viewModel: viewModel))
-    }
-}
-
-// MARK: - Toolbar (isolated observation scope)
-
-private struct InvoicesToolbarContent: ToolbarContent {
-    @Bindable var viewModel: InvoicesViewModel
-    var columnVisibility: NavigationSplitViewVisibility = .all
-
-    private var sortFilterMenuLabel: String {
-        if let period = viewModel.selectedPeriod {
-            return viewModel.formatPeriod(period)
-        }
-        return Strings.InvoicesList.sortAndFilter
-    }
-
-    var body: some ToolbarContent {
-        ToolbarItemGroup(placement: .automatic) {
-            if columnVisibility != .detailOnly {
-                Menu {
-                    Section(Strings.InvoicesList.sortBy) {
-                        ForEach(InvoiceSortOption.allCases, id: \.self) { option in
-                            Button {
-                                if viewModel.sortOption == option {
-                                    viewModel.sortDirection.toggle()
-                                } else {
-                                    viewModel.sortOption = option
-                                    viewModel.sortDirection = .descending
-                                }
-                            } label: {
-                                HStack {
-                                    Text(option.rawValue)
-                                    if viewModel.sortOption == option {
-                                        Image(systemName: viewModel.sortDirection == .ascending ? "chevron.up" : "chevron.down")
-                                    }
-                                }
-                            }
-                            .disabled(!viewModel.validSortOptions.contains(option))
-                        }
-                    }
-
-                    Divider()
-
-                    Section(Strings.InvoicesList.filterPeriod) {
-                        ForEach(DateFilterPeriod.allCases, id: \.self) { period in
-                            Button {
-                                if viewModel.filterPeriod != period {
-                                    viewModel.filterPeriod = period
-                                    viewModel.selectedPeriod = nil
-                                }
-                            } label: {
-                                HStack {
-                                    Text(period.rawValue)
-                                    if viewModel.filterPeriod == period {
-                                        Image(systemName: "checkmark")
-                                    }
-                                }
-                            }
-                        }
-                    }
-
-                    Divider()
-
-                    Section(Strings.InvoicesList.filterByPeriod(viewModel.filterPeriod.rawValue)) {
-                        Button {
-                            viewModel.selectedPeriod = nil
-                        } label: {
-                            HStack {
-                                Text(Strings.InvoicesList.all)
-                                if viewModel.selectedPeriod == nil {
-                                    Image(systemName: "checkmark")
-                                }
-                            }
-                        }
-
-                        ForEach(viewModel.availablePeriods, id: \.self) { period in
-                            Button {
-                                viewModel.selectedPeriod = period
-                            } label: {
-                                HStack {
-                                    Text(viewModel.formatPeriod(period))
-                                    if let selected = viewModel.selectedPeriod, selected == period {
-                                        Image(systemName: "checkmark")
-                                    }
-                                }
-                            }
-                        }
-                    }
-                } label: {
-                    Label(sortFilterMenuLabel, systemImage: "line.3.horizontal.decrease.circle")
-                }
-                .focusable(false)
-
-                Picker("Filter", selection: $viewModel.stateFilter) {
-                    Text(Strings.InvoicesList.stateOpen).tag(InvoiceState?.some(.open))
-                    Text(Strings.InvoicesList.statePaid).tag(InvoiceState?.some(.paid))
-                    Text(Strings.InvoicesList.stateDraft).tag(InvoiceState?.some(.draft))
-                    Text(Strings.InvoicesList.stateClosed).tag(InvoiceState?.some(.closed))
-                    Divider()
-                    Text(Strings.InvoicesList.all).tag(InvoiceState?.none)
-                }
-                .pickerStyle(.menu)
-            }
-        }
     }
 }
 
@@ -401,8 +293,12 @@ struct InvoiceRowView: View {
         }
     }
 
-    private var formattedDate: String {
-        dateValue.formatted(date: .abbreviated, time: .omitted)
+    private func prefixedDate(_ formatted: String) -> String {
+        switch sortOption {
+        case .issueDate: Strings.InvoiceDetail.issued(formatted)
+        case .dueDate: Strings.InvoiceDetail.due(formatted)
+        case .paidDate: Strings.InvoiceDetail.paid(formatted)
+        }
     }
 
     var body: some View {
@@ -425,12 +321,16 @@ struct InvoiceRowView: View {
                     .fontWeight(.medium)
                     .contentTransition(.numericText())
                     .animation(.default, value: invoice.displayAmount)
+                    .fixedSize()
 
-                Text(formattedDate)
-                    .font(.caption2)
-                    .foregroundStyle(.tertiary)
+                ViewThatFits(in: .horizontal) {
+                    Text(prefixedDate(dateValue.formatted(date: .abbreviated, time: .omitted)))
+                    Text(prefixedDate(dateValue.formatted(date: .numeric, time: .omitted)))
+                }
+                .font(.caption2)
+                .foregroundStyle(.tertiary)
+                .lineLimit(1)
             }
-            .fixedSize()
         }
         .padding(.vertical, 4)
     }

@@ -13,6 +13,11 @@ extension Notification.Name {
     static let insertTemplateVariable = Notification.Name("InsertTemplateVariable")
 }
 
+enum SidebarSelection: Hashable {
+    case invoices(InvoiceState?)
+    case estimates(EstimateState?)
+}
+
 struct ContentView: View {
     @Environment(\.modelContext) private var modelContext
     @State private var invoicesVM = InvoicesViewModel()
@@ -30,9 +35,31 @@ struct ContentView: View {
 
     private var estimatesEnabled: Bool { FeatureFlags.estimates }
 
+    private var sidebarSelection: Binding<SidebarSelection> {
+        Binding(
+            get: {
+                switch source.wrappedValue {
+                case .invoices: .invoices(invoicesVM.stateFilter)
+                case .estimates: .estimates(estimatesVM.stateFilter)
+                }
+            },
+            set: { new in
+                switch new {
+                case .invoices(let state):
+                    sourceRaw = DocumentSource.invoices.rawValue
+                    invoicesVM.stateFilter = state
+                case .estimates(let state):
+                    sourceRaw = DocumentSource.estimates.rawValue
+                    estimatesVM.stateFilter = state
+                }
+            }
+        )
+    }
+
     var body: some View {
         NavigationSplitView(columnVisibility: $columnVisibility) {
             sidebar
+                .navigationSplitViewColumnWidth(min: 300, ideal: 360)
         } detail: {
             detail
         }
@@ -57,24 +84,149 @@ struct ContentView: View {
 
     @ViewBuilder
     private var sidebar: some View {
-        VStack(spacing: 0) {
-            if estimatesEnabled {
-                Picker("", selection: source) {
-                    ForEach(DocumentSource.allCases) { kind in
-                        Text(kind.displayName).tag(kind)
-                    }
-                }
-                .pickerStyle(.segmented)
-                .labelsHidden()
-                .padding(.horizontal, 8)
-                .padding(.vertical, 6)
-            }
-
+        Group {
             switch source.wrappedValue {
             case .invoices:
-                InvoicesListView(viewModel: invoicesVM, columnVisibility: columnVisibility)
+                InvoicesListView(viewModel: invoicesVM)
             case .estimates:
-                EstimatesListView(viewModel: estimatesVM, columnVisibility: columnVisibility)
+                EstimatesListView(viewModel: estimatesVM)
+            }
+        }
+        .toolbar {
+            if columnVisibility != .detailOnly {
+                ToolbarItem(placement: .automatic) {
+                    ViewThatFits(in: .horizontal) {
+                        HStack(spacing: 8) {
+                            if source.wrappedValue == .invoices {
+                                sortFilterMenu
+                            }
+                            statePicker
+                        }
+
+                        Menu {
+                            if source.wrappedValue == .invoices {
+                                sortFilterMenuItems
+                            }
+                            Picker("Filter", selection: sidebarSelection) {
+                                statePickerContent
+                            }
+                            .pickerStyle(.inline)
+                        } label: {
+                            Label(Strings.Common.more, systemImage: "ellipsis.circle")
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private var sortFilterMenu: some View {
+        Menu {
+            sortFilterMenuItems
+        } label: {
+            Label(sortFilterMenuLabel, systemImage: "line.3.horizontal.decrease.circle")
+        }
+        .focusable(false)
+    }
+
+    private var statePicker: some View {
+        Picker("Filter", selection: sidebarSelection) {
+            statePickerContent
+        }
+        .pickerStyle(.menu)
+    }
+
+    private var sortFilterMenuLabel: String {
+        if let period = invoicesVM.selectedPeriod {
+            return invoicesVM.formatPeriod(period)
+        }
+        return Strings.InvoicesList.sortAndFilter
+    }
+
+    @ViewBuilder
+    private var sortFilterMenuItems: some View {
+        Section(Strings.InvoicesList.sortBy) {
+            ForEach(InvoiceSortOption.allCases, id: \.self) { option in
+                Button {
+                    if invoicesVM.sortOption == option {
+                        invoicesVM.sortDirection.toggle()
+                    } else {
+                        invoicesVM.sortOption = option
+                        invoicesVM.sortDirection = .descending
+                    }
+                } label: {
+                    HStack {
+                        Text(option.rawValue)
+                        if invoicesVM.sortOption == option {
+                            Image(systemName: invoicesVM.sortDirection == .ascending ? "chevron.up" : "chevron.down")
+                        }
+                    }
+                }
+                .disabled(!invoicesVM.validSortOptions.contains(option))
+            }
+        }
+
+        Section(Strings.InvoicesList.filterPeriod) {
+            ForEach(DateFilterPeriod.allCases, id: \.self) { period in
+                Button {
+                    if invoicesVM.filterPeriod != period {
+                        invoicesVM.filterPeriod = period
+                        invoicesVM.selectedPeriod = nil
+                    }
+                } label: {
+                    HStack {
+                        Text(period.rawValue)
+                        if invoicesVM.filterPeriod == period {
+                            Image(systemName: "checkmark")
+                        }
+                    }
+                }
+            }
+        }
+
+        Section(Strings.InvoicesList.filterByPeriod(invoicesVM.filterPeriod.rawValue)) {
+            Button {
+                invoicesVM.selectedPeriod = nil
+            } label: {
+                HStack {
+                    Text(Strings.InvoicesList.all)
+                    if invoicesVM.selectedPeriod == nil {
+                        Image(systemName: "checkmark")
+                    }
+                }
+            }
+
+            ForEach(invoicesVM.availablePeriods, id: \.self) { period in
+                Button {
+                    invoicesVM.selectedPeriod = period
+                } label: {
+                    HStack {
+                        Text(invoicesVM.formatPeriod(period))
+                        if let selected = invoicesVM.selectedPeriod, selected == period {
+                            Image(systemName: "checkmark")
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var statePickerContent: some View {
+        Section(Strings.DocumentSource.invoices) {
+            Text(Strings.InvoicesList.stateOpen).tag(SidebarSelection.invoices(.open))
+            Text(Strings.InvoicesList.statePaid).tag(SidebarSelection.invoices(.paid))
+            Text(Strings.InvoicesList.stateDraft).tag(SidebarSelection.invoices(.draft))
+            Text(Strings.InvoicesList.stateClosed).tag(SidebarSelection.invoices(.closed))
+            Text(Strings.InvoicesList.all).tag(SidebarSelection.invoices(nil))
+        }
+        if estimatesEnabled {
+            Section(Strings.DocumentSource.estimates) {
+                Text(Strings.EstimatesList.stateSent).tag(SidebarSelection.estimates(.sent))
+                Text(Strings.EstimatesList.stateAccepted).tag(SidebarSelection.estimates(.accepted))
+                Text(Strings.EstimatesList.stateDraft).tag(SidebarSelection.estimates(.draft))
+                Text(Strings.EstimatesList.stateDeclined).tag(SidebarSelection.estimates(.declined))
+                Text(Strings.EstimatesList.all).tag(SidebarSelection.estimates(nil))
             }
         }
     }
