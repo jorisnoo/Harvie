@@ -91,6 +91,38 @@ final class InvoicesViewModel {
     var updatedCount = 0
     var updateTotalCount = 0
 
+    // Batch action sheet triggers (shared by MultiSelectionView and list context menu)
+    var showChangeDateSheet = false
+    var showMarkAsSentSheet = false
+    var showMarkAsDraftSheet = false
+    var showMarkAsPaidSheet = false
+    var showMarkAsOpenSheet = false
+    var showConfirmDateSheet = false
+    var batchIssueDate = Date()
+    var batchPaymentDate = Date()
+
+    var anySelectedHasNonTodayDate: Bool {
+        selectedInvoices.contains { !Calendar.current.isDateInToday($0.issueDate) }
+    }
+
+    func initiateMarkAsSent() {
+        if anySelectedHasNonTodayDate {
+            showConfirmDateSheet = true
+        } else {
+            showMarkAsSentSheet = true
+        }
+    }
+
+    func initiateChangeDate() {
+        batchIssueDate = selectedInvoices.first?.issueDate ?? Date()
+        showChangeDateSheet = true
+    }
+
+    func initiateMarkAsPaid() {
+        batchPaymentDate = Date()
+        showMarkAsPaidSheet = true
+    }
+
     var allSelectedAreDrafts: Bool {
         guard !selectedInvoiceIDs.isEmpty else { return false }
 

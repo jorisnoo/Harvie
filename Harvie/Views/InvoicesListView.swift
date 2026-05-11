@@ -48,6 +48,51 @@ struct InvoicesListView: View {
         }
         .contextMenu(forSelectionType: Int.self) { selectedIDs in
             if !selectedIDs.isEmpty {
+                if viewModel.allSelectedAreDrafts {
+                    Button {
+                        viewModel.initiateMarkAsSent()
+                    } label: {
+                        Label(Strings.InvoiceDetail.markAsSent, systemImage: "paperplane")
+                    }
+                    .disabled(viewModel.isUpdating)
+                }
+
+                if viewModel.allSelectedAreOpen {
+                    Button {
+                        viewModel.initiateMarkAsPaid()
+                    } label: {
+                        Label(Strings.InvoiceDetail.markAsPaid, systemImage: "banknote")
+                    }
+                    .disabled(viewModel.isUpdating)
+
+                    Button {
+                        viewModel.showMarkAsDraftSheet = true
+                    } label: {
+                        Label(Strings.InvoiceDetail.markAsDraft, systemImage: "arrow.uturn.backward")
+                    }
+                    .disabled(viewModel.isUpdating)
+                }
+
+                if viewModel.allSelectedArePaid {
+                    Button {
+                        viewModel.showMarkAsOpenSheet = true
+                    } label: {
+                        Label(Strings.InvoiceDetail.markAsOpen, systemImage: "arrow.uturn.backward")
+                    }
+                    .disabled(viewModel.isUpdating)
+                }
+
+                if viewModel.allSelectedAreDrafts || viewModel.allSelectedAreOpen {
+                    Button {
+                        viewModel.initiateChangeDate()
+                    } label: {
+                        Label(Strings.InvoiceDetail.changeDate, systemImage: "calendar")
+                    }
+                    .disabled(viewModel.isUpdating)
+                }
+
+                Divider()
+
                 Button {
                     Task {
                         await viewModel.exportSelectedInvoices(withQRBill: true)
@@ -129,6 +174,167 @@ struct InvoicesListView: View {
         .navigationSubtitle(viewModel.isRefreshing ? Strings.InvoicesList.updating : "")
         .modifier(InvoicesAlertsModifier(viewModel: viewModel))
         .modifier(InvoicesOnChangeModifier(viewModel: viewModel))
+        .modifier(InvoicesActionSheetsModifier(viewModel: viewModel))
+    }
+}
+
+// MARK: - Batch action sheets (shared by context menu and multi-selection view)
+
+struct InvoicesActionSheetsModifier: ViewModifier {
+    @Bindable var viewModel: InvoicesViewModel
+
+    private var selectionCount: Int { viewModel.selectedInvoices.count }
+
+    private var batchProgressView: some View {
+        VStack(spacing: 6) {
+            ProgressView(
+                value: Double(viewModel.updatedCount),
+                total: Double(viewModel.updateTotalCount)
+            )
+            Text("\(viewModel.updatedCount) of \(viewModel.updateTotalCount)")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        }
+    }
+
+    func body(content: Content) -> some View {
+        content
+            .sheet(isPresented: $viewModel.showChangeDateSheet) {
+                ConfirmationSheet(
+                    title: Strings.InvoiceDetail.changeIssueDate,
+                    message: Strings.MultiSelection.setIssueDateMessage(selectionCount),
+                    confirmLabel: Strings.Common.apply,
+                    isProcessing: viewModel.isUpdating,
+                    onConfirm: {
+                        Task {
+                            await viewModel.updateIssueDateForSelected(to: viewModel.batchIssueDate)
+                            if viewModel.showUpdateSuccess { viewModel.showChangeDateSheet = false }
+                        }
+                    },
+                    onCancel: { viewModel.showChangeDateSheet = false },
+                    width: 300
+                ) {
+                    HStack {
+                        Spacer()
+                        Button(Strings.Common.today) { viewModel.batchIssueDate = Date() }
+                            .buttonStyle(.bordered)
+                            .controlSize(.small)
+                            .disabled(Calendar.current.isDateInToday(viewModel.batchIssueDate))
+                    }
+
+                    DatePicker(Strings.InvoiceDetail.issueDate, selection: $viewModel.batchIssueDate, displayedComponents: .date)
+                        .datePickerStyle(.graphical)
+                        .labelsHidden()
+
+                    if viewModel.isUpdating { batchProgressView }
+                }
+            }
+            .sheet(isPresented: $viewModel.showMarkAsSentSheet) {
+                ConfirmationSheet(
+                    title: Strings.InvoiceDetail.markAsSent,
+                    message: Strings.MultiSelection.markAsSentMessage(selectionCount),
+                    detail: Strings.MultiSelection.sentDateDetail,
+                    confirmLabel: Strings.InvoiceDetail.markAsSent,
+                    isProcessing: viewModel.isUpdating,
+                    onConfirm: {
+                        Task {
+                            await viewModel.markSelectedAsSent()
+                            if viewModel.showUpdateSuccess { viewModel.showMarkAsSentSheet = false }
+                        }
+                    },
+                    onCancel: { viewModel.showMarkAsSentSheet = false },
+                    width: 300
+                ) {
+                    if viewModel.isUpdating { batchProgressView }
+                }
+            }
+            .sheet(isPresented: $viewModel.showMarkAsDraftSheet) {
+                ConfirmationSheet(
+                    title: Strings.InvoiceDetail.markAsDraft,
+                    message: Strings.MultiSelection.markAsDraftMessage(selectionCount),
+                    confirmLabel: Strings.InvoiceDetail.markAsDraft,
+                    isProcessing: viewModel.isUpdating,
+                    onConfirm: {
+                        Task {
+                            await viewModel.markSelectedAsDraft()
+                            if viewModel.showUpdateSuccess { viewModel.showMarkAsDraftSheet = false }
+                        }
+                    },
+                    onCancel: { viewModel.showMarkAsDraftSheet = false }
+                ) {
+                    if viewModel.isUpdating { batchProgressView }
+                }
+            }
+            .sheet(isPresented: $viewModel.showMarkAsPaidSheet) {
+                ConfirmationSheet(
+                    title: Strings.InvoiceDetail.markAsPaid,
+                    message: Strings.MultiSelection.markAsPaidMessage(selectionCount),
+                    confirmLabel: Strings.InvoiceDetail.markAsPaid,
+                    isProcessing: viewModel.isUpdating,
+                    onConfirm: {
+                        Task {
+                            await viewModel.markSelectedAsPaid(paidAt: viewModel.batchPaymentDate)
+                            if viewModel.showUpdateSuccess { viewModel.showMarkAsPaidSheet = false }
+                        }
+                    },
+                    onCancel: { viewModel.showMarkAsPaidSheet = false },
+                    width: 300
+                ) {
+                    HStack {
+                        Spacer()
+                        Button(Strings.Common.today) { viewModel.batchPaymentDate = Date() }
+                            .buttonStyle(.bordered)
+                            .controlSize(.small)
+                            .disabled(Calendar.current.isDateInToday(viewModel.batchPaymentDate))
+                    }
+                    DatePicker(Strings.InvoiceDetail.paymentDate, selection: $viewModel.batchPaymentDate, displayedComponents: .date)
+                        .datePickerStyle(.graphical)
+                        .labelsHidden()
+                    if viewModel.isUpdating { batchProgressView }
+                }
+            }
+            .sheet(isPresented: $viewModel.showMarkAsOpenSheet) {
+                ConfirmationSheet(
+                    title: Strings.InvoiceDetail.markAsOpen,
+                    message: Strings.MultiSelection.markAsOpenMessage(selectionCount),
+                    detail: Strings.InvoiceDetail.reopenDetail,
+                    confirmLabel: Strings.InvoiceDetail.markAsOpen,
+                    isProcessing: viewModel.isUpdating,
+                    onConfirm: {
+                        Task {
+                            await viewModel.markSelectedAsOpen()
+                            if viewModel.showUpdateSuccess { viewModel.showMarkAsOpenSheet = false }
+                        }
+                    },
+                    onCancel: { viewModel.showMarkAsOpenSheet = false }
+                ) {
+                    if viewModel.isUpdating { batchProgressView }
+                }
+            }
+            .sheet(isPresented: $viewModel.showConfirmDateSheet) {
+                ConfirmationSheet(
+                    title: Strings.InvoiceDetail.updateIssueDateTitle,
+                    message: Strings.MultiSelection.updateIssueDateMessage(selectionCount),
+                    detail: Strings.InvoiceDetail.keepCurrentDate,
+                    confirmLabel: Strings.InvoiceDetail.setToToday,
+                    isProcessing: viewModel.isUpdating,
+                    onConfirm: {
+                        Task {
+                            await viewModel.updateIssueDateForSelected(to: Date())
+                            if viewModel.showUpdateSuccess {
+                                viewModel.showConfirmDateSheet = false
+                                viewModel.showMarkAsSentSheet = true
+                            }
+                        }
+                    },
+                    onCancel: {
+                        viewModel.showConfirmDateSheet = false
+                        viewModel.showMarkAsSentSheet = true
+                    }
+                ) {
+                    if viewModel.isUpdating { batchProgressView }
+                }
+            }
     }
 }
 
