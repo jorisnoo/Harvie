@@ -150,7 +150,8 @@ struct ClientOverridesSettings: View {
             LabelEditorSheet(
                 labelOverrides: labelOverridesBinding(for: override),
                 baselineLabels: appSettings.labelOverrides,
-                keepsEmptyOverrides: true
+                keepsEmptyOverrides: true,
+                initialLanguage: override.templateLanguage ?? appSettings.templateLanguage
             )
         }
 

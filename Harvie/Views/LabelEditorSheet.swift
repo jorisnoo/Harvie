@@ -9,8 +9,20 @@ struct LabelEditorSheet: View {
     @Binding var labelOverrides: [String: [String: String]]?
     var baselineLabels: [String: [String: String]]? = nil
     var keepsEmptyOverrides: Bool = false
-    @State private var selectedLanguage: TemplateLanguage = .en
+    @State private var selectedLanguage: TemplateLanguage
     @Environment(\.dismiss) private var dismiss
+
+    init(
+        labelOverrides: Binding<[String: [String: String]]?>,
+        baselineLabels: [String: [String: String]]? = nil,
+        keepsEmptyOverrides: Bool = false,
+        initialLanguage: TemplateLanguage = .en
+    ) {
+        self._labelOverrides = labelOverrides
+        self.baselineLabels = baselineLabels
+        self.keepsEmptyOverrides = keepsEmptyOverrides
+        self._selectedLanguage = State(initialValue: initialLanguage)
+    }
 
     var body: some View {
         VStack(spacing: 0) {

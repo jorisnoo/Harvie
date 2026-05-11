@@ -446,7 +446,10 @@ struct TemplatesSettings: View {
                 }
             }
             .sheet(isPresented: $showLabelEditor) {
-                LabelEditorSheet(labelOverrides: $viewModel.appSettings.labelOverrides)
+                LabelEditorSheet(
+                    labelOverrides: $viewModel.appSettings.labelOverrides,
+                    initialLanguage: viewModel.appSettings.templateLanguage
+                )
             }
             .formStyle(.grouped)
             .frame(maxHeight: .infinity, alignment: .top)
