@@ -583,4 +583,37 @@ enum Strings {
             "Exporting \(index) of \(total): \(number)"
         }
     }
+
+    // MARK: - Data Export Window
+
+    enum DataExport {
+        static let menuItem = "Export All Data\u{2026}"
+        static let windowTitle = "Export Harvest Data"
+        static let intro = "Download all data from your Harvest account as JSON and CSV files."
+        static let outputFolder = "Output Folder"
+        static let chooseFolder = "Choose\u{2026}"
+        static let noFolderSelected = "No folder selected"
+        static let selectFolderPrompt = "Select a folder to save the exported files"
+        static let resourcesSection = "Resources to Export"
+        static let formatNote = "Exports both JSON and CSV for each selected resource, plus a manifest.json with run details."
+        static let selectAll = "Select All"
+        static let selectNone = "Select None"
+        static let startExport = "Start Export"
+        static let cancel = "Cancel"
+        static let exportRunning = "Exporting\u{2026}"
+        static let revealInFinder = "Reveal in Finder"
+        static let needsCredentials = "Connect your Harvest account in Settings before exporting."
+
+        static func progressMessage(_ resource: String, _ done: Int, _ total: Int) -> String {
+            "Exporting \(resource) (\(done) of \(total))\u{2026}"
+        }
+
+        static func successSummary(_ resourceCount: Int, _ rowCount: Int) -> String {
+            "Exported \(resourceCount) resource\(resourceCount == 1 ? "" : "s") (\(rowCount) total record\(rowCount == 1 ? "" : "s"))."
+        }
+
+        static func failureSummary(_ message: String) -> String {
+            "Export failed: \(message)"
+        }
+    }
 }
