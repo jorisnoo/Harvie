@@ -5,6 +5,11 @@
 
 import Foundation
 
+enum DocumentKind: String, Sendable {
+    case invoice
+    case estimate
+}
+
 struct TemplateContext {
     let invoice: InvoiceContext
     let client: ClientContext
@@ -91,6 +96,71 @@ struct TemplateContext {
         )
 
         let items: [[String: Any]] = (invoice.lineItems ?? []).map { item in
+            [
+                "description": item.description ?? "",
+                "quantity": item.quantity,
+                "unitPrice": item.unitPrice,
+                "amount": item.amount,
+                "kind": item.kind,
+                "taxed": item.taxed
+            ]
+        }
+
+        return TemplateContext(
+            invoice: invoiceCtx,
+            client: clientCtx,
+            creditor: creditorCtx,
+            lineItems: items
+        )
+    }
+
+    nonisolated static func from(
+        estimate: Estimate,
+        creditorInfo: CreditorInfo,
+        clientAddress: String? = nil,
+        logoDataURI: String? = nil
+    ) -> TemplateContext {
+        let subtotal: Decimal = {
+            if let items = estimate.lineItems {
+                return items.reduce(Decimal.zero) { $0 + $1.amount }
+            }
+            return estimate.amount - (estimate.taxAmount ?? 0) + (estimate.discountAmount ?? 0)
+        }()
+
+        let invoiceCtx = InvoiceContext(
+            number: estimate.number,
+            amount: estimate.amount,
+            currency: estimate.currency,
+            subject: estimate.subject ?? "",
+            notes: estimate.notes ?? "",
+            issueDate: estimate.issueDate,
+            dueDate: estimate.issueDate,
+            tax: estimate.tax,
+            taxAmount: estimate.taxAmount,
+            tax2: estimate.tax2,
+            tax2Amount: estimate.tax2Amount,
+            discount: estimate.discount,
+            discountAmount: estimate.discountAmount,
+            subtotal: subtotal
+        )
+
+        let clientCtx = ClientContext(
+            name: estimate.client.name,
+            address: clientAddress ?? ""
+        )
+
+        let creditorCtx = CreditorContext(
+            name: creditorInfo.name,
+            iban: creditorInfo.iban,
+            street: creditorInfo.streetName,
+            buildingNumber: creditorInfo.buildingNumber,
+            postalCode: creditorInfo.postalCode,
+            town: creditorInfo.town,
+            country: creditorInfo.country,
+            logo: logoDataURI
+        )
+
+        let items: [[String: Any]] = (estimate.lineItems ?? []).map { item in
             [
                 "description": item.description ?? "",
                 "quantity": item.quantity,

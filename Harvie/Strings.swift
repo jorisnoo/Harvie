@@ -156,7 +156,7 @@ enum Strings {
             "Mark invoice \(number) as sent?"
         }
 
-        static let sentDate = "Sent Date"
+        static let sentDateDetail = "The sent date will be set to now."
 
         static func markAsDraftMessage(_ number: String) -> String {
             "Revert invoice \(number) to draft?"
@@ -215,6 +215,77 @@ enum Strings {
         static let emailNotConfigured = "Email is not configured on this Mac."
     }
 
+    // MARK: - Estimates List
+
+    enum EstimatesList {
+        static let title = "Estimates"
+        static let updating = "Updating..."
+        static let loading = "Loading estimates..."
+        static let noEstimates = "No Estimates"
+        static let filterPrompt = "Filter estimates"
+        static let export = "Export"
+        static let markAsSent = "Mark as Sent"
+        static let markAsAccepted = "Mark as Accepted"
+        static let markAsDeclined = "Mark as Declined"
+        static let reopen = "Reopen"
+        static let stateDraft = "Draft"
+        static let stateSent = "Sent"
+        static let stateAccepted = "Accepted"
+        static let stateDeclined = "Declined"
+        static let all = "All"
+        static let exportingEstimates = "Exporting Estimates"
+
+        static func estimateCount(_ count: Int) -> String {
+            "\(count) estimate\(count == 1 ? "" : "s")"
+        }
+
+        static func noEstimatesForState(_ state: String) -> String {
+            "No \(state) estimates found."
+        }
+    }
+
+    // MARK: - Estimate Detail
+
+    enum EstimateDetail {
+        static let export = "Export"
+        static let selectAnEstimate = "Select an Estimate"
+        static let selectAnEstimateDescription = "Choose an estimate from the list to view details and export."
+        static let notes = "Notes"
+        static let exportTooltip = "Download estimate PDF"
+        static let markAsSent = "Mark as Sent"
+        static let markAsAccepted = "Mark as Accepted"
+        static let markAsDeclined = "Mark as Declined"
+        static let reopen = "Reopen"
+        static let estimateSent = "Estimate Sent"
+        static let estimateAccepted = "Estimate Accepted"
+        static let estimateDeclined = "Estimate Declined"
+        static let estimateReopened = "Estimate Reopened"
+
+        static func estimateSentMessage(_ number: String) -> String {
+            "Estimate \(number) has been marked as sent."
+        }
+        static func estimateAcceptedMessage(_ number: String) -> String {
+            "Estimate \(number) has been marked as accepted."
+        }
+        static func estimateDeclinedMessage(_ number: String) -> String {
+            "Estimate \(number) has been marked as declined."
+        }
+        static func estimateReopenedMessage(_ number: String) -> String {
+            "Estimate \(number) has been reopened."
+        }
+        static func issued(_ date: String) -> String { "Issued \(date)" }
+        static func sent(_ date: String) -> String { "Sent \(date)" }
+        static func accepted(_ date: String) -> String { "Accepted \(date)" }
+        static func declined(_ date: String) -> String { "Declined \(date)" }
+    }
+
+    // MARK: - Document Source
+
+    enum DocumentSource {
+        static let invoices = "Invoices"
+        static let estimates = "Estimates"
+    }
+
     // MARK: - Multi Selection
 
     enum MultiSelection {
@@ -232,6 +303,12 @@ enum Strings {
 
         static func markAsSentMessage(_ count: Int) -> String {
             "Mark \(count) invoice(s) as sent?"
+        }
+
+        static let sentDateDetail = "The sent date will be set to the current time."
+
+        static func updateIssueDateMessage(_ count: Int) -> String {
+            "Some of the \(count) selected invoice(s) have an issue date that is not today. Do you want to update them to today?"
         }
 
         static func markAsDraftMessage(_ count: Int) -> String {
@@ -253,7 +330,7 @@ enum Strings {
         static let harvest = "Harvest"
         static let qrBill = "QR Bill"
         static let downloads = "Downloads"
-        static let templatesBeta = "Templates (Beta)"
+        static let templates = "Templates"
         static let feedback = "Feedback"
 
         // Harvest
@@ -326,6 +403,7 @@ enum Strings {
         static let pdfSource = "PDF source"
         static let language = "Language"
         static let customizeLabels = "Customize labels"
+        static let noCustomLabels = "No labels customized yet."
         static let showQuantityColumn = "Show Quantity column"
         static let showUnitPriceColumn = "Show Unit Price column"
         static let showTotalHours = "Show Total Hours"
@@ -343,6 +421,27 @@ enum Strings {
         static let reportAnIssue = "Report an Issue"
         static let openGitHubIssues = "Open GitHub Issues"
         static let reportHint = "Report bugs or request features on GitHub."
+
+        // Clients
+        static let clients = "Clients"
+        static let clientOverrides = "Client Overrides"
+        static let addOverride = "Add Override"
+        static func removeOverride(_ name: String) -> String {
+            "Remove Override for \(name)"
+        }
+        static let overrideLanguage = "Override language"
+        static let overrideColumnVisibility = "Override column visibility"
+        static let overrideLabels = "Override labels"
+        static let noOverridesHint = """
+            Add per-client overrides to use different settings for specific clients. \
+            Unchecked fields use the global default.
+            """
+        static let noClientsHint = "Clients will appear here once invoices have been loaded."
+        static let selectClient = "Select a client..."
+
+        static func settingsFor(_ name: String) -> String {
+            "Settings for \(name)"
+        }
 
         // Debug
         static let demo = "Demo"
@@ -415,6 +514,14 @@ enum Strings {
         static func updatedCount(_ count: Int) -> String {
             "Successfully updated \(count) invoice(s)."
         }
+
+        static func exportedEstimateCount(_ count: Int) -> String {
+            "Successfully exported \(count) estimate(s)."
+        }
+
+        static func updatedEstimateCount(_ count: Int) -> String {
+            "Successfully updated \(count) estimate(s)."
+        }
     }
 
     // MARK: - Errors
@@ -466,6 +573,7 @@ enum Strings {
 
     enum Export {
         static let selectFolderMessage = "Select folder to save invoices"
+        static let selectFolderMessageEstimates = "Select folder to save estimates"
         static let exportComplete = "Export complete!"
         static let selectLogoMessage = "Select a company logo image"
         static let choosePrompt = "Choose"
@@ -473,6 +581,39 @@ enum Strings {
 
         static func exportingProgress(_ index: Int, _ total: Int, _ number: String) -> String {
             "Exporting \(index) of \(total): \(number)"
+        }
+    }
+
+    // MARK: - Data Export Window
+
+    enum DataExport {
+        static let menuItem = "Export All Data\u{2026}"
+        static let windowTitle = "Export Harvest Data"
+        static let intro = "Download all data from your Harvest account as JSON and CSV files."
+        static let outputFolder = "Output Folder"
+        static let chooseFolder = "Choose\u{2026}"
+        static let noFolderSelected = "No folder selected"
+        static let selectFolderPrompt = "Select a folder to save the exported files"
+        static let resourcesSection = "Resources to Export"
+        static let formatNote = "Exports both JSON and CSV for each selected resource, plus a manifest.json with run details."
+        static let selectAll = "Select All"
+        static let selectNone = "Select None"
+        static let startExport = "Start Export"
+        static let cancel = "Cancel"
+        static let exportRunning = "Exporting\u{2026}"
+        static let revealInFinder = "Reveal in Finder"
+        static let needsCredentials = "Connect your Harvest account in Settings before exporting."
+
+        static func progressMessage(_ resource: String, _ done: Int, _ total: Int) -> String {
+            "Exporting \(resource) (\(done) of \(total))\u{2026}"
+        }
+
+        static func successSummary(_ resourceCount: Int, _ rowCount: Int) -> String {
+            "Exported \(resourceCount) resource\(resourceCount == 1 ? "" : "s") (\(rowCount) total record\(rowCount == 1 ? "" : "s"))."
+        }
+
+        static func failureSummary(_ message: String) -> String {
+            "Export failed: \(message)"
         }
     }
 }

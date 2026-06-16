@@ -8,15 +8,6 @@ import SwiftUI
 struct MultiSelectionView: View {
     @Bindable var viewModel: InvoicesViewModel
 
-    @State private var batchIssueDate = Date()
-    @State private var batchSentDate = Date()
-    @State private var batchPaymentDate = Date()
-    @State private var showChangeDateSheet = false
-    @State private var showMarkAsSentSheet = false
-    @State private var showMarkAsDraftSheet = false
-    @State private var showMarkAsPaidSheet = false
-    @State private var showMarkAsOpenSheet = false
-
     private var selectedInvoices: [Invoice] {
         viewModel.selectedInvoices
     }
@@ -61,164 +52,11 @@ struct MultiSelectionView: View {
         }
         .padding(.vertical, 32)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .sheet(isPresented: $showChangeDateSheet) {
-            ConfirmationSheet(
-                title: Strings.InvoiceDetail.changeIssueDate,
-                message: Strings.MultiSelection.setIssueDateMessage(selectedInvoices.count),
-                confirmLabel: Strings.Common.apply,
-                isProcessing: viewModel.isUpdating,
-                onConfirm: {
-                    Task {
-                        await viewModel.updateIssueDateForSelected(to: batchIssueDate)
-                        if viewModel.showUpdateSuccess { showChangeDateSheet = false }
-                    }
-                },
-                onCancel: { showChangeDateSheet = false },
-                width: 300
-            ) {
-                HStack {
-                    Spacer()
-                    Button(Strings.Common.today) { batchIssueDate = Date() }
-                        .buttonStyle(.bordered)
-                        .controlSize(.small)
-                        .disabled(Calendar.current.isDateInToday(batchIssueDate))
-                }
-
-                DatePicker(Strings.InvoiceDetail.issueDate, selection: $batchIssueDate, displayedComponents: .date)
-                    .datePickerStyle(.graphical)
-                    .labelsHidden()
-
-                if viewModel.isUpdating {
-                    batchProgressView
-                }
-            }
-        }
-        .sheet(isPresented: $showMarkAsSentSheet) {
-            ConfirmationSheet(
-                title: Strings.InvoiceDetail.markAsSent,
-                message: Strings.MultiSelection.markAsSentMessage(selectedInvoices.count),
-                confirmLabel: Strings.InvoiceDetail.markAsSent,
-                isProcessing: viewModel.isUpdating,
-                onConfirm: {
-                    Task {
-                        await viewModel.markSelectedAsSent(issueDate: batchIssueDate, sentDate: batchSentDate)
-                        if viewModel.showUpdateSuccess { showMarkAsSentSheet = false }
-                    }
-                },
-                onCancel: { showMarkAsSentSheet = false },
-                width: 300
-            ) {
-                Text(Strings.InvoiceDetail.issueDate)
-                    .font(.headline)
-                HStack {
-                    Spacer()
-                    Button(Strings.Common.today) { batchIssueDate = Date() }
-                        .buttonStyle(.bordered)
-                        .controlSize(.small)
-                        .disabled(Calendar.current.isDateInToday(batchIssueDate))
-                }
-                DatePicker(Strings.InvoiceDetail.issueDate, selection: $batchIssueDate, displayedComponents: .date)
-                    .datePickerStyle(.graphical)
-                    .labelsHidden()
-
-                Divider()
-
-                Text(Strings.InvoiceDetail.sentDate)
-                    .font(.headline)
-                HStack {
-                    Spacer()
-                    Button(Strings.Common.today) { batchSentDate = Date() }
-                        .buttonStyle(.bordered)
-                        .controlSize(.small)
-                        .disabled(Calendar.current.isDateInToday(batchSentDate))
-                }
-                DatePicker(Strings.InvoiceDetail.sentDate, selection: $batchSentDate, displayedComponents: .date)
-                    .datePickerStyle(.graphical)
-                    .labelsHidden()
-                    .onChange(of: batchIssueDate) { _, newDate in
-                        batchSentDate = newDate
-                    }
-
-                if viewModel.isUpdating {
-                    batchProgressView
-                }
-            }
-        }
-        .sheet(isPresented: $showMarkAsDraftSheet) {
-            ConfirmationSheet(
-                title: Strings.InvoiceDetail.markAsDraft,
-                message: Strings.MultiSelection.markAsDraftMessage(selectedInvoices.count),
-                confirmLabel: Strings.InvoiceDetail.markAsDraft,
-                isProcessing: viewModel.isUpdating,
-                onConfirm: {
-                    Task {
-                        await viewModel.markSelectedAsDraft()
-                        if viewModel.showUpdateSuccess { showMarkAsDraftSheet = false }
-                    }
-                },
-                onCancel: { showMarkAsDraftSheet = false }
-            ) {
-                if viewModel.isUpdating {
-                    batchProgressView
-                }
-            }
-        }
-        .sheet(isPresented: $showMarkAsPaidSheet) {
-            ConfirmationSheet(
-                title: Strings.InvoiceDetail.markAsPaid,
-                message: Strings.MultiSelection.markAsPaidMessage(selectedInvoices.count),
-                confirmLabel: Strings.InvoiceDetail.markAsPaid,
-                isProcessing: viewModel.isUpdating,
-                onConfirm: {
-                    Task {
-                        await viewModel.markSelectedAsPaid(paidAt: batchPaymentDate)
-                        if viewModel.showUpdateSuccess { showMarkAsPaidSheet = false }
-                    }
-                },
-                onCancel: { showMarkAsPaidSheet = false },
-                width: 300
-            ) {
-                HStack {
-                    Spacer()
-                    Button(Strings.Common.today) { batchPaymentDate = Date() }
-                        .buttonStyle(.bordered)
-                        .controlSize(.small)
-                        .disabled(Calendar.current.isDateInToday(batchPaymentDate))
-                }
-                DatePicker(Strings.InvoiceDetail.paymentDate, selection: $batchPaymentDate, displayedComponents: .date)
-                    .datePickerStyle(.graphical)
-                    .labelsHidden()
-                if viewModel.isUpdating {
-                    batchProgressView
-                }
-            }
-        }
-        .sheet(isPresented: $showMarkAsOpenSheet) {
-            ConfirmationSheet(
-                title: Strings.InvoiceDetail.markAsOpen,
-                message: Strings.MultiSelection.markAsOpenMessage(selectedInvoices.count),
-                detail: Strings.InvoiceDetail.reopenDetail,
-                confirmLabel: Strings.InvoiceDetail.markAsOpen,
-                isProcessing: viewModel.isUpdating,
-                onConfirm: {
-                    Task {
-                        await viewModel.markSelectedAsOpen()
-                        if viewModel.showUpdateSuccess { showMarkAsOpenSheet = false }
-                    }
-                },
-                onCancel: { showMarkAsOpenSheet = false }
-            ) {
-                if viewModel.isUpdating {
-                    batchProgressView
-                }
-            }
-        }
     }
 
     private var changeDateButton: some View {
         Button {
-            batchIssueDate = Date()
-            showChangeDateSheet = true
+            viewModel.initiateChangeDate()
         } label: {
             Label(Strings.InvoiceDetail.changeDate, systemImage: "calendar")
                 .frame(maxWidth: 150)
@@ -229,9 +67,7 @@ struct MultiSelectionView: View {
 
     private var markAsSentButton: some View {
         Button {
-            batchIssueDate = Date()
-            batchSentDate = Date()
-            showMarkAsSentSheet = true
+            viewModel.initiateMarkAsSent()
         } label: {
             Label(Strings.InvoiceDetail.markAsSent, systemImage: "paperplane")
                 .frame(maxWidth: 150)
@@ -243,8 +79,7 @@ struct MultiSelectionView: View {
     private var openActionsSection: some View {
         VStack(spacing: 12) {
             Button {
-                batchPaymentDate = Date()
-                showMarkAsPaidSheet = true
+                viewModel.initiateMarkAsPaid()
             } label: {
                 Label(Strings.InvoiceDetail.markAsPaid, systemImage: "banknote")
                     .frame(maxWidth: 150)
@@ -253,7 +88,7 @@ struct MultiSelectionView: View {
             .disabled(viewModel.isUpdating)
 
             Button {
-                showMarkAsDraftSheet = true
+                viewModel.showMarkAsDraftSheet = true
             } label: {
                 Label(Strings.InvoiceDetail.markAsDraft, systemImage: "arrow.uturn.backward")
                     .frame(maxWidth: 150)
@@ -265,7 +100,7 @@ struct MultiSelectionView: View {
 
     private var markAsOpenButton: some View {
         Button {
-            showMarkAsOpenSheet = true
+            viewModel.showMarkAsOpenSheet = true
         } label: {
             Label(Strings.InvoiceDetail.markAsOpen, systemImage: "arrow.uturn.backward")
                 .frame(maxWidth: 150)
@@ -334,18 +169,6 @@ struct MultiSelectionView: View {
             }
             .buttonStyle(.bordered)
             .controlSize(.large)
-        }
-    }
-
-    private var batchProgressView: some View {
-        VStack(spacing: 6) {
-            ProgressView(
-                value: Double(viewModel.updatedCount),
-                total: Double(viewModel.updateTotalCount)
-            )
-            Text("\(viewModel.updatedCount) of \(viewModel.updateTotalCount)")
-                .font(.caption)
-                .foregroundStyle(.secondary)
         }
     }
 

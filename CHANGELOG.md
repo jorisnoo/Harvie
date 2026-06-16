@@ -2,6 +2,35 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.7.2](https://github.com/jorisnoo/Harvie/releases/tag/v0.7.2) (2026-05-28)
+
+### Features
+
+- **export:** implement Harvest data export to CSV and JSON ([249e667](https://github.com/jorisnoo/Harvie/commit/249e667f805fc672bee88a3d158e2b85c4a307b6))
+- **invoices:** add batch actions to list context menu ([4797b41](https://github.com/jorisnoo/Harvie/commit/4797b411bf96a7da6316699959aa9bc1e4777ce6))
+- **release:** add --build-number parameter to release script ([fd8e246](https://github.com/jorisnoo/Harvie/commit/fd8e246d27ecfa0edf0d2f32ff22115a154c30d4))
+- **templates:** graduate from beta ([661b145](https://github.com/jorisnoo/Harvie/commit/661b1452293ec9fbb2997d87359f60896a507760))
+- **templates:** add funky and neon-noir invoice template designs ([b1ad650](https://github.com/jorisnoo/Harvie/commit/b1ad6506d51ef8cbd08d923788e81c568c4a25de))
+- initialize label editor language from settings ([dd6c73a](https://github.com/jorisnoo/Harvie/commit/dd6c73a040aecc71bec61c85835a99663e04c54c))
+- **labels:** show customized labels summary in client overrides ([92be595](https://github.com/jorisnoo/Harvie/commit/92be5959550cb5e1cbefd126d1bc56b4015c5577))
+- add estimates feature ([59e889a](https://github.com/jorisnoo/Harvie/commit/59e889aa7c45b9060ac94c2abeede6f5b2b66729))
+
+### Code Refactoring
+
+- **settings:** add client name to remove override button and improve spacing ([30d4038](https://github.com/jorisnoo/Harvie/commit/30d4038e33e4323c71f56f8e581d0399b0a3c31f))
+- consolidate sort and filter controls in ContentView ([0ac4365](https://github.com/jorisnoo/Harvie/commit/0ac436517eddd2c7f5331e55780667f05864022b))
+## [0.7.1](https://github.com/jorisnoo/Harvie/releases/tag/v0.7.1) (2026-04-22)
+
+### Features
+
+- add per-client setting overrides for language, columns, and labels ([be04709](https://github.com/jorisnoo/Harvie/commit/be047096096183e7e436c8d42947387aaa6f89e0))
+
+### Code Refactoring
+
+- **qr-bill:** consolidate paragraph styles with dynamic line heights ([c3d0b82](https://github.com/jorisnoo/Harvie/commit/c3d0b828b0b4a337ef4d68b4840be5367301d9c8))
+- **feature-flags:** restructure with enum-based system and runtime overrides ([d4c015e](https://github.com/jorisnoo/Harvie/commit/d4c015ed1d640a335238e110300fcbb6cf5a37db))
+- extract update prompt and improve code formatting ([c35eedd](https://github.com/jorisnoo/Harvie/commit/c35eedd534b65346ab7b9cbfea1154fc35f346c8))
+- **address:** improve parsing and rendering of multi-line addresses ([3ec9995](https://github.com/jorisnoo/Harvie/commit/3ec999526ae93cb3a100568a8f3671c9342261c1))
 ## [0.7.0](https://github.com/jorisnoo/Harvie/releases/tag/v0.7.0) (2026-03-23)
 
 ### Features

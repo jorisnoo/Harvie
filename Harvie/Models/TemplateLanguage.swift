@@ -78,6 +78,36 @@ enum TemplateLanguage: String, Codable, CaseIterable, Sendable {
         }
     }
 
+    /// Per-language label overrides that replace invoice defaults when rendering an estimate.
+    /// Only keys that differ from the invoice pack are listed; all others fall through.
+    nonisolated var estimateLabelOverrides: [String: String] {
+        switch self {
+        case .en:
+            return ["invoice": "Estimate", "due": "Valid Until", "totalDue": "Estimated Total"]
+        case .de:
+            return ["invoice": "Offerte", "due": "G\u{00FC}ltig bis", "totalDue": "Geschätzter Betrag"]
+        case .fr:
+            return ["invoice": "Devis", "due": "Valable jusqu\u{2019}au", "totalDue": "Montant estim\u{00E9}"]
+        case .it:
+            return ["invoice": "Preventivo", "due": "Valido fino al", "totalDue": "Totale stimato"]
+        }
+    }
+
+    /// Returns the label dictionary for a given document kind, with estimate-specific
+    /// substitutions applied on top of the invoice defaults when appropriate.
+    nonisolated func labels(for kind: DocumentKind) -> [String: String] {
+        switch kind {
+        case .invoice:
+            return labels
+        case .estimate:
+            var merged = labels
+            for (key, value) in estimateLabelOverrides {
+                merged[key] = value
+            }
+            return merged
+        }
+    }
+
     nonisolated private static let en_labels: [String: String] = [
         "invoice": "Invoice",
         "description": "Description",
@@ -208,7 +238,14 @@ enum TemplateLanguage: String, Codable, CaseIterable, Sendable {
     // MARK: - Resolved Labels
 
     nonisolated func resolvedLabels(overrides: [String: [String: String]]?) -> [String: String] {
-        var result = labels
+        resolvedLabels(for: .invoice, overrides: overrides)
+    }
+
+    nonisolated func resolvedLabels(
+        for kind: DocumentKind,
+        overrides: [String: [String: String]]?
+    ) -> [String: String] {
+        var result = labels(for: kind)
         guard let langOverrides = overrides?[rawValue] else { return result }
         for (key, value) in langOverrides where !value.isEmpty && !key.hasPrefix("qr.") {
             result[key] = value

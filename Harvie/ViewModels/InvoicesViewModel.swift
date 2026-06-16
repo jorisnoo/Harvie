@@ -91,6 +91,38 @@ final class InvoicesViewModel {
     var updatedCount = 0
     var updateTotalCount = 0
 
+    // Batch action sheet triggers (shared by MultiSelectionView and list context menu)
+    var showChangeDateSheet = false
+    var showMarkAsSentSheet = false
+    var showMarkAsDraftSheet = false
+    var showMarkAsPaidSheet = false
+    var showMarkAsOpenSheet = false
+    var showConfirmDateSheet = false
+    var batchIssueDate = Date()
+    var batchPaymentDate = Date()
+
+    var anySelectedHasNonTodayDate: Bool {
+        selectedInvoices.contains { !Calendar.current.isDateInToday($0.issueDate) }
+    }
+
+    func initiateMarkAsSent() {
+        if anySelectedHasNonTodayDate {
+            showConfirmDateSheet = true
+        } else {
+            showMarkAsSentSheet = true
+        }
+    }
+
+    func initiateChangeDate() {
+        batchIssueDate = selectedInvoices.first?.issueDate ?? Date()
+        showChangeDateSheet = true
+    }
+
+    func initiateMarkAsPaid() {
+        batchPaymentDate = Date()
+        showMarkAsPaidSheet = true
+    }
+
     var allSelectedAreDrafts: Bool {
         guard !selectedInvoiceIDs.isEmpty else { return false }
 
@@ -404,7 +436,9 @@ final class InvoicesViewModel {
     }
 
     func switchFilterAndSelect(invoiceId: Int, to newState: InvoiceState) {
-        stateFilter = newState
+        if let current = stateFilter, current != newState {
+            stateFilter = newState
+        }
         loadInvoicesTask?.cancel()
         loadInvoicesTask = Task {
             await performLoadInvoices()
@@ -566,19 +600,9 @@ final class InvoicesViewModel {
         )
     }
 
-    func markSelectedAsSent(issueDate: Date, sentDate: Date) async {
-        let invoices = selectedInvoices.filter { $0.state == .draft }
-        let calendar = Calendar.current
-        let dueDates: [Int: Date] = Dictionary(uniqueKeysWithValues: invoices.map { invoice in
-            let dayOffset = calendar.dateComponents([.day], from: invoice.issueDate, to: invoice.dueDate).day ?? 0
-            let newDueDate = calendar.date(byAdding: .day, value: dayOffset, to: issueDate) ?? issueDate
-            return (invoice.id, newDueDate)
-        })
-        await performBatchOperation(on: invoices) { id, credentials in
-            let dueDate = dueDates[id] ?? issueDate
-            try await self.apiService.updateInvoiceDates(invoiceId: id, issueDate: issueDate, dueDate: dueDate, credentials: credentials)
+    func markSelectedAsSent() async {
+        await performBatchOperation(on: selectedInvoices.filter { $0.state == .draft }) { id, credentials in
             try await self.apiService.markInvoiceAsSent(invoiceId: id, credentials: credentials)
-            try await self.apiService.updateInvoiceSentAt(invoiceId: id, sentAt: sentDate, credentials: credentials)
         }
     }
 

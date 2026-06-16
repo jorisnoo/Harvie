@@ -34,6 +34,7 @@ fi
 BUILD_ONLY=true
 CLEAN=false
 VERSION=""
+BUILD_NUMBER=""
 CONFIGURATION="Release"
 
 # Colors for output
@@ -55,6 +56,7 @@ Options:
     --notarise               Build, sign, package AND notarise (default: skip notarisation)
     --clean                  Remove build artifacts before building
     --version X.Y.Z          Override version (default: from git tag)
+    --build-number N         Override build number / CFBundleVersion (default: from project)
     --configuration CONFIG   Build configuration (default: Release)
     --help                   Show this help message
 
@@ -185,6 +187,12 @@ build_archive() {
         log_info "Using team ID from certificate: $team_id"
     fi
 
+    local extra_args=()
+    if [ -n "$BUILD_NUMBER" ]; then
+        extra_args+=("CURRENT_PROJECT_VERSION=$BUILD_NUMBER")
+        log_info "Using build number: $BUILD_NUMBER"
+    fi
+
     xcodebuild archive \
         -project "$PROJECT_ROOT/$XCODE_PROJECT" \
         -scheme "$XCODE_SCHEME" \
@@ -193,7 +201,8 @@ build_archive() {
         CODE_SIGN_STYLE=Manual \
         CODE_SIGN_IDENTITY="$cert_name" \
         DEVELOPMENT_TEAM="$team_id" \
-        MARKETING_VERSION="$version"
+        MARKETING_VERSION="$version" \
+        "${extra_args[@]}"
 
     log_info "Archive created successfully."
 }
@@ -376,6 +385,10 @@ while [[ $# -gt 0 ]]; do
             ;;
         --version)
             VERSION="$2"
+            shift 2
+            ;;
+        --build-number)
+            BUILD_NUMBER="$2"
             shift 2
             ;;
         --configuration)

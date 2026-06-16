@@ -18,8 +18,7 @@ private struct ClickOutsideTextFieldsModifier: ViewModifier {
                     // If a text view is already the first responder, check whether
                     // the click lands inside it — if so, leave editing alone.
                     if let responder = event.window?.firstResponder as? NSView,
-                       responder is NSTextView || responder is NSTextField
-                    {
+                       responder is NSTextView || responder is NSTextField {
                         let loc = responder.convert(event.locationInWindow, from: nil)
                         if responder.bounds.contains(loc) {
                             return event

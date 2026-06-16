@@ -48,21 +48,28 @@ extension InvoicesViewModel {
             }
 
             let total = invoicesToExport.count
-
-            // Load template if using template mode
-            var template: InvoiceTemplate?
-            if withQRBill && appSettings.effectivePDFSource == .template {
-                guard let loaded = await resolveTemplate() else {
-                    exportError = Strings.Errors.noTemplateSelected
-                    isExporting = false
-                    return
-                }
-                template = loaded
-            }
+            var overrideCache: [Int: ClientOverride?] = [:]
 
             for (index, invoice) in invoicesToExport.enumerated() {
                 exportProgressMessage = Strings.Export.exportingProgress(index + 1, total, invoice.number)
                 exportProgress = Double(index) / Double(total)
+
+                let clientId = invoice.client.id
+                if overrideCache[clientId] == nil {
+                    overrideCache[clientId] = .some(fetchClientOverride(for: clientId))
+                }
+                let resolvedSettings = appSettings.resolved(with: overrideCache[clientId] ?? nil)
+
+                // Resolve template per-invoice (clients may have different settings)
+                var template: InvoiceTemplate?
+                if withQRBill && resolvedSettings.effectivePDFSource == .template {
+                    guard let loaded = await resolveTemplate(for: resolvedSettings) else {
+                        exportError = Strings.Errors.noTemplateSelected
+                        isExporting = false
+                        return
+                    }
+                    template = loaded
+                }
 
                 let document = try await generatePDF(
                     for: invoice,
@@ -70,7 +77,7 @@ extension InvoicesViewModel {
                     credentials: credentials,
                     creditorInfo: creditorInfo,
                     template: template,
-                    settings: appSettings
+                    settings: resolvedSettings
                 )
 
                 let date: Date = switch sortOption {
@@ -80,7 +87,7 @@ extension InvoicesViewModel {
                     invoice.effectivePaidDate ?? invoice.issueDate
                 }
 
-                let fileName = appSettings.generateFilename(
+                let fileName = resolvedSettings.generateFilename(
                     invoiceNumber: invoice.number,
                     creditorName: creditorInfo.name,
                     clientName: invoice.client.name,
@@ -125,9 +132,11 @@ extension InvoicesViewModel {
 
     /// Resolves the selected template, falling back to the first available template
     /// if the selected one no longer exists (e.g. after a template was deleted or re-seeded).
-    private func resolveTemplate() async -> InvoiceTemplate? {
+    private func resolveTemplate(for settings: AppSettings? = nil) async -> InvoiceTemplate? {
+        let effectiveSettings = settings ?? appSettings
+
         // Try the explicitly selected template first
-        if let templateId = appSettings.selectedTemplateId,
+        if let templateId = effectiveSettings.selectedTemplateId,
            let template = await loadTemplate(id: templateId) {
             return template
         }
@@ -145,11 +154,22 @@ extension InvoicesViewModel {
         return fallback
     }
 
+    func fetchClientOverride(for clientId: Int) -> ClientOverride? {
+        guard let context = modelContext else { return nil }
+        let descriptor = FetchDescriptor<ClientOverride>(
+            predicate: #Predicate { $0.clientId == clientId }
+        )
+        return try? context.fetch(descriptor).first
+    }
+
     // MARK: - Drag & Drop
     // TODO: Drag-and-drop export is temporarily disabled (see InvoicesListView)
 
     func createDragProvider(for invoice: Invoice) -> NSItemProvider {
         let provider = NSItemProvider()
+
+        let override = fetchClientOverride(for: invoice.client.id)
+        let resolvedSettings = appSettings.resolved(with: override)
 
         let date: Date = switch sortOption {
         case .issueDate, .dueDate:
@@ -158,7 +178,7 @@ extension InvoicesViewModel {
             invoice.effectivePaidDate ?? invoice.issueDate
         }
 
-        let fileName = appSettings.generateFilename(
+        let fileName = resolvedSettings.generateFilename(
             invoiceNumber: invoice.number,
             creditorName: creditorInfo.name,
             clientName: invoice.client.name,
@@ -170,7 +190,7 @@ extension InvoicesViewModel {
 
         provider.suggestedName = (fileName as NSString).deletingPathExtension
 
-        let settings = appSettings
+        let settings = resolvedSettings
         let creditor = creditorInfo
 
         provider.registerFileRepresentation(for: .pdf, visibility: .all) { completion in
@@ -185,7 +205,7 @@ extension InvoicesViewModel {
 
                     let template: InvoiceTemplate?
                     if creditor.isValid && settings.effectivePDFSource == .template {
-                        guard let loaded = await self.resolveTemplate() else {
+                        guard let loaded = await self.resolveTemplate(for: settings) else {
                             throw NSError(domain: "Harvie", code: 1, userInfo: [
                                 NSLocalizedDescriptionKey: Strings.Errors.noTemplateSelected
                             ])

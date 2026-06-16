@@ -65,7 +65,9 @@ jobs:
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
           MACOS_CERTIFICATE_NAME: ${{ secrets.MACOS_CERTIFICATE_NAME }}
         run: |
-          ./scripts/build-release.sh --clean --notarise --version "${{ steps.version.outputs.VERSION }}"
+          ./scripts/build-release.sh --clean --notarise \
+            --version "${{ steps.version.outputs.VERSION }}" \
+            --build-number "${{ github.run_number }}"
 
       - name: Extract release notes
         id: changelog

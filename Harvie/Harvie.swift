@@ -18,7 +18,7 @@ struct HarvieApp: App {
         LegacyMigration.migrateIfNeeded()
 
         do {
-            modelContainer = try ModelContainer(for: CachedInvoice.self, InvoiceTemplate.self)
+            modelContainer = try ModelContainer(for: CachedInvoice.self, CachedEstimate.self, InvoiceTemplate.self, ClientOverride.self)
         } catch {
             fatalError("Failed to create ModelContainer: \(error)")
         }
@@ -44,9 +44,14 @@ struct HarvieApp: App {
         .commands {
             CommandGroup(replacing: .newItem) { }
 
+            CommandGroup(after: .saveItem) {
+                ExportMenuButton()
+            }
+
             CommandGroup(after: .toolbar) {
                 Button(Strings.Common.refresh) {
                     NotificationCenter.default.post(name: .refreshInvoices, object: nil)
+                    NotificationCenter.default.post(name: .refreshEstimates, object: nil)
                 }
                 .keyboardShortcut("r", modifiers: .command)
 
@@ -64,10 +69,27 @@ struct HarvieApp: App {
         }
         .modelContainer(modelContainer)
 
+        Window(Strings.DataExport.windowTitle, id: "export") {
+            ExportView()
+        }
+        .windowResizability(.contentSize)
+        .defaultSize(width: 560, height: 640)
+
         Settings {
             SettingsView()
                 .modelContainer(modelContainer)
         }
+    }
+}
+
+private struct ExportMenuButton: View {
+    @Environment(\.openWindow) private var openWindow
+
+    var body: some View {
+        Button(Strings.DataExport.menuItem) {
+            openWindow(id: "export")
+        }
+        .keyboardShortcut("e", modifiers: [.command, .shift])
     }
 }
 

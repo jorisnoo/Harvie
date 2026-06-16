@@ -20,9 +20,14 @@ struct SettingsView: View {
             DownloadsSettings(viewModel: viewModel)
                 .tabItem { Label(Strings.Settings.downloads, systemImage: "folder") }
 
+            if FeatureFlags.clientOverrides {
+                ClientOverridesSettings()
+                    .tabItem { Label(Strings.Settings.clients, systemImage: "person.2") }
+            }
+
             if FeatureFlags.customPDFTemplates {
                 TemplatesSettings(viewModel: viewModel)
-                    .tabItem { Label(Strings.Settings.templatesBeta, systemImage: "doc.richtext") }
+                    .tabItem { Label(Strings.Settings.templates, systemImage: "doc.richtext") }
             }
 
             FeedbackSettings()
@@ -441,7 +446,10 @@ struct TemplatesSettings: View {
                 }
             }
             .sheet(isPresented: $showLabelEditor) {
-                LabelEditorSheet(labelOverrides: $viewModel.appSettings.labelOverrides)
+                LabelEditorSheet(
+                    labelOverrides: $viewModel.appSettings.labelOverrides,
+                    initialLanguage: viewModel.appSettings.templateLanguage
+                )
             }
             .formStyle(.grouped)
             .frame(maxHeight: .infinity, alignment: .top)

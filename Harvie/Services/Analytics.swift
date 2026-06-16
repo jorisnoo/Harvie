@@ -66,4 +66,12 @@ enum Analytics {
             "with_qr_bill": .boolean(withQRBill),
         ])
     }
+
+    static func estimatesLoaded(count: Int) {
+        track("estimates_loaded", props: ["count": .integer(count)])
+    }
+
+    static func estimatesExported(count: Int) {
+        track("estimates_exported", props: ["count": .integer(count)])
+    }
 }

@@ -36,7 +36,6 @@ struct InvoiceDetailView: View {
     var issueDate = EditableField(Date())
     @State private var paymentTerm: PaymentTerm = .net30
     @State private var paymentDate = Date()
-    @State private var sentDate = Date()
 
     // Line item editing
     @State private var editedDescriptions: [Int: String] = [:]
@@ -221,8 +220,7 @@ struct InvoiceDetailView: View {
             if invoice.state == .draft {
                 ToolbarItem(placement: .primaryAction) {
                     Button {
-                        issueDate.current = invoice.issueDate
-                        activeSheet = .changeDate
+                        openChangeDate()
                     } label: {
                         Label(Strings.InvoiceDetail.changeDate, systemImage: "calendar")
                     }
@@ -234,7 +232,7 @@ struct InvoiceDetailView: View {
                 ToolbarItem(placement: .primaryAction) {
                     Menu {
                         Button {
-                            initiateSendViaEmail()
+                            initiateAction(.sendViaEmail)
                         } label: {
                             Label(Strings.InvoiceDetail.sendViaEmail, systemImage: "envelope")
                         }
@@ -243,9 +241,7 @@ struct InvoiceDetailView: View {
                         Divider()
 
                         Button {
-                            issueDate.current = invoice.issueDate
-                            sentDate = Date()
-                            activeSheet = .markAsSent
+                            initiateAction(.markAsSent)
                         } label: {
                             Label(Strings.InvoiceDetail.markAsSent, systemImage: "text.badge.checkmark")
                         }
@@ -286,8 +282,7 @@ struct InvoiceDetailView: View {
                         .disabled(isProcessing || isPreviewing || isSendingEmail || !canExportWithQRBill)
 
                         Button {
-                            issueDate.current = invoice.issueDate
-                            activeSheet = .changeDate
+                            openChangeDate()
                         } label: {
                             Label(Strings.InvoiceDetail.changeDate, systemImage: "calendar")
                         }
@@ -355,27 +350,38 @@ struct InvoiceDetailView: View {
                     },
                     onCancel: { activeSheet = nil },
                     width: 300
-                ) { issueDatePicker }
-            case .markAsSent:
-                ConfirmationSheet(
-                    title: Strings.InvoiceDetail.markAsSentMessage(invoice.number),
-                    confirmLabel: Strings.InvoiceDetail.markAsSent,
-                    isProcessing: isPerformingSheetAction,
-                    onConfirm: { Task { await markAsSent() } },
-                    onCancel: { activeSheet = nil },
-                    width: 580
                 ) {
-                    HStack(alignment: .top, spacing: 24) {
-                        VStack(spacing: 8) {
-                            Text(Strings.InvoiceDetail.issueDate).font(.headline)
-                            issueDatePicker
-                        }
-                        VStack(spacing: 8) {
-                            Text(Strings.InvoiceDetail.sentDate).font(.headline)
-                            sentDatePicker
+                    HStack {
+                        Spacer()
+                        Button(Strings.Common.today) { issueDate.current = Date() }
+                            .buttonStyle(.bordered)
+                            .controlSize(.small)
+                            .disabled(Calendar.current.isDateInToday(issueDate.current))
+                    }
+
+                    DatePicker(Strings.InvoiceDetail.issueDate, selection: issueDate.binding, displayedComponents: .date)
+                        .datePickerStyle(.graphical)
+                        .labelsHidden()
+
+                    Picker(Strings.InvoiceDetail.dueDate, selection: $paymentTerm) {
+                        ForEach(PaymentTerm.pickerCases(including: paymentTerm), id: \.self) { term in
+                            Text(term.label).tag(term)
                         }
                     }
+
+                    Text(Strings.InvoiceDetail.due(
+                        paymentTerm.dueDate(from: issueDate.current)
+                            .formatted(date: .long, time: .omitted)
+                    ))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
                 }
+            case .markAsSent:
+                stateChangeSheet(
+                    title: Strings.InvoiceDetail.markAsSent,
+                    message: Strings.InvoiceDetail.markAsSentMessage(invoice.number),
+                    detail: Strings.InvoiceDetail.sentDateDetail
+                ) { await markAsSent() }
             case .markAsDraft:
                 stateChangeSheet(
                     title: Strings.InvoiceDetail.markAsDraft,
@@ -408,7 +414,7 @@ struct InvoiceDetailView: View {
                     message: Strings.InvoiceDetail.markAsOpenMessage(invoice.number),
                     detail: Strings.InvoiceDetail.reopenDetail
                 ) { await markAsOpen() }
-            case .confirmDateBeforeSend:
+            case .confirmDateBeforeSend(let action):
                 ConfirmationSheet(
                     title: Strings.InvoiceDetail.updateIssueDateTitle,
                     message: Strings.InvoiceDetail.updateIssueDateMessage(
@@ -420,10 +426,10 @@ struct InvoiceDetailView: View {
                         Task {
                             issueDate.current = Date()
                             await saveIssueDate()
-                            if issueDate.showSaved { activeSheet = nil; Task { await sendViaEmail() } }
+                            if issueDate.showSaved { activeSheet = nil; performAction(action) }
                         }
                     },
-                    onCancel: { activeSheet = nil; Task { await sendViaEmail() } }
+                    onCancel: { activeSheet = nil; performAction(action) }
                 )
             }
         }
@@ -511,6 +517,12 @@ struct InvoiceDetailView: View {
                 Text(Strings.InvoiceDetail.issued(invoice.issueDate.formatted(date: .long, time: .omitted)))
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
+                    .underline(invoice.state == .draft, pattern: .dash, color: .secondary.opacity(0.5))
+                    .onTapGesture { if invoice.state == .draft { openChangeDate() } }
+                    .onHover { hovering in
+                        guard invoice.state == .draft else { return }
+                        if hovering { NSCursor.pointingHand.push() } else { NSCursor.pop() }
+                    }
 
                 if let sentAt = invoice.sentAt {
                     Text(Strings.InvoiceDetail.sent(sentAt.formatted(date: .long, time: .shortened)))
@@ -522,6 +534,12 @@ struct InvoiceDetailView: View {
             Text(Strings.InvoiceDetail.due(invoice.dueDate.formatted(date: .long, time: .omitted)))
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
+                .underline(invoice.state == .draft, pattern: .dash, color: .secondary.opacity(0.5))
+                .onTapGesture { if invoice.state == .draft { openChangeDate() } }
+                .onHover { hovering in
+                    guard invoice.state == .draft else { return }
+                    if hovering { NSCursor.pointingHand.push() } else { NSCursor.pop() }
+                }
 
             if let tax = invoice.tax, invoice.taxAmount != nil {
                 Text(Strings.InvoiceDetail.inclTax(tax.formatted(), CurrencyFormatter.format(liveTaxAmount, currency: invoice.currency)))
@@ -845,6 +863,11 @@ struct InvoiceDetailView: View {
         }
     }
 
+    private func openChangeDate() {
+        issueDate.current = invoice.issueDate
+        activeSheet = .changeDate
+    }
+
     private func saveIssueDate() async {
         issueDate.markSaving()
         let newDueDate = paymentTerm.dueDate(from: issueDate.current)
@@ -861,19 +884,23 @@ struct InvoiceDetailView: View {
         }
     }
 
-    private func initiateSendViaEmail() {
+    private func initiateAction(_ action: SendAction) {
         guard Calendar.current.isDateInToday(invoice.issueDate) else {
-            activeSheet = .confirmDateBeforeSend; return
+            activeSheet = .confirmDateBeforeSend(action); return
         }
-        Task { await sendViaEmail() }
+        performAction(action)
+    }
+
+    private func performAction(_ action: SendAction) {
+        switch action {
+        case .sendViaEmail: Task { await sendViaEmail() }
+        case .markAsSent: activeSheet = .markAsSent
+        }
     }
 
     private func markAsSent() async {
-        let date = issueDate.current, due = paymentTerm.dueDate(from: date), sent = sentDate
         await performStateChange(label: "mark as sent", completed: .markedAsSent, newState: .open) { credentials in
-            try await apiService.updateInvoiceDates(invoiceId: invoice.id, issueDate: date, dueDate: due, credentials: credentials)
             try await apiService.markInvoiceAsSent(invoiceId: invoice.id, credentials: credentials)
-            try await apiService.updateInvoiceSentAt(invoiceId: invoice.id, sentAt: sent, credentials: credentials)
         }
     }
 
@@ -922,45 +949,6 @@ struct InvoiceDetailView: View {
         )
     }
 
-    @ViewBuilder private var issueDatePicker: some View {
-        HStack {
-            Spacer()
-            Button(Strings.Common.today) { issueDate.current = Date() }
-                .buttonStyle(.bordered).controlSize(.small)
-                .disabled(Calendar.current.isDateInToday(issueDate.current))
-        }
-        DatePicker(Strings.InvoiceDetail.issueDate, selection: issueDate.binding, displayedComponents: .date)
-            .datePickerStyle(.graphical)
-            .labelsHidden()
-        Picker(Strings.InvoiceDetail.dueDate, selection: $paymentTerm) {
-            ForEach(PaymentTerm.pickerCases(including: paymentTerm), id: \.self) { term in
-                Text(term.label).tag(term)
-            }
-        }
-        Text(Strings.InvoiceDetail.due(
-            paymentTerm.dueDate(from: issueDate.current)
-                .formatted(date: .long, time: .omitted)
-        ))
-        .font(.caption)
-        .foregroundStyle(.secondary)
-    }
-
-    @ViewBuilder private var sentDatePicker: some View {
-        HStack {
-            Spacer()
-            Button(Strings.Common.today) { sentDate = Date() }
-                .buttonStyle(.bordered)
-                .controlSize(.small)
-                .disabled(Calendar.current.isDateInToday(sentDate))
-        }
-        DatePicker(Strings.InvoiceDetail.sentDate, selection: $sentDate, displayedComponents: .date)
-            .datePickerStyle(.graphical)
-            .labelsHidden()
-            .onChange(of: issueDate.current) { _, newDate in
-                sentDate = newDate
-            }
-    }
-
     // MARK: - Send via Email
 
     private func sendViaEmail() async {
@@ -990,8 +978,11 @@ struct InvoiceDetailView: View {
             }
 
             emailService.recipients = recipientEmails
-            emailService.subject = appSettings.generateEmailSubject(
-                invoiceLabel: appSettings.templateLanguage.labels["invoice"]!,
+            let cId = invoice.client.id
+            let desc = FetchDescriptor<ClientOverride>(predicate: #Predicate { $0.clientId == cId })
+            let emailSettings = appSettings.resolved(with: try? modelContext.fetch(desc).first)
+            emailService.subject = emailSettings.generateEmailSubject(
+                invoiceLabel: emailSettings.templateLanguage.labels["invoice"]!,
                 invoiceNumber: invoice.number,
                 title: invoice.subject,
                 clientName: invoice.client.name,
@@ -1019,6 +1010,10 @@ struct InvoiceDetailView: View {
 
 private extension InvoiceDetailView {
     func generatePDF() async throws -> (pdf: PDFDocument, settings: AppSettings) {
+        let clientId = invoice.client.id
+        let descriptor = FetchDescriptor<ClientOverride>(predicate: #Predicate { $0.clientId == clientId })
+        let settings = appSettings.resolved(with: try? modelContext.fetch(descriptor).first)
+
         #if DEBUG
         let effectiveCreditorInfo = creditorInfo.isValid ? creditorInfo : DemoDataProvider.defaultCreditorInfo
         #else
@@ -1029,7 +1024,7 @@ private extension InvoiceDetailView {
             throw GenerationError.invalidCreditor
         }
 
-        if appSettings.effectivePDFSource == .template {
+        if settings.effectivePDFSource == .template {
             guard let template = resolveTemplate() else {
                 throw GenerationError.templateNotFound
             }
@@ -1039,32 +1034,32 @@ private extension InvoiceDetailView {
                 template: template,
                 creditorInfo: effectiveCreditorInfo,
                 credentials: credentials,
-                language: appSettings.templateLanguage,
-                labelOverrides: appSettings.labelOverrides,
-                paidMarkStyle: appSettings.paidMarkStyle,
-                columnVisibility: appSettings.columnVisibility
+                language: settings.templateLanguage,
+                labelOverrides: settings.labelOverrides,
+                paidMarkStyle: settings.paidMarkStyle,
+                columnVisibility: settings.columnVisibility
             )
-            return (pdf, appSettings)
+            return (pdf, settings)
         }
 
         #if DEBUG
-        if appSettings.isDemoMode {
+        if settings.isDemoMode {
             let pdf = try await pdfService.createDemoInvoiceWithQRBill(
                 invoice: invoice, creditorInfo: effectiveCreditorInfo,
-                paidMarkStyle: appSettings.paidMarkStyle
+                paidMarkStyle: settings.paidMarkStyle
             )
-            return (pdf, appSettings)
+            return (pdf, settings)
         }
         #endif
 
         let credentials = try await keychainService.loadHarvestCredentials()
         let pdf = try await pdfService.createInvoiceWithQRBill(
             invoice: invoice, credentials: credentials, creditorInfo: effectiveCreditorInfo,
-            language: appSettings.templateLanguage,
-            labelOverrides: appSettings.labelOverrides,
-            paidMarkStyle: appSettings.paidMarkStyle
+            language: settings.templateLanguage,
+            labelOverrides: settings.labelOverrides,
+            paidMarkStyle: settings.paidMarkStyle
         )
-        return (pdf, appSettings)
+        return (pdf, settings)
     }
 
     func previewWithQRBill() async {
@@ -1171,7 +1166,7 @@ private extension InvoiceDetailView {
     }
 
     enum ActiveSheet: Identifiable {
-        case changeDate, markAsSent, markAsDraft, markAsPaid, markAsOpen, confirmDateBeforeSend
+        case changeDate, markAsSent, markAsDraft, markAsPaid, markAsOpen, confirmDateBeforeSend(SendAction)
         var id: String {
             switch self {
             case .changeDate: "changeDate"
@@ -1182,6 +1177,10 @@ private extension InvoiceDetailView {
             case .confirmDateBeforeSend: "confirmDateBeforeSend"
             }
         }
+    }
+
+    enum SendAction {
+        case sendViaEmail, markAsSent
     }
 
     enum CompletedAction: Identifiable {

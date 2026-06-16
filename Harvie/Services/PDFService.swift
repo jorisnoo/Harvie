@@ -281,6 +281,39 @@ actor PDFService {
         )
     }
 
+    func createEstimateFromTemplate(
+        estimate: Estimate,
+        template: InvoiceTemplate,
+        creditorInfo: CreditorInfo,
+        clientAddress: String? = nil,
+        credentials: HarvestCredentials? = nil,
+        language: TemplateLanguage = .en,
+        labelOverrides: [String: [String: String]]? = nil,
+        columnVisibility: ColumnVisibility = .default
+    ) async throws -> PDFDocument {
+        var resolvedClientAddress = clientAddress
+        if resolvedClientAddress == nil, let credentials {
+            let fetched = try? await HarvestAPIService.shared.fetchClient(id: estimate.client.id, credentials: credentials)
+            resolvedClientAddress = fetched?.address
+        }
+
+        let logoDataURI = await LogoStorage.dataURI()
+
+        var context = TemplateContext.from(
+            estimate: estimate,
+            creditorInfo: creditorInfo,
+            clientAddress: resolvedClientAddress,
+            logoDataURI: logoDataURI
+        ).toDictionary()
+        context["labels"] = language.resolvedLabels(for: .estimate, overrides: labelOverrides)
+
+        return try await TemplatePDFService.shared.renderTemplate(
+            template: template,
+            context: context,
+            columnVisibility: columnVisibility
+        )
+    }
+
     private func attachQRBillAndPaidMark(
         to document: PDFDocument,
         invoice: Invoice,
@@ -506,65 +539,54 @@ actor PDFService {
     #endif
 
     private func parseAddress(_ address: String, name: String) -> StructuredAddress {
-        // Harvest address is typically multi-line:
-        // Street 123
-        // 8000 Zürich
-        // Switzerland
+        // Harvest addresses are free-form multi-line text. Typical shape:
+        //   Street 123
+        //   8000 Zürich
+        //   Switzerland
+        // But extra lines (c/o, department, suite) may appear above the street.
         let lines = address.components(separatedBy: .newlines)
             .map { $0.trimmingCharacters(in: .whitespaces) }
             .filter { !$0.isEmpty }
 
-        var streetName: String?
-        var buildingNumber: String?
+        // Locate the city line by scanning for "<postal-code> <town>".
+        let cityIndex = lines.firstIndex { line in
+            let parts = line.components(separatedBy: " ")
+            guard parts.count >= 2, let first = parts.first else { return false }
+            return first.count >= 3 && first.allSatisfy { $0.isNumber }
+        }
+
+        var streetLines: [String] = []
         var postalCode = ""
         var town = ""
         var country = "CH"
 
-        if lines.count >= 1 {
-            // First line is typically street + number
-            let streetLine = lines[0]
-            let parts = streetLine.components(separatedBy: " ")
-            if let lastPart = parts.last, lastPart.rangeOfCharacter(from: .decimalDigits) != nil,
-               parts.count > 1 {
+        if let idx = cityIndex {
+            streetLines = Array(lines.prefix(idx))
+            let cityParts = lines[idx].components(separatedBy: " ")
+            postalCode = cityParts.first ?? ""
+            town = cityParts.dropFirst().joined(separator: " ")
+            if idx + 1 < lines.count {
+                country = countryCode(from: lines[idx + 1])
+            }
+        } else if lines.count >= 2 {
+            streetLines = [lines[0]]
+            town = lines[1]
+        } else {
+            streetLines = lines
+        }
+
+        // Split building number from the last street line; preserve earlier lines as-is.
+        var streetName: String?
+        var buildingNumber: String?
+        if let lastStreet = streetLines.last {
+            let parts = lastStreet.components(separatedBy: " ")
+            if parts.count > 1, let lastPart = parts.last,
+               lastPart.rangeOfCharacter(from: .decimalDigits) != nil {
                 buildingNumber = lastPart
-                streetName = parts.dropLast().joined(separator: " ")
+                let streetOnly = parts.dropLast().joined(separator: " ")
+                streetName = (streetLines.dropLast() + [streetOnly]).joined(separator: "\n")
             } else {
-                streetName = streetLine
-            }
-        }
-
-        if lines.count >= 2 {
-            // Second line is typically postal code + city
-            let cityLine = lines[1]
-            let parts = cityLine.components(separatedBy: " ")
-            if let firstPart = parts.first, firstPart.rangeOfCharacter(from: .decimalDigits) != nil {
-                postalCode = firstPart
-                town = parts.dropFirst().joined(separator: " ")
-            } else {
-                town = cityLine
-            }
-        }
-
-        if lines.count >= 3 {
-            // Third line could be country
-            let countryLine = lines[2]
-            if countryLine.count == 2 {
-                country = countryLine.uppercased()
-            } else {
-                // Map common country names to codes
-                let countryMap = [
-                    "switzerland": "CH",
-                    "schweiz": "CH",
-                    "suisse": "CH",
-                    "germany": "DE",
-                    "deutschland": "DE",
-                    "austria": "AT",
-                    "österreich": "AT",
-                    "france": "FR",
-                    "italy": "IT",
-                    "italia": "IT"
-                ]
-                country = countryMap[countryLine.lowercased()] ?? "CH"
+                streetName = streetLines.joined(separator: "\n")
             }
         }
 
@@ -576,5 +598,24 @@ actor PDFService {
             town: town,
             country: country
         )
+    }
+
+    private func countryCode(from line: String) -> String {
+        if line.count == 2 {
+            return line.uppercased()
+        }
+        let countryMap = [
+            "switzerland": "CH",
+            "schweiz": "CH",
+            "suisse": "CH",
+            "germany": "DE",
+            "deutschland": "DE",
+            "austria": "AT",
+            "österreich": "AT",
+            "france": "FR",
+            "italy": "IT",
+            "italia": "IT"
+        ]
+        return countryMap[line.lowercased()] ?? "CH"
     }
 }

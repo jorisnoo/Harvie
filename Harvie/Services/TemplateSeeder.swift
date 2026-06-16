@@ -22,6 +22,15 @@ struct TemplateSeeder {
         BuiltInTemplate(name: "Minimal", htmlFile: "minimal", cssFile: "minimal")
     ]
 
+    /// Templates copied to the user's templates folder on first launch and then owned by
+    /// the user — editable, deletable, never re-seeded once the flag below is set.
+    static let starterTemplates = [
+        BuiltInTemplate(name: "Funky", htmlFile: "funky", cssFile: "funky"),
+        BuiltInTemplate(name: "Neon Noir", htmlFile: "neon-noir", cssFile: "neon-noir")
+    ]
+
+    private static let starterSeededDefaultsKey = "harvie.starterTemplatesSeeded.v1"
+
     @MainActor
     static func seedIfNeeded(context: ModelContext) {
         let descriptor = FetchDescriptor<InvoiceTemplate>(
@@ -50,10 +59,56 @@ struct TemplateSeeder {
             refreshBuiltInTemplates(existingTemplates, context: context)
         }
 
+        seedStarterTemplatesIfNeeded()
         migrateUserTemplatesToDisk(context: context)
         synchronizeDiskTemplates(context: context)
         seedVariablesReference()
         try? context.save()
+    }
+
+    /// Copies starter templates to the user's templates folder once per install. After
+    /// seeding, they live as ordinary user templates on disk — `synchronizeDiskTemplates`
+    /// picks them up. Deleting one in-app won't bring it back on the next launch.
+    private static func seedStarterTemplatesIfNeeded() {
+        let defaults = UserDefaults.standard
+        guard !defaults.bool(forKey: starterSeededDefaultsKey) else { return }
+
+        let fm = FileManager.default
+        let root = TemplateFileManager.templatesRoot
+        try? fm.createDirectory(at: root, withIntermediateDirectories: true)
+
+        let existingFolders = (try? fm.contentsOfDirectory(atPath: root.path)) ?? []
+
+        for starter in starterTemplates {
+            // Skip if a folder for this starter already exists (e.g. user had it before this version).
+            let prefix = sanitizeFolderName(starter.name) + "-"
+            if existingFolders.contains(where: { $0.hasPrefix(prefix) }) {
+                continue
+            }
+
+            guard let html = loadResource(named: starter.htmlFile, extension: "html"),
+                  let css = loadResource(named: starter.cssFile, extension: "css") else {
+                logger.warning("Starter template resources missing for \(starter.name); skipping")
+                continue
+            }
+
+            TemplateFileManager.save(html: html, css: css, for: UUID(), name: starter.name)
+
+            #if DEBUG
+            logger.debug("Seeded starter template '\(starter.name)'")
+            #endif
+        }
+
+        defaults.set(true, forKey: starterSeededDefaultsKey)
+    }
+
+    /// Mirrors the folder-name sanitization used by `TemplateFileManager` for collision checks.
+    private static func sanitizeFolderName(_ name: String) -> String {
+        let allowed = CharacterSet.alphanumerics.union(CharacterSet(charactersIn: "-_ "))
+        let cleaned = name.unicodeScalars.filter { allowed.contains($0) }
+        return String(String.UnicodeScalarView(cleaned))
+            .trimmingCharacters(in: .whitespaces)
+            .replacingOccurrences(of: " ", with: "-")
     }
 
     /// One-time migration: for user templates with content in SwiftData but no files on disk,

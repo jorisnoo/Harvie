@@ -7,7 +7,6 @@ import SwiftUI
 
 struct InvoicesListView: View {
     @Bindable var viewModel: InvoicesViewModel
-    var columnVisibility: NavigationSplitViewVisibility = .all
     @Environment(\.openSettings) private var openSettings
 
     private var warningBanner: some View {
@@ -49,6 +48,51 @@ struct InvoicesListView: View {
         }
         .contextMenu(forSelectionType: Int.self) { selectedIDs in
             if !selectedIDs.isEmpty {
+                if viewModel.allSelectedAreDrafts {
+                    Button {
+                        viewModel.initiateMarkAsSent()
+                    } label: {
+                        Label(Strings.InvoiceDetail.markAsSent, systemImage: "paperplane")
+                    }
+                    .disabled(viewModel.isUpdating)
+                }
+
+                if viewModel.allSelectedAreOpen {
+                    Button {
+                        viewModel.initiateMarkAsPaid()
+                    } label: {
+                        Label(Strings.InvoiceDetail.markAsPaid, systemImage: "banknote")
+                    }
+                    .disabled(viewModel.isUpdating)
+
+                    Button {
+                        viewModel.showMarkAsDraftSheet = true
+                    } label: {
+                        Label(Strings.InvoiceDetail.markAsDraft, systemImage: "arrow.uturn.backward")
+                    }
+                    .disabled(viewModel.isUpdating)
+                }
+
+                if viewModel.allSelectedArePaid {
+                    Button {
+                        viewModel.showMarkAsOpenSheet = true
+                    } label: {
+                        Label(Strings.InvoiceDetail.markAsOpen, systemImage: "arrow.uturn.backward")
+                    }
+                    .disabled(viewModel.isUpdating)
+                }
+
+                if viewModel.allSelectedAreDrafts || viewModel.allSelectedAreOpen {
+                    Button {
+                        viewModel.initiateChangeDate()
+                    } label: {
+                        Label(Strings.InvoiceDetail.changeDate, systemImage: "calendar")
+                    }
+                    .disabled(viewModel.isUpdating)
+                }
+
+                Divider()
+
                 Button {
                     Task {
                         await viewModel.exportSelectedInvoices(withQRBill: true)
@@ -129,114 +173,168 @@ struct InvoicesListView: View {
         .navigationTitle(Strings.InvoicesList.title)
         .navigationSubtitle(viewModel.isRefreshing ? Strings.InvoicesList.updating : "")
         .modifier(InvoicesAlertsModifier(viewModel: viewModel))
-        .toolbar {
-            InvoicesToolbarContent(viewModel: viewModel, columnVisibility: columnVisibility)
-        }
         .modifier(InvoicesOnChangeModifier(viewModel: viewModel))
+        .modifier(InvoicesActionSheetsModifier(viewModel: viewModel))
     }
 }
 
-// MARK: - Toolbar (isolated observation scope)
+// MARK: - Batch action sheets (shared by context menu and multi-selection view)
 
-private struct InvoicesToolbarContent: ToolbarContent {
+struct InvoicesActionSheetsModifier: ViewModifier {
     @Bindable var viewModel: InvoicesViewModel
-    var columnVisibility: NavigationSplitViewVisibility = .all
 
-    private var sortFilterMenuLabel: String {
-        if let period = viewModel.selectedPeriod {
-            return viewModel.formatPeriod(period)
+    private var selectionCount: Int { viewModel.selectedInvoices.count }
+
+    private var batchProgressView: some View {
+        VStack(spacing: 6) {
+            ProgressView(
+                value: Double(viewModel.updatedCount),
+                total: Double(viewModel.updateTotalCount)
+            )
+            Text("\(viewModel.updatedCount) of \(viewModel.updateTotalCount)")
+                .font(.caption)
+                .foregroundStyle(.secondary)
         }
-        return Strings.InvoicesList.sortAndFilter
     }
 
-    var body: some ToolbarContent {
-        ToolbarItemGroup(placement: .automatic) {
-            if columnVisibility != .detailOnly {
-                Menu {
-                    Section(Strings.InvoicesList.sortBy) {
-                        ForEach(InvoiceSortOption.allCases, id: \.self) { option in
-                            Button {
-                                if viewModel.sortOption == option {
-                                    viewModel.sortDirection.toggle()
-                                } else {
-                                    viewModel.sortOption = option
-                                    viewModel.sortDirection = .descending
-                                }
-                            } label: {
-                                HStack {
-                                    Text(option.rawValue)
-                                    if viewModel.sortOption == option {
-                                        Image(systemName: viewModel.sortDirection == .ascending ? "chevron.up" : "chevron.down")
-                                    }
-                                }
-                            }
-                            .disabled(!viewModel.validSortOptions.contains(option))
+    func body(content: Content) -> some View {
+        content
+            .sheet(isPresented: $viewModel.showChangeDateSheet) {
+                ConfirmationSheet(
+                    title: Strings.InvoiceDetail.changeIssueDate,
+                    message: Strings.MultiSelection.setIssueDateMessage(selectionCount),
+                    confirmLabel: Strings.Common.apply,
+                    isProcessing: viewModel.isUpdating,
+                    onConfirm: {
+                        Task {
+                            await viewModel.updateIssueDateForSelected(to: viewModel.batchIssueDate)
+                            if viewModel.showUpdateSuccess { viewModel.showChangeDateSheet = false }
                         }
+                    },
+                    onCancel: { viewModel.showChangeDateSheet = false },
+                    width: 300
+                ) {
+                    HStack {
+                        Spacer()
+                        Button(Strings.Common.today) { viewModel.batchIssueDate = Date() }
+                            .buttonStyle(.bordered)
+                            .controlSize(.small)
+                            .disabled(Calendar.current.isDateInToday(viewModel.batchIssueDate))
                     }
 
-                    Divider()
+                    DatePicker(Strings.InvoiceDetail.issueDate, selection: $viewModel.batchIssueDate, displayedComponents: .date)
+                        .datePickerStyle(.graphical)
+                        .labelsHidden()
 
-                    Section(Strings.InvoicesList.filterPeriod) {
-                        ForEach(DateFilterPeriod.allCases, id: \.self) { period in
-                            Button {
-                                if viewModel.filterPeriod != period {
-                                    viewModel.filterPeriod = period
-                                    viewModel.selectedPeriod = nil
-                                }
-                            } label: {
-                                HStack {
-                                    Text(period.rawValue)
-                                    if viewModel.filterPeriod == period {
-                                        Image(systemName: "checkmark")
-                                    }
-                                }
-                            }
-                        }
-                    }
-
-                    Divider()
-
-                    Section(Strings.InvoicesList.filterByPeriod(viewModel.filterPeriod.rawValue)) {
-                        Button {
-                            viewModel.selectedPeriod = nil
-                        } label: {
-                            HStack {
-                                Text(Strings.InvoicesList.all)
-                                if viewModel.selectedPeriod == nil {
-                                    Image(systemName: "checkmark")
-                                }
-                            }
-                        }
-
-                        ForEach(viewModel.availablePeriods, id: \.self) { period in
-                            Button {
-                                viewModel.selectedPeriod = period
-                            } label: {
-                                HStack {
-                                    Text(viewModel.formatPeriod(period))
-                                    if let selected = viewModel.selectedPeriod, selected == period {
-                                        Image(systemName: "checkmark")
-                                    }
-                                }
-                            }
-                        }
-                    }
-                } label: {
-                    Label(sortFilterMenuLabel, systemImage: "line.3.horizontal.decrease.circle")
+                    if viewModel.isUpdating { batchProgressView }
                 }
-                .focusable(false)
-
-                Picker("Filter", selection: $viewModel.stateFilter) {
-                    Text(Strings.InvoicesList.stateOpen).tag(InvoiceState?.some(.open))
-                    Text(Strings.InvoicesList.statePaid).tag(InvoiceState?.some(.paid))
-                    Text(Strings.InvoicesList.stateDraft).tag(InvoiceState?.some(.draft))
-                    Text(Strings.InvoicesList.stateClosed).tag(InvoiceState?.some(.closed))
-                    Divider()
-                    Text(Strings.InvoicesList.all).tag(InvoiceState?.none)
-                }
-                .pickerStyle(.menu)
             }
-        }
+            .sheet(isPresented: $viewModel.showMarkAsSentSheet) {
+                ConfirmationSheet(
+                    title: Strings.InvoiceDetail.markAsSent,
+                    message: Strings.MultiSelection.markAsSentMessage(selectionCount),
+                    detail: Strings.MultiSelection.sentDateDetail,
+                    confirmLabel: Strings.InvoiceDetail.markAsSent,
+                    isProcessing: viewModel.isUpdating,
+                    onConfirm: {
+                        Task {
+                            await viewModel.markSelectedAsSent()
+                            if viewModel.showUpdateSuccess { viewModel.showMarkAsSentSheet = false }
+                        }
+                    },
+                    onCancel: { viewModel.showMarkAsSentSheet = false },
+                    width: 300
+                ) {
+                    if viewModel.isUpdating { batchProgressView }
+                }
+            }
+            .sheet(isPresented: $viewModel.showMarkAsDraftSheet) {
+                ConfirmationSheet(
+                    title: Strings.InvoiceDetail.markAsDraft,
+                    message: Strings.MultiSelection.markAsDraftMessage(selectionCount),
+                    confirmLabel: Strings.InvoiceDetail.markAsDraft,
+                    isProcessing: viewModel.isUpdating,
+                    onConfirm: {
+                        Task {
+                            await viewModel.markSelectedAsDraft()
+                            if viewModel.showUpdateSuccess { viewModel.showMarkAsDraftSheet = false }
+                        }
+                    },
+                    onCancel: { viewModel.showMarkAsDraftSheet = false }
+                ) {
+                    if viewModel.isUpdating { batchProgressView }
+                }
+            }
+            .sheet(isPresented: $viewModel.showMarkAsPaidSheet) {
+                ConfirmationSheet(
+                    title: Strings.InvoiceDetail.markAsPaid,
+                    message: Strings.MultiSelection.markAsPaidMessage(selectionCount),
+                    confirmLabel: Strings.InvoiceDetail.markAsPaid,
+                    isProcessing: viewModel.isUpdating,
+                    onConfirm: {
+                        Task {
+                            await viewModel.markSelectedAsPaid(paidAt: viewModel.batchPaymentDate)
+                            if viewModel.showUpdateSuccess { viewModel.showMarkAsPaidSheet = false }
+                        }
+                    },
+                    onCancel: { viewModel.showMarkAsPaidSheet = false },
+                    width: 300
+                ) {
+                    HStack {
+                        Spacer()
+                        Button(Strings.Common.today) { viewModel.batchPaymentDate = Date() }
+                            .buttonStyle(.bordered)
+                            .controlSize(.small)
+                            .disabled(Calendar.current.isDateInToday(viewModel.batchPaymentDate))
+                    }
+                    DatePicker(Strings.InvoiceDetail.paymentDate, selection: $viewModel.batchPaymentDate, displayedComponents: .date)
+                        .datePickerStyle(.graphical)
+                        .labelsHidden()
+                    if viewModel.isUpdating { batchProgressView }
+                }
+            }
+            .sheet(isPresented: $viewModel.showMarkAsOpenSheet) {
+                ConfirmationSheet(
+                    title: Strings.InvoiceDetail.markAsOpen,
+                    message: Strings.MultiSelection.markAsOpenMessage(selectionCount),
+                    detail: Strings.InvoiceDetail.reopenDetail,
+                    confirmLabel: Strings.InvoiceDetail.markAsOpen,
+                    isProcessing: viewModel.isUpdating,
+                    onConfirm: {
+                        Task {
+                            await viewModel.markSelectedAsOpen()
+                            if viewModel.showUpdateSuccess { viewModel.showMarkAsOpenSheet = false }
+                        }
+                    },
+                    onCancel: { viewModel.showMarkAsOpenSheet = false }
+                ) {
+                    if viewModel.isUpdating { batchProgressView }
+                }
+            }
+            .sheet(isPresented: $viewModel.showConfirmDateSheet) {
+                ConfirmationSheet(
+                    title: Strings.InvoiceDetail.updateIssueDateTitle,
+                    message: Strings.MultiSelection.updateIssueDateMessage(selectionCount),
+                    detail: Strings.InvoiceDetail.keepCurrentDate,
+                    confirmLabel: Strings.InvoiceDetail.setToToday,
+                    isProcessing: viewModel.isUpdating,
+                    onConfirm: {
+                        Task {
+                            await viewModel.updateIssueDateForSelected(to: Date())
+                            if viewModel.showUpdateSuccess {
+                                viewModel.showConfirmDateSheet = false
+                                viewModel.showMarkAsSentSheet = true
+                            }
+                        }
+                    },
+                    onCancel: {
+                        viewModel.showConfirmDateSheet = false
+                        viewModel.showMarkAsSentSheet = true
+                    }
+                ) {
+                    if viewModel.isUpdating { batchProgressView }
+                }
+            }
     }
 }
 
@@ -401,8 +499,12 @@ struct InvoiceRowView: View {
         }
     }
 
-    private var formattedDate: String {
-        dateValue.formatted(date: .abbreviated, time: .omitted)
+    private func prefixedDate(_ formatted: String) -> String {
+        switch sortOption {
+        case .issueDate: Strings.InvoiceDetail.issued(formatted)
+        case .dueDate: Strings.InvoiceDetail.due(formatted)
+        case .paidDate: Strings.InvoiceDetail.paid(formatted)
+        }
     }
 
     var body: some View {
@@ -425,12 +527,16 @@ struct InvoiceRowView: View {
                     .fontWeight(.medium)
                     .contentTransition(.numericText())
                     .animation(.default, value: invoice.displayAmount)
+                    .fixedSize()
 
-                Text(formattedDate)
-                    .font(.caption2)
-                    .foregroundStyle(.tertiary)
+                ViewThatFits(in: .horizontal) {
+                    Text(prefixedDate(dateValue.formatted(date: .abbreviated, time: .omitted)))
+                    Text(prefixedDate(dateValue.formatted(date: .numeric, time: .omitted)))
+                }
+                .font(.caption2)
+                .foregroundStyle(.tertiary)
+                .lineLimit(1)
             }
-            .fixedSize()
         }
         .padding(.vertical, 4)
     }
