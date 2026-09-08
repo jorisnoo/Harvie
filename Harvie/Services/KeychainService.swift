@@ -52,6 +52,10 @@ actor KeychainService {
 
     func save<T: Encodable>(_ value: T, for key: KeychainKey) throws {
         let data = try encoder.encode(value)
+        if AppEnvironment.isRunningTests {
+            cache[key] = data
+            return
+        }
 
         let query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
@@ -89,6 +93,7 @@ actor KeychainService {
         if let cached = cache[key] {
             return try decoder.decode(T.self, from: cached)
         }
+        if AppEnvironment.isRunningTests { throw KeychainError.notFound }
 
         let query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
@@ -118,6 +123,10 @@ actor KeychainService {
     }
 
     func delete(for key: KeychainKey) throws {
+        if AppEnvironment.isRunningTests {
+            cache[key] = nil
+            return
+        }
         let query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: service,

@@ -15,10 +15,12 @@ struct HarvieApp: App {
     let modelContainer: ModelContainer
 
     init() {
-        LegacyMigration.migrateIfNeeded()
+        if !AppEnvironment.isRunningTests { LegacyMigration.migrateIfNeeded() }
 
         do {
-            modelContainer = try ModelContainer(for: CachedInvoice.self, CachedEstimate.self, InvoiceTemplate.self, ClientOverride.self)
+            let schema = Schema([CachedInvoice.self, CachedEstimate.self, InvoiceTemplate.self, ClientOverride.self])
+            let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: AppEnvironment.isRunningTests)
+            modelContainer = try ModelContainer(for: schema, configurations: [configuration])
         } catch {
             fatalError("Failed to create ModelContainer: \(error)")
         }
@@ -26,7 +28,10 @@ struct HarvieApp: App {
 
     var body: some Scene {
         Window(Strings.App.title, id: "main") {
-            ContentView()
+            if AppEnvironment.isRunningTests {
+                Color.clear
+            } else {
+                ContentView()
                 .onAppear {
                     Analytics.initialize()
                     Analytics.appLaunched()
@@ -38,6 +43,7 @@ struct HarvieApp: App {
                         }
                     }
                 }
+            }
         }
         .windowStyle(.automatic)
         .defaultSize(width: 900, height: 600)
@@ -70,14 +76,17 @@ struct HarvieApp: App {
         .modelContainer(modelContainer)
 
         Window(Strings.DataExport.windowTitle, id: "export") {
-            ExportView()
+            if AppEnvironment.isRunningTests { Color.clear } else { ExportView() }
         }
         .windowResizability(.contentSize)
         .defaultSize(width: 560, height: 640)
 
         Settings {
-            SettingsView()
-                .modelContainer(modelContainer)
+            if AppEnvironment.isRunningTests {
+                Color.clear
+            } else {
+                SettingsView().modelContainer(modelContainer)
+            }
         }
     }
 }

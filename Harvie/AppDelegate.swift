@@ -18,10 +18,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     )
 
     func applicationDidFinishLaunching(_ notification: Notification) {
-        #if DEBUG
-        return
-        #endif
+        #if !DEBUG
+        guard !AppEnvironment.isRunningTests else { return }
         updater.check(success: { [updater] in promptInstallIfDownloaded(updater: updater) })
+        #endif
     }
 
     func checkForUpdates() {

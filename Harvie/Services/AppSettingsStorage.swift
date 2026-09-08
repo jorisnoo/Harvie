@@ -10,8 +10,10 @@ private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "app.harv
 
 enum AppSettingsStorage {
     private static let key = "appSettings"
+    private static var testSettings: AppSettings?
 
     static func load() -> AppSettings {
+        if AppEnvironment.isRunningTests { return testSettings ?? .default }
         if let data = UserDefaults.standard.data(forKey: key) {
             return (try? JSONDecoder().decode(AppSettings.self, from: data)) ?? .default
         }
@@ -26,6 +28,10 @@ enum AppSettingsStorage {
     }
 
     static func save(_ settings: AppSettings) {
+        if AppEnvironment.isRunningTests {
+            testSettings = settings
+            return
+        }
         if let data = try? JSONEncoder().encode(settings) {
             UserDefaults.standard.set(data, forKey: key)
         }
