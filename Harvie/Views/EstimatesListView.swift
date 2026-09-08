@@ -14,6 +14,12 @@ struct EstimatesListView: View {
         VStack(spacing: 0) {
             EstimateStateFilterBar(viewModel: viewModel)
 
+            if let error = viewModel.error {
+                RefreshWarningView(error: error, lastRefreshed: viewModel.lastRefreshed) {
+                    viewModel.refresh()
+                }
+            }
+
             ScrollViewReader { proxy in
                 List(selection: $viewModel.selectedEstimateIDs) {
                     ForEach(viewModel.sortedEstimates) { estimate in
@@ -93,7 +99,7 @@ struct EstimatesListView: View {
         Group {
             if viewModel.isLoading && viewModel.estimates.isEmpty {
                 ProgressView(Strings.EstimatesList.loading)
-            } else if let error = viewModel.error {
+            } else if let error = viewModel.error, viewModel.estimates.isEmpty {
                 if !viewModel.hasValidCredentials {
                     ContentUnavailableView {
                         Label(Strings.InvoicesList.setupRequired, systemImage: "gear")

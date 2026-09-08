@@ -67,16 +67,19 @@ final class SettingsViewModel {
     }
 
     private func saveSettings() async {
-        let needsAPIRefresh = harvestCredentials != lastSavedCredentials || appSettings.isDemoMode != lastSavedDemoMode
+        let credentials = harvestCredentials
+        let creditor = creditorInfo
+        let preferences = appSettings
+        let needsAPIRefresh = credentials != lastSavedCredentials || preferences.isDemoMode != lastSavedDemoMode
 
         do {
-            try await keychainService.saveHarvestCredentials(harvestCredentials)
-            try await keychainService.saveCreditorInfo(creditorInfo)
-            AppSettingsStorage.save(appSettings)
+            try await keychainService.saveHarvestCredentials(credentials)
+            try await keychainService.saveCreditorInfo(creditor)
+            AppSettingsStorage.savePreferences(preferences)
             Analytics.settingsSaved()
 
-            lastSavedCredentials = harvestCredentials
-            lastSavedDemoMode = appSettings.isDemoMode
+            lastSavedCredentials = credentials
+            lastSavedDemoMode = preferences.isDemoMode
             saveError = nil
 
             NotificationCenter.default.post(

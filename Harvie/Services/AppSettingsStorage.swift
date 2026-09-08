@@ -37,6 +37,23 @@ enum AppSettingsStorage {
         }
     }
 
+    /// Settings owns preferences; list view state may have changed since the window opened.
+    static func savePreferences(_ preferences: AppSettings) {
+        save(mergingPreferences(preferences, into: load()))
+    }
+
+    static func mergingPreferences(_ preferences: AppSettings, into latest: AppSettings) -> AppSettings {
+        var merged = preferences
+        merged.lastSortOption = latest.lastSortOption
+        merged.lastSortAscending = latest.lastSortAscending
+        merged.lastFilterPeriod = latest.lastFilterPeriod
+        merged.lastSelectedPeriod = latest.lastSelectedPeriod
+        merged.lastStateFilter = latest.lastStateFilter
+        merged.lastSelectedStates = latest.lastSelectedStates
+        merged.lastSelectedEstimateStates = latest.lastSelectedEstimateStates
+        return merged
+    }
+
     private static func migrateFromKeychain() -> AppSettings? {
         let service = "ch.noordermeer.HarvestQRBill"  // Keep old service name for migration
         let account = "app_settings"

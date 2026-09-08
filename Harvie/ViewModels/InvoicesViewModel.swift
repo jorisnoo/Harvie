@@ -58,6 +58,8 @@ final class InvoicesViewModel {
     var selectedPeriod: Date? {
         didSet { if !isBatchUpdating { updateSortedInvoices() } }
     }
+    private var activeAccountId: String?
+    private(set) var lastRefreshed: Date?
     var hasValidCredentials = false
     @ObservationIgnored private(set) var isInitialized = false
 
@@ -161,8 +163,13 @@ final class InvoicesViewModel {
 
     @ObservationIgnored var modelContext: ModelContext?
 
-    private let apiService = HarvestAPIService.shared
-    private let keychainService = KeychainService.shared
+    private let apiService: HarvestAPIService
+    private let keychainService: KeychainService
+
+    init(apiService: HarvestAPIService = .shared, keychainService: KeychainService = .shared) {
+        self.apiService = apiService
+        self.keychainService = keychainService
+    }
     private let pdfService = PDFService.shared
 
     func loadSavedState() async {
@@ -313,7 +320,7 @@ final class InvoicesViewModel {
         }
     }
 
-    private func performLoadInvoices() async {
+    func performLoadInvoices() async {
         error = nil
 
         #if DEBUG
@@ -324,24 +331,14 @@ final class InvoicesViewModel {
         }
         #endif
 
-        // First, load from cache for instant display
-        if let context = modelContext {
-            loadFromCache(context: context)
-        }
-
-        // Show loading indicator only if cache is empty
-        if invoices.isEmpty {
-            isLoading = true
-        } else {
-            isRefreshing = true
-        }
-
         do {
             try Task.checkCancellation()
 
             let credentials = try await keychainService.loadHarvestCredentials()
+            try Task.checkCancellation()
 
             guard credentials.isValid else {
+                clearAccountData()
                 hasValidCredentials = false
                 error = Strings.Errors.configureCredentials
                 isLoading = false
@@ -349,6 +346,15 @@ final class InvoicesViewModel {
                 return
             }
 
+            if activeAccountId != credentials.accountId {
+                clearAccountData()
+                activeAccountId = credentials.accountId
+            }
+            if let context = modelContext {
+                loadFromCache(context: context, accountId: credentials.accountId)
+            }
+            isLoading = invoices.isEmpty
+            isRefreshing = !invoices.isEmpty
             hasValidCredentials = true
 
             try Task.checkCancellation()
@@ -358,15 +364,19 @@ final class InvoicesViewModel {
             try Task.checkCancellation()
 
             invoices = fetchedInvoices
+            lastRefreshed = Date()
+            clearInvalidSelections()
             Analytics.invoicesLoaded(count: fetchedInvoices.count)
 
             // Update cache
             if let context = modelContext {
-                updateCache(with: fetchedInvoices, context: context)
+                updateCache(with: fetchedInvoices, context: context, accountId: credentials.accountId, replaceAll: true)
             }
         } catch is CancellationError {
             return
         } catch KeychainService.KeychainError.notFound {
+            guard !Task.isCancelled else { return }
+            clearAccountData()
             hasValidCredentials = false
             error = Strings.Errors.configureCredentials
         } catch {
@@ -374,10 +384,8 @@ final class InvoicesViewModel {
             // CancellationError — a superseded load must not clobber its replacement's state.
             guard !Task.isCancelled else { return }
 
-            // Only show error if we don't have cached data
-            if invoices.isEmpty {
-                self.error = error.localizedDescription
-            }
+            if error is KeychainService.KeychainError { clearAccountData() }
+            self.error = error.localizedDescription
         }
 
         isLoading = false
@@ -394,13 +402,23 @@ final class InvoicesViewModel {
     }
     #endif
 
-    private func loadFromCache(context: ModelContext) {
+    func clearAccountData() {
+        invoices = []
+        selectedInvoiceIDs = []
+        activeAccountId = nil
+        lastRefreshed = nil
+        hasValidCredentials = false
+    }
+
+    func loadFromCache(context: ModelContext, accountId: String) {
         let descriptor = FetchDescriptor<CachedInvoice>(
+            predicate: #Predicate { $0.accountId == accountId },
             sortBy: [SortDescriptor(\.issueDate, order: .reverse)]
         )
 
         do {
             let cached = try context.fetch(descriptor)
+            lastRefreshed = cached.map(\.lastFetched).min()
             // Load all states; updateSortedInvoices applies the client-side state filter.
             invoices = cached.map { $0.toInvoice() }
         } catch {
@@ -408,7 +426,7 @@ final class InvoicesViewModel {
         }
     }
 
-    private func updateCache(with invoices: [Invoice], context: ModelContext) {
+    func updateCache(with invoices: [Invoice], context: ModelContext, accountId: String, replaceAll: Bool = false) {
         // Fetch existing cached invoices
         let descriptor = FetchDescriptor<CachedInvoice>()
         let existing = (try? context.fetch(descriptor)) ?? []
@@ -417,10 +435,18 @@ final class InvoicesViewModel {
         // Update or insert
         for invoice in invoices {
             if let cached = existingById[invoice.id] {
+                cached.accountId = accountId
                 cached.update(from: invoice)
             } else {
-                let cached = CachedInvoice(from: invoice)
+                let cached = CachedInvoice(from: invoice, accountId: accountId)
                 context.insert(cached)
+            }
+        }
+
+        if replaceAll {
+            let fetchedIDs = Set(invoices.map(\.id))
+            for cached in existing where (cached.accountId == accountId || cached.accountId.isEmpty) && !fetchedIDs.contains(cached.id) {
+                context.delete(cached)
             }
         }
 
@@ -462,7 +488,8 @@ final class InvoicesViewModel {
     }
 
     private func performRefreshInvoices(ids: Set<Int>) async {
-        guard let credentials = try? await keychainService.loadHarvestCredentials() else { return }
+        guard let credentials = try? await keychainService.loadHarvestCredentials(),
+              credentials.accountId == activeAccountId else { return }
 
         var fetched: [Invoice] = []
 
@@ -480,6 +507,7 @@ final class InvoicesViewModel {
             }
         }
 
+        guard credentials.accountId == activeAccountId else { return }
         var updatedInvoices = invoices
         for invoice in fetched {
             if let index = updatedInvoices.firstIndex(where: { $0.id == invoice.id }) {
@@ -494,7 +522,7 @@ final class InvoicesViewModel {
         selectedInvoiceIDs = selectedInvoiceIDs.intersection(currentIDs)
 
         if let context = modelContext {
-            updateCache(with: fetched, context: context)
+            updateCache(with: fetched, context: context, accountId: credentials.accountId)
         }
     }
 
@@ -628,21 +656,8 @@ final class InvoicesViewModel {
         }
     }
 
-    func markAsPaid(invoiceId: Int, amount: Decimal, paidAt: Date = Date()) async throws {
-        #if DEBUG
-        if appSettings.isDemoMode { return }
-        #endif
-
-        let credentials = try await keychainService.loadHarvestCredentials()
-        try await apiService.createPayment(
-            invoiceId: invoiceId,
-            amount: amount,
-            paidAt: paidAt,
-            credentials: credentials
-        )
-    }
-
     func markSelectedAsPaid(paidAt: Date = Date()) async {
+        guard !isUpdating else { return }
         let invoices = selectedInvoices.filter { $0.state == .open }
         guard !invoices.isEmpty else { return }
 
@@ -662,17 +677,16 @@ final class InvoicesViewModel {
             let credentials = try await keychainService.loadHarvestCredentials()
 
             for invoice in invoices {
-                let amount = invoice.dueAmount > 0 ? invoice.dueAmount : invoice.amount
-                try await apiService.createPayment(invoiceId: invoice.id, amount: amount, paidAt: paidAt, credentials: credentials)
+                try await apiService.payOutstandingBalance(invoiceId: invoice.id, paidAt: paidAt, credentials: credentials)
                 updatedCount += 1
             }
 
             showUpdateSuccess = true
-            await performRefreshInvoices(ids: Set(invoices.map(\.id)))
         } catch {
             updateError = error.localizedDescription
         }
 
+        await performRefreshInvoices(ids: Set(invoices.map(\.id)))
         isUpdating = false
     }
 

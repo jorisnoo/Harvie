@@ -12,6 +12,7 @@ final class CachedEstimate {
     private static let jsonDecoder = JSONDecoder()
 
     @Attribute(.unique) var id: Int = 0
+    var accountId: String = ""
     var clientKey: String = ""
     var number: String = ""
     var purchaseOrder: String?
@@ -43,7 +44,8 @@ final class CachedEstimate {
         EstimateState(rawValue: stateRaw) ?? .draft
     }
 
-    init(from estimate: Estimate) {
+    init(from estimate: Estimate, accountId: String = "") {
+        self.accountId = accountId
         self.id = estimate.id
         assign(from: estimate)
     }

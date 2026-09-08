@@ -33,6 +33,12 @@ struct InvoicesListView: View {
         VStack(spacing: 0) {
             InvoiceStateFilterBar(viewModel: viewModel)
 
+            if let error = viewModel.error {
+                RefreshWarningView(error: error, lastRefreshed: viewModel.lastRefreshed) {
+                    viewModel.refresh()
+                }
+            }
+
             if !viewModel.canExportWithQRBill {
                 warningBanner
             }
@@ -149,7 +155,7 @@ struct InvoicesListView: View {
         Group {
             if viewModel.isLoading && viewModel.invoices.isEmpty {
                 ProgressView(Strings.InvoicesList.loading)
-            } else if let error = viewModel.error {
+            } else if let error = viewModel.error, viewModel.invoices.isEmpty {
                 if !viewModel.hasValidCredentials {
                     ContentUnavailableView {
                         Label(Strings.InvoicesList.setupRequired, systemImage: "gear")

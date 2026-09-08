@@ -43,6 +43,8 @@ final class EstimatesViewModel {
     var searchText = "" {
         didSet { if !isBatchUpdating { updateSortedEstimates() } }
     }
+    private var activeAccountId: String?
+    private(set) var lastRefreshed: Date?
     var hasValidCredentials = false
     @ObservationIgnored private(set) var isInitialized = false
 
@@ -90,8 +92,13 @@ final class EstimatesViewModel {
 
     @ObservationIgnored var modelContext: ModelContext?
 
-    private let apiService = HarvestAPIService.shared
-    private let keychainService = KeychainService.shared
+    private let apiService: HarvestAPIService
+    private let keychainService: KeychainService
+
+    init(apiService: HarvestAPIService = .shared, keychainService: KeychainService = .shared) {
+        self.apiService = apiService
+        self.keychainService = keychainService
+    }
 
     private(set) var sortedEstimates: [Estimate] = []
 
@@ -181,7 +188,7 @@ final class EstimatesViewModel {
 
     func refresh() { loadEstimates() }
 
-    private func performLoad() async {
+    func performLoad() async {
         error = nil
 
         #if DEBUG
@@ -194,21 +201,13 @@ final class EstimatesViewModel {
         }
         #endif
 
-        if let context = modelContext {
-            loadFromCache(context: context)
-        }
-
-        if estimates.isEmpty {
-            isLoading = true
-        } else {
-            isRefreshing = true
-        }
-
         do {
             try Task.checkCancellation()
             let credentials = try await keychainService.loadHarvestCredentials()
+            try Task.checkCancellation()
 
             guard credentials.isValid else {
+                clearAccountData()
                 hasValidCredentials = false
                 error = Strings.Errors.configureCredentials
                 isLoading = false
@@ -216,6 +215,15 @@ final class EstimatesViewModel {
                 return
             }
 
+            if activeAccountId != credentials.accountId {
+                clearAccountData()
+                activeAccountId = credentials.accountId
+            }
+            if let context = modelContext {
+                loadFromCache(context: context, accountId: credentials.accountId)
+            }
+            isLoading = estimates.isEmpty
+            isRefreshing = !estimates.isEmpty
             hasValidCredentials = true
             try Task.checkCancellation()
 
@@ -227,14 +235,18 @@ final class EstimatesViewModel {
             try Task.checkCancellation()
 
             estimates = fetched
+            lastRefreshed = Date()
+            clearInvalidSelections()
             Analytics.estimatesLoaded(count: fetched.count)
 
             if let context = modelContext {
-                updateCache(with: fetched, context: context)
+                updateCache(with: fetched, context: context, accountId: credentials.accountId, replaceAll: true)
             }
         } catch is CancellationError {
             return
         } catch KeychainService.KeychainError.notFound {
+            guard !Task.isCancelled else { return }
+            clearAccountData()
             hasValidCredentials = false
             error = Strings.Errors.configureCredentials
         } catch {
@@ -242,39 +254,56 @@ final class EstimatesViewModel {
             // CancellationError — a superseded load must not clobber its replacement's state.
             guard !Task.isCancelled else { return }
 
-            if estimates.isEmpty {
-                self.error = error.localizedDescription
-            }
+            if error is KeychainService.KeychainError { clearAccountData() }
+            self.error = error.localizedDescription
         }
 
         isLoading = false
         isRefreshing = false
     }
 
-    private func loadFromCache(context: ModelContext) {
+    func clearAccountData() {
+        estimates = []
+        selectedEstimateIDs = []
+        activeAccountId = nil
+        lastRefreshed = nil
+        hasValidCredentials = false
+    }
+
+    func loadFromCache(context: ModelContext, accountId: String) {
         let descriptor = FetchDescriptor<CachedEstimate>(
+            predicate: #Predicate { $0.accountId == accountId },
             sortBy: [SortDescriptor(\.issueDate, order: .reverse)]
         )
 
         do {
             let cached = try context.fetch(descriptor)
+            lastRefreshed = cached.map(\.lastFetched).min()
             estimates = cached.map { $0.toEstimate() }
         } catch {
             logger.warning("Failed to load estimate cache: \(error.localizedDescription)")
         }
     }
 
-    private func updateCache(with estimates: [Estimate], context: ModelContext) {
+    func updateCache(with estimates: [Estimate], context: ModelContext, accountId: String, replaceAll: Bool = false) {
         let descriptor = FetchDescriptor<CachedEstimate>()
         let existing = (try? context.fetch(descriptor)) ?? []
         let existingById = Dictionary(uniqueKeysWithValues: existing.map { ($0.id, $0) })
 
         for estimate in estimates {
             if let cached = existingById[estimate.id] {
+                cached.accountId = accountId
                 cached.update(from: estimate)
             } else {
-                let cached = CachedEstimate(from: estimate)
+                let cached = CachedEstimate(from: estimate, accountId: accountId)
                 context.insert(cached)
+            }
+        }
+
+        if replaceAll {
+            let fetchedIDs = Set(estimates.map(\.id))
+            for cached in existing where (cached.accountId == accountId || cached.accountId.isEmpty) && !fetchedIDs.contains(cached.id) {
+                context.delete(cached)
             }
         }
 
@@ -307,7 +336,8 @@ final class EstimatesViewModel {
     }
 
     private func performRefresh(ids: Set<Int>) async {
-        guard let credentials = try? await keychainService.loadHarvestCredentials() else { return }
+        guard let credentials = try? await keychainService.loadHarvestCredentials(),
+              credentials.accountId == activeAccountId else { return }
 
         var fetched: [Estimate] = []
         await withTaskGroup(of: Estimate?.self) { group in
@@ -321,6 +351,7 @@ final class EstimatesViewModel {
             }
         }
 
+        guard credentials.accountId == activeAccountId else { return }
         var updated = estimates
         for estimate in fetched {
             if let index = updated.firstIndex(where: { $0.id == estimate.id }) {
@@ -335,7 +366,7 @@ final class EstimatesViewModel {
         selectedEstimateIDs = selectedEstimateIDs.intersection(currentIDs)
 
         if let context = modelContext {
-            updateCache(with: fetched, context: context)
+            updateCache(with: fetched, context: context, accountId: credentials.accountId)
         }
     }
 

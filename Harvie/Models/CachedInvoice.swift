@@ -12,6 +12,7 @@ final class CachedInvoice {
     private static let jsonDecoder = JSONDecoder()
 
     @Attribute(.unique) var id: Int = 0
+    var accountId: String = ""
     var clientKey: String = ""
     var number: String = ""
     var purchaseOrder: String?
@@ -52,7 +53,8 @@ final class CachedInvoice {
         InvoiceState(rawValue: stateRaw) ?? .open
     }
 
-    init(from invoice: Invoice) {
+    init(from invoice: Invoice, accountId: String = "") {
+        self.accountId = accountId
         self.id = invoice.id
         assign(from: invoice)
     }
