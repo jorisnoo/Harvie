@@ -45,8 +45,8 @@ private final class PaymentFixture: @unchecked Sendable {
 
 private final class PaymentURLProtocol: URLProtocol, @unchecked Sendable {
     static let fixture = PaymentFixture()
-    override class func canInit(with request: URLRequest) -> Bool { true }
-    override class func canonicalRequest(for request: URLRequest) -> URLRequest { request }
+    override static func canInit(with request: URLRequest) -> Bool { true }
+    override static func canonicalRequest(for request: URLRequest) -> URLRequest { request }
     override func startLoading() {
         var body = request.httpBody
         if body == nil, let stream = request.httpBodyStream {
@@ -62,7 +62,8 @@ private final class PaymentURLProtocol: URLProtocol, @unchecked Sendable {
             body = data
         }
         let data = Self.fixture.response(for: request, body: body)
-        client?.urlProtocol(self, didReceive: HTTPURLResponse(url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil)!, cacheStoragePolicy: .notAllowed)
+        let response = HTTPURLResponse(url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil)!
+        client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
         client?.urlProtocol(self, didLoad: data)
         client?.urlProtocolDidFinishLoading(self)
     }

@@ -1,6 +1,7 @@
 excluded:
   - DerivedData
   - .build
+  - build
   - .worktrees
   - Harvie/Services/DemoDataProvider.swift
 

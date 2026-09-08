@@ -16,13 +16,9 @@ actor HarvestAPIService {
     private let decoder: JSONDecoder
     private var paymentsInProgress: Set<String> = []
 
-    private static nonisolated(unsafe) let iso8601Formatter: ISO8601DateFormatter = {
-        let f = ISO8601DateFormatter()
-        f.formatOptions = [.withInternetDateTime]
-        return f
-    }()
+    private static let iso8601Style = Date.ISO8601FormatStyle()
 
-    private static nonisolated(unsafe) let dateOnlyFormatter: DateFormatter = {
+    private static let dateOnlyFormatter: DateFormatter = {
         let f = DateFormatter()
         f.locale = Locale(identifier: "en_US_POSIX")
         f.dateFormat = "yyyy-MM-dd"
@@ -37,7 +33,7 @@ actor HarvestAPIService {
         config.timeoutIntervalForRequest = 30
         self.session = session ?? URLSession(configuration: config)
 
-        let iso = Self.iso8601Formatter
+        let iso = Self.iso8601Style
         let dateOnly = Self.dateOnlyFormatter
 
         decoder = JSONDecoder()
@@ -45,7 +41,7 @@ actor HarvestAPIService {
             let container = try decoder.singleValueContainer()
             let dateString = try container.decode(String.self)
 
-            if let date = iso.date(from: dateString) {
+            if let date = try? iso.parse(dateString) {
                 return date
             }
 
@@ -456,7 +452,7 @@ actor HarvestAPIService {
         request.httpMethod = "POST"
         let body = CreatePaymentBody(
             amount: amount,
-            paidAt: Self.iso8601Formatter.string(from: paidAt),
+            paidAt: paidAt.formatted(Self.iso8601Style),
             paidDate: Self.dateOnlyFormatter.string(from: paidAt)
         )
         request.httpBody = try JSONEncoder().encode(body)

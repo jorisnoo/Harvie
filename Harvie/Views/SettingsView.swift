@@ -410,7 +410,7 @@ struct TemplatesSettings: View {
                         if let logo = viewModel.logoImage {
                             Image(nsImage: logo)
                                 .resizable()
-                                .aspectRatio(contentMode: .fit)
+                                .scaledToFit()
                                 .frame(maxHeight: 48)
                         } else {
                             Text(Strings.Settings.noLogoSet)

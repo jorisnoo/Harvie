@@ -50,8 +50,8 @@ struct HarvestExporterTests {
 }
 
 private final class ExportURLProtocol: URLProtocol, @unchecked Sendable {
-    override class func canInit(with request: URLRequest) -> Bool { true }
-    override class func canonicalRequest(for request: URLRequest) -> URLRequest { request }
+    override static func canInit(with request: URLRequest) -> Bool { true }
+    override static func canonicalRequest(for request: URLRequest) -> URLRequest { request }
     override func startLoading() {
         let component = request.url!.lastPathComponent
         let keys = ["payments": "invoice_payments", "messages": request.url!.path.contains("estimates") ? "estimate_messages" : "invoice_messages"]
@@ -59,7 +59,8 @@ private final class ExportURLProtocol: URLProtocol, @unchecked Sendable {
         let malformed = request.value(forHTTPHeaderField: "Harvest-Account-Id") == "malformed" && component == "billable_rates"
         let body: [String: Any] = [malformed ? "unexpected" : key: [["id": 7]], "next_page": NSNull()]
         let data = try! JSONSerialization.data(withJSONObject: body)
-        client?.urlProtocol(self, didReceive: HTTPURLResponse(url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil)!, cacheStoragePolicy: .notAllowed)
+        let response = HTTPURLResponse(url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil)!
+        client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
         client?.urlProtocol(self, didLoad: data)
         client?.urlProtocolDidFinishLoading(self)
     }

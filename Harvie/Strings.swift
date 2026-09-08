@@ -539,60 +539,60 @@ enum Strings {
 
     enum Errors {
         // Credentials
-        static let configureCredentials = "Please configure your Harvest API credentials in Settings."
-        static let configureCreditor = "Please configure your creditor information in Settings."
-        static let noTemplateSelected = "No template selected. Please select a template in Settings > Templates."
+        nonisolated static let configureCredentials = "Please configure your Harvest API credentials in Settings."
+        nonisolated static let configureCreditor = "Please configure your creditor information in Settings."
+        nonisolated static let noTemplateSelected = "No template selected. Please select a template in Settings > Templates."
 
         // Connection
-        static let fillCredentials = "Please fill in Access Token and Account ID."
-        static let connectionFailed = "Connection failed."
-        static let connectionFailedNetwork = "Connection failed. Please check your network."
+        nonisolated static let fillCredentials = "Please fill in Access Token and Account ID."
+        nonisolated static let connectionFailed = "Connection failed."
+        nonisolated static let connectionFailedNetwork = "Connection failed. Please check your network."
 
         // API
-        static let invalidCredentials = "Invalid API credentials. Please check your settings."
-        static let invalidURL = "Failed to construct API request."
-        static let invalidSubdomain = "Invalid Harvest subdomain."
-        static let unauthorized = "Unauthorized. Please check your API token."
-        static let notFound = "Resource not found."
-        static let networkFailed = "Network connection failed."
-        static let decodingFailed = "Failed to parse server response."
+        nonisolated static let invalidCredentials = "Invalid API credentials. Please check your settings."
+        nonisolated static let invalidURL = "Failed to construct API request."
+        nonisolated static let invalidSubdomain = "Invalid Harvest subdomain."
+        nonisolated static let unauthorized = "Unauthorized. Please check your API token."
+        nonisolated static let notFound = "Resource not found."
+        nonisolated static let networkFailed = "Network connection failed."
+        nonisolated static let decodingFailed = "Failed to parse server response."
 
-        static func serverError(_ code: Int) -> String {
+        nonisolated static func serverError(_ code: Int) -> String {
             "Server error (code: \(code))"
         }
 
         // PDF
-        static let downloadFailed = "Failed to download the PDF from Harvest."
-        static let invalidPDF = "The downloaded file is not a valid PDF."
-        static let saveFailed = "Failed to save the PDF file."
-        static let qrBillGenerationFailed = "Failed to generate the QR bill."
-        static let renderingFailed = "Failed to render the template to PDF."
-        static let processTerminated = "The web rendering process terminated unexpectedly."
-        static let renderingTimeout = "PDF rendering timed out."
+        nonisolated static let downloadFailed = "Failed to download the PDF from Harvest."
+        nonisolated static let invalidPDF = "The downloaded file is not a valid PDF."
+        nonisolated static let saveFailed = "Failed to save the PDF file."
+        nonisolated static let qrBillGenerationFailed = "Failed to generate the QR bill."
+        nonisolated static let renderingFailed = "Failed to render the template to PDF."
+        nonisolated static let processTerminated = "The web rendering process terminated unexpectedly."
+        nonisolated static let renderingTimeout = "PDF rendering timed out."
 
         // QR Bill
-        static let invalidIBAN = "Invalid IBAN format."
-        static let qrIBANNotSupported = "QR-IBAN is not supported. Please use a regular Swiss IBAN."
-        static let invalidCreditorAddress = "Creditor address is incomplete."
-        static let invalidAmount = "Amount must be between 0.01 and 999,999,999.99."
-        static let invalidCurrency = "Currency must be CHF or EUR."
-        static let invalidReference = "Invalid creditor reference format."
-        static let messageTooLong = "Combined message and billing info must not exceed 140 characters."
+        nonisolated static let invalidIBAN = "Invalid IBAN format."
+        nonisolated static let qrIBANNotSupported = "QR-IBAN is not supported. Please use a regular Swiss IBAN."
+        nonisolated static let invalidCreditorAddress = "Creditor address is incomplete."
+        nonisolated static let invalidAmount = "Amount must be between 0.01 and 999,999,999.99."
+        nonisolated static let invalidCurrency = "Currency must be CHF or EUR."
+        nonisolated static let invalidReference = "Invalid creditor reference format."
+        nonisolated static let messageTooLong = "Combined message and billing info must not exceed 140 characters."
 
         // Keychain
-        static let keychainEncodingFailed = "Failed to prepare data for the keychain."
-        static let keychainDecodingFailed = "Failed to read data from the keychain."
-        static let keychainNotFound = "No saved data found in the keychain."
+        nonisolated static let keychainEncodingFailed = "Failed to prepare data for the keychain."
+        nonisolated static let keychainDecodingFailed = "Failed to read data from the keychain."
+        nonisolated static let keychainNotFound = "No saved data found in the keychain."
 
-        static func keychainSaveFailed(_ detail: String) -> String {
+        nonisolated static func keychainSaveFailed(_ detail: String) -> String {
             "Failed to save to the keychain: \(detail)"
         }
 
-        static func keychainLoadFailed(_ detail: String) -> String {
+        nonisolated static func keychainLoadFailed(_ detail: String) -> String {
             "Failed to load from the keychain: \(detail)"
         }
 
-        static func keychainDeleteFailed(_ detail: String) -> String {
+        nonisolated static func keychainDeleteFailed(_ detail: String) -> String {
             "Failed to delete from the keychain: \(detail)"
         }
     }

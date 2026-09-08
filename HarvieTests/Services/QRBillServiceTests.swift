@@ -32,7 +32,9 @@ struct QRBillServiceTests {
         #expect(CreditorReferenceGenerator.validate(data.reference!))
         #expect(!CreditorReferenceGenerator.validate("RF78Ä123"))
         #expect(throws: QRBillService.ValidationError.messageTooLong) {
-            try service.createQRBillData(invoice: TestDocuments.invoice(number: String(repeating: "A", count: 141)), creditorInfo: TestDocuments.creditor)
+            try service.createQRBillData(
+                invoice: TestDocuments.invoice(number: String(repeating: "A", count: 141)), creditorInfo: TestDocuments.creditor
+            )
         }
         #expect(throws: QRBillService.ValidationError.messageTooLong) {
             try service.createQRBillData(invoice: TestDocuments.invoice(number: "7\r\nEPD"), creditorInfo: TestDocuments.creditor)

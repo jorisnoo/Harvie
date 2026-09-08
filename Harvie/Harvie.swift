@@ -32,17 +32,17 @@ struct HarvieApp: App {
                 Color.clear
             } else {
                 ContentView()
-                .onAppear {
-                    Analytics.initialize()
-                    Analytics.appLaunched()
-                }
-                .task {
-                    if FeatureFlags.customPDFTemplates {
-                        await MainActor.run {
-                            TemplateSeeder.seedIfNeeded(context: modelContainer.mainContext)
+                    .onAppear {
+                        Analytics.initialize()
+                        Analytics.appLaunched()
+                    }
+                    .task {
+                        if FeatureFlags.customPDFTemplates {
+                            await MainActor.run {
+                                TemplateSeeder.seedIfNeeded(context: modelContainer.mainContext)
+                            }
                         }
                     }
-                }
             }
         }
         .windowStyle(.automatic)
