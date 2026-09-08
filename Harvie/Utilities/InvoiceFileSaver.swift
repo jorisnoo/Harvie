@@ -28,26 +28,7 @@ enum InvoiceFileSaver {
            let folderURL = settings.downloadURL {
             let hasAccess = folderURL.startAccessingSecurityScopedResource()
 
-            let fileURL = folderURL.appendingPathComponent(fileName)
-
-            guard isValidPath(fileURL, within: folderURL) else {
-                if hasAccess { folderURL.stopAccessingSecurityScopedResource() }
-                return try await showSavePanel(for: document, suggestedName: "invoice.pdf", pdfService: pdfService)
-            }
-
-            var finalURL = fileURL
-            var counter = 1
-            let baseName = fileName.lowercased().hasSuffix(".pdf") ? String(fileName.dropLast(4)) : fileName
-
-            while FileManager.default.fileExists(atPath: finalURL.path) {
-                let numberedName = "\(baseName)_\(counter).pdf"
-                finalURL = folderURL.appendingPathComponent(numberedName)
-                guard isValidPath(finalURL, within: folderURL) else {
-                    if hasAccess { folderURL.stopAccessingSecurityScopedResource() }
-                    return try await showSavePanel(for: document, suggestedName: "invoice.pdf", pdfService: pdfService)
-                }
-                counter += 1
-            }
+            let finalURL = availableURL(fileName: fileName, in: folderURL)
 
             let success = document.write(to: finalURL)
 
@@ -87,6 +68,19 @@ enum InvoiceFileSaver {
         return .saved(path: url.path)
     }
 
+    /// Uses the same collision policy for individual downloads and batch exports.
+    static func availableURL(fileName: String, in folderURL: URL) -> URL {
+        let name = sanitizeFilename(fileName)
+        let baseName = String(name.dropLast(4))
+        var url = folderURL.appendingPathComponent(name)
+        var counter = 1
+        while FileManager.default.fileExists(atPath: url.path) {
+            url = folderURL.appendingPathComponent("\(baseName)_\(counter).pdf")
+            counter += 1
+        }
+        return url
+    }
+
     static func sanitizeFilename(_ filename: String) -> String {
         var sanitized = filename
             .replacingOccurrences(of: "..", with: "")
@@ -102,13 +96,13 @@ enum InvoiceFileSaver {
             sanitized += ".pdf"
         }
 
-        return sanitized.isEmpty ? "invoice.pdf" : sanitized
+        return sanitized == "pdf" || sanitized == ".pdf" ? "invoice.pdf" : sanitized
     }
 
     static func isValidPath(_ fileURL: URL, within folderURL: URL) -> Bool {
         let resolvedFile = fileURL.standardizedFileURL.path
         let resolvedFolder = folderURL.standardizedFileURL.path
 
-        return resolvedFile.hasPrefix(resolvedFolder + "/") || resolvedFile.hasPrefix(resolvedFolder)
+        return resolvedFile.hasPrefix(resolvedFolder == "/" ? "/" : resolvedFolder + "/")
     }
 }

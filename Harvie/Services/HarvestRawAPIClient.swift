@@ -38,10 +38,10 @@ actor HarvestRawAPIClient {
         }
     }
 
-    init() {
+    init(session: URLSession? = nil) {
         let config = URLSessionConfiguration.default
         config.timeoutIntervalForRequest = 60
-        session = URLSession(configuration: config)
+        self.session = session ?? URLSession(configuration: config)
     }
 
     /// Fetches every page of a paginated list endpoint and returns the merged

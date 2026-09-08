@@ -75,6 +75,27 @@ actor HarvestExporter {
             }
         }
 
+        var responseKey: String {
+            switch self {
+            case .projectUserAssignments: "user_assignments"
+            case .projectTaskAssignments: "task_assignments"
+            case .userBillableRates: "billable_rates"
+            case .userCostRates: "cost_rates"
+            case .userProjectAssignments: "project_assignments"
+            default: rawValue
+            }
+        }
+
+        var parent: Resource? {
+            switch self {
+            case .invoicePayments, .invoiceMessages: .invoices
+            case .estimateMessages: .estimates
+            case .projectUserAssignments, .projectTaskAssignments: .projects
+            case .userBillableRates, .userCostRates, .userProjectAssignments: .users
+            default: nil
+            }
+        }
+
         /// Filename stem (no extension).
         var fileStem: String { rawValue }
     }
@@ -143,6 +164,7 @@ actor HarvestExporter {
             ))
 
             do {
+                try Task.checkCancellation()
                 let count = try await export(
                     resource,
                     state: &state,
@@ -151,6 +173,7 @@ actor HarvestExporter {
                 )
                 results.append(ResourceResult(resource: resource, recordCount: count, errorMessage: nil))
             } catch {
+                try Task.checkCancellation()
                 if case HarvestRawAPIClient.RawAPIError.unauthorized = error {
                     throw error
                 }
@@ -177,10 +200,7 @@ actor HarvestExporter {
     /// Mutable bag of parent-id arrays collected during the export so that
     /// per-parent sub-resources have something to iterate over.
     private struct ExportState {
-        var invoiceIDs: [Int] = []
-        var estimateIDs: [Int] = []
-        var projectIDs: [Int] = []
-        var userIDs: [Int] = []
+        var ids: [Resource: [Int]] = [:]
     }
 
     private func export(
@@ -189,28 +209,37 @@ actor HarvestExporter {
         credentials: HarvestCredentials,
         into folderURL: URL
     ) async throws -> Int {
+        // Child exports need their parents even when the parent files were not selected.
+        if let parent = resource.parent, state.ids[parent] == nil {
+            let data = try await client.fetchAllPages(
+                path: parent.rawValue, resourceKey: parent.responseKey, credentials: credentials
+            )
+            let rows = try JSONSerialization.jsonObject(with: data) as? [[String: Any]] ?? []
+            state.ids[parent] = ids(in: rows)
+        }
+
         switch resource {
         case .company:
             return try await exportSingleton(resource, credentials: credentials, into: folderURL)
 
         case .users:
             let rows = try await exportList(resource, path: "users", credentials: credentials, into: folderURL)
-            state.userIDs = ids(in: rows)
+            state.ids[.users] = ids(in: rows)
             return rows.count
 
         case .projects:
             let rows = try await exportList(resource, path: "projects", credentials: credentials, into: folderURL)
-            state.projectIDs = ids(in: rows)
+            state.ids[.projects] = ids(in: rows)
             return rows.count
 
         case .invoices:
             let rows = try await exportList(resource, path: "invoices", credentials: credentials, into: folderURL)
-            state.invoiceIDs = ids(in: rows)
+            state.ids[.invoices] = ids(in: rows)
             return rows.count
 
         case .estimates:
             let rows = try await exportList(resource, path: "estimates", credentials: credentials, into: folderURL)
-            state.estimateIDs = ids(in: rows)
+            state.ids[.estimates] = ids(in: rows)
             return rows.count
 
         case .roles, .tasks, .clients, .contacts, .timeEntries,
@@ -219,35 +248,35 @@ actor HarvestExporter {
             return try await exportList(resource, path: resource.rawValue, credentials: credentials, into: folderURL).count
 
         case .invoicePayments:
-            return try await exportPerParent(resource, parentIDs: state.invoiceIDs,
+            return try await exportPerParent(resource, parentIDs: state.ids[.invoices] ?? [],
                 pathBuilder: { "invoices/\($0)/payments" }, parentKey: "invoice_id",
                 credentials: credentials, into: folderURL)
         case .invoiceMessages:
-            return try await exportPerParent(resource, parentIDs: state.invoiceIDs,
+            return try await exportPerParent(resource, parentIDs: state.ids[.invoices] ?? [],
                 pathBuilder: { "invoices/\($0)/messages" }, parentKey: "invoice_id",
                 credentials: credentials, into: folderURL)
         case .estimateMessages:
-            return try await exportPerParent(resource, parentIDs: state.estimateIDs,
+            return try await exportPerParent(resource, parentIDs: state.ids[.estimates] ?? [],
                 pathBuilder: { "estimates/\($0)/messages" }, parentKey: "estimate_id",
                 credentials: credentials, into: folderURL)
         case .projectUserAssignments:
-            return try await exportPerParent(resource, parentIDs: state.projectIDs,
+            return try await exportPerParent(resource, parentIDs: state.ids[.projects] ?? [],
                 pathBuilder: { "projects/\($0)/user_assignments" }, parentKey: "project_id",
                 credentials: credentials, into: folderURL)
         case .projectTaskAssignments:
-            return try await exportPerParent(resource, parentIDs: state.projectIDs,
+            return try await exportPerParent(resource, parentIDs: state.ids[.projects] ?? [],
                 pathBuilder: { "projects/\($0)/task_assignments" }, parentKey: "project_id",
                 credentials: credentials, into: folderURL)
         case .userBillableRates:
-            return try await exportPerParent(resource, parentIDs: state.userIDs,
+            return try await exportPerParent(resource, parentIDs: state.ids[.users] ?? [],
                 pathBuilder: { "users/\($0)/billable_rates" }, parentKey: "user_id",
                 credentials: credentials, into: folderURL)
         case .userCostRates:
-            return try await exportPerParent(resource, parentIDs: state.userIDs,
+            return try await exportPerParent(resource, parentIDs: state.ids[.users] ?? [],
                 pathBuilder: { "users/\($0)/cost_rates" }, parentKey: "user_id",
                 credentials: credentials, into: folderURL)
         case .userProjectAssignments:
-            return try await exportPerParent(resource, parentIDs: state.userIDs,
+            return try await exportPerParent(resource, parentIDs: state.ids[.users] ?? [],
                 pathBuilder: { "users/\($0)/project_assignments" }, parentKey: "user_id",
                 credentials: credentials, into: folderURL)
         }
@@ -288,7 +317,7 @@ actor HarvestExporter {
     ) async throws -> [[String: Any]] {
         let data = try await client.fetchAllPages(
             path: path,
-            resourceKey: resource.rawValue,
+            resourceKey: resource.responseKey,
             credentials: credentials,
             extraQuery: extraQuery
         )
@@ -313,27 +342,19 @@ actor HarvestExporter {
 
         for parentID in parentIDs {
             let path = pathBuilder(parentID)
-            do {
-                let data = try await client.fetchAllPages(
-                    path: path,
-                    resourceKey: resource.rawValue,
-                    credentials: credentials
-                )
-                let rows = (try JSONSerialization.jsonObject(with: data) as? [Any] ?? [])
-                    .compactMap { $0 as? [String: Any] }
-                for var row in rows {
-                    if row[parentKey] == nil {
-                        row[parentKey] = parentID
-                    }
-                    merged.append(row)
+            try Task.checkCancellation()
+            let data = try await client.fetchAllPages(
+                path: path,
+                resourceKey: resource.responseKey,
+                credentials: credentials
+            )
+            let rows = (try JSONSerialization.jsonObject(with: data) as? [Any] ?? [])
+                .compactMap { $0 as? [String: Any] }
+            for var row in rows {
+                if row[parentKey] == nil {
+                    row[parentKey] = parentID
                 }
-            } catch HarvestRawAPIClient.RawAPIError.notFound {
-                // Some sub-resources 404 for parents that have none — skip silently.
-                continue
-            } catch HarvestRawAPIClient.RawAPIError.missingResourceKey {
-                // Some Harvest endpoints (e.g. user rates for inactive users)
-                // return shapes we don't recognise — skip rather than abort.
-                continue
+                merged.append(row)
             }
         }
 

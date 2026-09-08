@@ -96,7 +96,7 @@ extension InvoicesViewModel {
                     dueDate: invoice.dueDate,
                     paidDate: invoice.effectivePaidDate
                 )
-                let fileURL = folderURL.appendingPathComponent(fileName)
+                let fileURL = InvoiceFileSaver.availableURL(fileName: fileName, in: folderURL)
 
                 try await PDFService.shared.savePDF(document, to: fileURL)
                 exportedCount += 1

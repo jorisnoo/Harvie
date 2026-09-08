@@ -84,7 +84,7 @@ extension EstimatesViewModel {
                     dueDate: estimate.issueDate,
                     paidDate: nil
                 )
-                let fileURL = folderURL.appendingPathComponent(fileName)
+                let fileURL = InvoiceFileSaver.availableURL(fileName: fileName, in: folderURL)
 
                 try await PDFService.shared.savePDF(document, to: fileURL)
                 exportedCount += 1
