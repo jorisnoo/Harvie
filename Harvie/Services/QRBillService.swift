@@ -11,7 +11,11 @@ struct QRBillService {
         ["CHF", "EUR"].contains(currency.uppercased())
     }
 
-    enum ValidationError: Error, LocalizedError {
+    static func shouldIncludeQRBill(for invoice: Invoice) -> Bool {
+        isCurrencySupported(invoice.currency) && invoice.dueAmount > 0 && invoice.state != .paid
+    }
+
+    enum ValidationError: Error, LocalizedError, Equatable {
         case invalidIBAN
         case qrIBANNotSupported
         case invalidCreditorAddress
@@ -47,7 +51,7 @@ struct QRBillService {
         language: TemplateLanguage = .en,
         labelOverrides: [String: [String: String]]? = nil
     ) throws -> QRBillData {
-        guard IBANValidator.validate(creditorInfo.iban) else {
+        guard IBANValidator.isSwissIBAN(creditorInfo.iban), IBANValidator.validate(creditorInfo.iban) else {
             throw ValidationError.invalidIBAN
         }
 
@@ -65,9 +69,11 @@ struct QRBillService {
             throw ValidationError.invalidCurrency
         }
 
-        let reference = CreditorReferenceGenerator.generate(from: invoice.number)
+        let generated = CreditorReferenceGenerator.generate(from: invoice.number)
+        let reference = CreditorReferenceGenerator.validate(generated)
+            ? generated : CreditorReferenceGenerator.generate(from: String(invoice.id))
 
-        return QRBillData(
+        let data = QRBillData(
             creditorIBAN: creditorInfo.iban.replacingOccurrences(of: " ", with: "").uppercased(),
             creditorAddress: creditorInfo.structuredAddress,
             amount: invoice.dueAmount,
@@ -80,9 +86,12 @@ struct QRBillService {
             unstructuredMessage: "\(language.resolvedQRBillLabels(overrides: labelOverrides).invoice) \(invoice.number)",
             billingInfo: nil
         )
+        if let error = validate(data).first { throw error }
+        return data
     }
 
     func generateQRCodeImage(from data: QRBillData, size: CGFloat = 500) -> CGImage? {
+        guard validate(data).isEmpty else { return nil }
         let payload = data.generatePayload()
 
         guard let payloadData = payload.data(using: .utf8) else {
@@ -115,7 +124,7 @@ struct QRBillService {
     func validate(_ data: QRBillData) -> [ValidationError] {
         var errors: [ValidationError] = []
 
-        if !IBANValidator.validate(data.creditorIBAN) {
+        if !IBANValidator.isSwissIBAN(data.creditorIBAN) || !IBANValidator.validate(data.creditorIBAN) {
             errors.append(.invalidIBAN)
         }
 
@@ -137,15 +146,15 @@ struct QRBillService {
             errors.append(.invalidCurrency)
         }
 
-        if let reference = data.reference,
-           !reference.isEmpty,
-           !CreditorReferenceGenerator.validate(reference) {
+        if !CreditorReferenceGenerator.validate(data.reference ?? "") {
             errors.append(.invalidReference)
         }
 
         // Combined message and billing info must not exceed 140 characters
         let messageLength = (data.unstructuredMessage ?? "").count + (data.billingInfo ?? "").count
-        if messageLength > Self.maxMessageLength {
+        if messageLength > Self.maxMessageLength ||
+            (data.unstructuredMessage ?? "").rangeOfCharacter(from: .newlines) != nil ||
+            (data.billingInfo ?? "").rangeOfCharacter(from: .newlines) != nil {
             errors.append(.messageTooLong)
         }
 

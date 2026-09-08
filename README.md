@@ -69,7 +69,8 @@ Build and run with Xcode 15+.
 
 This app generates QR Bills according to the [Swiss Payment Standards](https://www.paymentstandards.ch/):
 
-- QR-IBAN or standard IBAN support
+- Standard Swiss and Liechtenstein IBAN support (CH/LI)
+- QR-IBAN accounts are not supported; they require QRR references
 - SCOR (Creditor Reference) format
 - Structured address format
 - CHF and EUR currencies

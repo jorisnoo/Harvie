@@ -132,11 +132,7 @@ struct InvoiceDetailView: View {
     }
 
     private func rounded(_ value: Decimal) -> Decimal {
-        // Round to nearest 0.05 (Swiss rounding)
-        var multiplied = value * 20
-        var result = Decimal()
-        NSDecimalRound(&result, &multiplied, 0, .bankers)
-        return result / 20
+        CurrencyFormatter.rounded(value, currency: invoice.currency)
     }
 
     var body: some View {
@@ -798,9 +794,8 @@ struct InvoiceDetailView: View {
     }
 
     private func isQuantityModified(_ item: LineItem) -> Bool {
-        guard let edited = editedQuantities[item.id],
-              let parsed = parsePrice(edited) else { return false }
-        return parsed != item.quantity
+        guard let edited = editedQuantities[item.id] else { return false }
+        return parsePrice(edited) != item.quantity
     }
 
     private func unitPriceBinding(for item: LineItem) -> Binding<String> {
@@ -814,19 +809,21 @@ struct InvoiceDetailView: View {
     }
 
     private func isUnitPriceModified(_ item: LineItem) -> Bool {
-        guard let edited = editedUnitPrices[item.id],
-              let parsed = parsePrice(edited) else { return false }
-        return parsed != item.unitPrice
+        guard let edited = editedUnitPrices[item.id] else { return false }
+        return parsePrice(edited) != item.unitPrice
     }
 
     private func parsePrice(_ string: String) -> Decimal? {
-        let cleaned = string.replacingOccurrences(of: "[^0-9.,]", with: "", options: .regularExpression)
-        // Handle both comma and dot as decimal separator
-        let normalized = cleaned.replacingOccurrences(of: ",", with: ".")
-        return Decimal(string: normalized)
+        DecimalInput.parse(string)
     }
 
     private func saveLineItem(_ item: LineItem) async {
+        guard !savingLineItems.contains(item.id) else { return }
+        if editedQuantities[item.id].map({ parsePrice($0) == nil }) == true ||
+            editedUnitPrices[item.id].map({ parsePrice($0) == nil }) == true {
+            error = "Enter a valid quantity and price using your region’s number format."
+            return
+        }
         let editedDescription = editedDescriptions[item.id]
         let editedQuantity = editedQuantities[item.id].flatMap { parsePrice($0) }
         let editedPrice = editedUnitPrices[item.id].flatMap { parsePrice($0) }
@@ -906,10 +903,9 @@ struct InvoiceDetailView: View {
     }
 
     private func markAsPaid() async {
-        let amount = invoice.dueAmount > 0 ? invoice.dueAmount : invoice.amount
         let date = paymentDate
         await performStateChange(label: "mark as paid", completed: .markedAsPaid, newState: .paid) { credentials in
-            try await apiService.createPayment(invoiceId: invoice.id, amount: amount, paidAt: date, credentials: credentials)
+            try await apiService.payOutstandingBalance(invoiceId: invoice.id, paidAt: date, credentials: credentials)
         }
     }
 
@@ -926,6 +922,7 @@ struct InvoiceDetailView: View {
         label: String, completed: CompletedAction, newState: InvoiceState,
         action: (HarvestCredentials) async throws -> Void
     ) async {
+        guard !isPerformingSheetAction else { return }
         isPerformingSheetAction = true
         let success = await performAPIAction(label: label, action: action)
         if success { completedAction = completed; activeSheet = nil; onStateChanged?(invoice.id, newState) }
@@ -954,7 +951,7 @@ struct InvoiceDetailView: View {
             let (pdf, _) = try await generatePDF()
             let tempURL = FileManager.default.temporaryDirectory
                 .appendingPathComponent(invoiceFileName)
-            pdf.write(to: tempURL)
+            try await pdfService.savePDF(pdf, to: tempURL)
 
             // Fetch client contact emails
             var recipientEmails: [String] = []
@@ -985,13 +982,9 @@ struct InvoiceDetailView: View {
             )
             emailService.perform(withItems: [tempURL])
 
-            // Mark as sent in Harvest (only for drafts)
-            if invoice.state == .draft {
-                let success = await performAPIAction(label: "mark as sent") { credentials in
-                    try await apiService.markInvoiceAsSent(invoiceId: invoice.id, credentials: credentials)
-                }
-                if success { onStateChanged?(invoice.id, .open) }
-            }
+            // The mail composer does not confirm delivery. Marking as sent remains
+            // an explicit action so cancelling a draft never changes Harvest.
+
         } catch {
             handlePDFError(error, context: "Send via email")
         }
@@ -1065,7 +1058,7 @@ private extension InvoiceDetailView {
             let (pdf, _) = try await generatePDF()
             let tempURL = FileManager.default.temporaryDirectory
                 .appendingPathComponent(invoiceFileName)
-            pdf.write(to: tempURL)
+            try await pdfService.savePDF(pdf, to: tempURL)
             NSWorkspace.shared.open(tempURL)
             Analytics.pdfPreviewed()
         } catch {

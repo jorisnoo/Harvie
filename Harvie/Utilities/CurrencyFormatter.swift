@@ -28,6 +28,16 @@ struct CurrencyFormatter {
         return formatter.string(from: amount as NSDecimalNumber) ?? "\(amount)"
     }
 
+    static func rounded(_ amount: Decimal, currency: String) -> Decimal {
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .currency
+        formatter.currencyCode = currency
+        var value = amount
+        var result = Decimal()
+        NSDecimalRound(&result, &value, formatter.maximumFractionDigits, .plain)
+        return result
+    }
+
     static func formatDecimal(_ amount: Decimal, groupingSeparator: String = "'") -> String {
         if groupingSeparator == "'" {
             return decimalFormatter.string(from: amount as NSDecimalNumber) ?? "\(amount)"

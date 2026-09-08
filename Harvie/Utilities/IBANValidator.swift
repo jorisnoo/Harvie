@@ -24,6 +24,8 @@ struct IBANValidator {
             return false
         }
 
+        if ["CH", "LI"].contains(countryCode), cleaned.count != 21 { return false }
+
         let checkDigits = String(cleaned.dropFirst(2).prefix(2))
         guard checkDigits.allSatisfy({ $0.isNumber }) else {
             return false

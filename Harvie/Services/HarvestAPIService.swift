@@ -14,6 +14,7 @@ actor HarvestAPIService {
     private let baseURL = URL(string: "https://api.harvestapp.com/v2")!
     private let session: URLSession
     private let decoder: JSONDecoder
+    private var paymentsInProgress: Set<String> = []
 
     private static nonisolated(unsafe) let iso8601Formatter: ISO8601DateFormatter = {
         let f = ISO8601DateFormatter()
@@ -31,10 +32,10 @@ actor HarvestAPIService {
         return f
     }()
 
-    init() {
+    init(session: URLSession? = nil) {
         let config = URLSessionConfiguration.default
         config.timeoutIntervalForRequest = 30
-        session = URLSession(configuration: config)
+        self.session = session ?? URLSession(configuration: config)
 
         let iso = Self.iso8601Formatter
         let dateOnly = Self.dateOnlyFormatter
@@ -60,6 +61,7 @@ actor HarvestAPIService {
     }
 
     enum APIError: Error, LocalizedError {
+        case paymentInProgress
         case invalidCredentials
         case invalidURL
         case invalidSubdomain
@@ -71,6 +73,8 @@ actor HarvestAPIService {
 
         var errorDescription: String? {
             switch self {
+            case .paymentInProgress:
+                return "A payment for this invoice is already being recorded."
             case .invalidCredentials:
                 return Strings.Errors.invalidCredentials
             case .invalidURL:
@@ -426,6 +430,20 @@ actor HarvestAPIService {
         credentials: HarvestCredentials
     ) async throws {
         try await sendInvoiceEvent(invoiceId: invoiceId, eventType: "draft", credentials: credentials)
+    }
+
+    /// Always read the current balance, including after a previous request timed out.
+    func payOutstandingBalance(
+        invoiceId: Int,
+        paidAt: Date = Date(),
+        credentials: HarvestCredentials
+    ) async throws {
+        let key = "\(credentials.accountId):\(invoiceId)"
+        guard paymentsInProgress.insert(key).inserted else { throw APIError.paymentInProgress }
+        defer { paymentsInProgress.remove(key) }
+        let invoice = try await fetchInvoice(id: invoiceId, credentials: credentials)
+        guard invoice.state == .open, invoice.dueAmount > 0 else { return }
+        try await createPayment(invoiceId: invoiceId, amount: invoice.dueAmount, paidAt: paidAt, credentials: credentials)
     }
 
     func createPayment(

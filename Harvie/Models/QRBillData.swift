@@ -99,7 +99,8 @@ struct StructuredAddress {
     var addressType: String { "S" }
 
     var isValid: Bool {
-        !name.isEmpty && !postalCode.isEmpty && !town.isEmpty && !country.isEmpty
+        [name, postalCode, town].allSatisfy { !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
+            && Locale.isoRegionCodes.contains(country.uppercased())
     }
 
     var streetLine: String? {
@@ -118,17 +119,18 @@ struct StructuredAddress {
     }
 
     func toPayloadLines() -> [String] {
-        // Swiss QR-bill spec: fields are single-line. Flatten embedded newlines.
-        let flatName = name.replacingOccurrences(of: "\n", with: " ")
-        let flatStreet = (streetName ?? "").replacingOccurrences(of: "\n", with: " ")
+        // Every field must occupy exactly one line in the QR payload.
+        func flat(_ value: String, limit: Int) -> String {
+            String(value.components(separatedBy: .newlines).joined(separator: " ").prefix(limit))
+        }
         return [
             addressType,
-            String(flatName.prefix(70)),
-            String(flatStreet.prefix(70)),
-            String((buildingNumber ?? "").prefix(16)),
-            String(postalCode.prefix(16)),
-            String(town.prefix(35)),
-            String(country.prefix(2))
+            flat(name, limit: 70),
+            flat(streetName ?? "", limit: 70),
+            flat(buildingNumber ?? "", limit: 16),
+            flat(postalCode, limit: 16),
+            flat(town, limit: 35),
+            country.uppercased()
         ]
     }
 }

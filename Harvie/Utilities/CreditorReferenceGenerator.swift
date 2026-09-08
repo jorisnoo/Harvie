@@ -9,7 +9,7 @@ struct CreditorReferenceGenerator {
     static func generate(from invoiceNumber: String) -> String {
         let cleaned = invoiceNumber
             .uppercased()
-            .filter { $0.isLetter || $0.isNumber }
+            .filter { $0.isASCII && ($0.isLetter || $0.isNumber) }
 
         let reference = String(cleaned.prefix(21))
         let checkDigits = calculateCheckDigits(reference: reference)
@@ -24,7 +24,9 @@ struct CreditorReferenceGenerator {
 
         guard cleaned.hasPrefix("RF"),
               cleaned.count >= 5,
-              cleaned.count <= 25 else {
+              cleaned.count <= 25,
+              cleaned.allSatisfy({ $0.isASCII && ($0.isLetter || $0.isNumber) }),
+              cleaned.dropFirst(2).prefix(2).allSatisfy({ $0.isNumber }) else {
             return false
         }
 

@@ -354,7 +354,7 @@ actor PDFService {
         paidMarkStyle: PaidMarkStyle,
         preferOverlay: Bool = false
     ) async throws -> PDFDocument {
-        guard QRBillService.isCurrencySupported(invoice.currency) else {
+        guard QRBillService.shouldIncludeQRBill(for: invoice) else {
             try await renderAndApplyPaidMark(
                 to: document, invoice: invoice, language: language,
                 paidMarkStyle: paidMarkStyle, excludingLastPage: false
@@ -442,7 +442,7 @@ actor PDFService {
             createDemoInvoicePDF(invoice: invoice, creditorInfo: creditorInfo)
         }
 
-        guard QRBillService.isCurrencySupported(invoice.currency) else {
+        guard QRBillService.shouldIncludeQRBill(for: invoice) else {
             return demoPDF
         }
 
