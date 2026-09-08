@@ -314,6 +314,20 @@ struct TemplateEngine {
     // MARK: - Filters
 
     private static func applyFilter(_ filter: Filter?, to value: Any?) -> String {
+        let rendered = formatValue(filter, value: value)
+        if case .markdown? = filter { return rendered }
+        return escapeHTML(rendered)
+    }
+
+    private static func escapeHTML(_ text: String) -> String {
+        text.replacingOccurrences(of: "&", with: "&amp;")
+            .replacingOccurrences(of: "<", with: "&lt;")
+            .replacingOccurrences(of: ">", with: "&gt;")
+            .replacingOccurrences(of: "\"", with: "&quot;")
+            .replacingOccurrences(of: "'", with: "&#39;")
+    }
+
+    private static func formatValue(_ filter: Filter?, value: Any?) -> String {
         guard let value else { return "" }
 
         guard let filter else {

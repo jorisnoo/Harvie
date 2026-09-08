@@ -168,7 +168,7 @@
 <table>
   <tr><th>Variable</th><th>Type</th><th>Description</th></tr>
   <tr><td><code>invoice.number</code></td><td>String</td><td>Invoice number</td></tr>
-  <tr><td><code>invoice.amount</code></td><td>Decimal</td><td>Total amount due</td></tr>
+  <tr><td><code>invoice.amount</code></td><td>Decimal</td><td>Invoice total before payments and credits</td></tr>
   <tr><td><code>invoice.currency</code></td><td>String</td><td>Currency code (e.g. CHF, EUR)</td></tr>
   <tr><td><code>invoice.subject</code></td><td>String</td><td>Invoice subject line</td></tr>
   <tr><td><code>invoice.notes</code></td><td>String</td><td>Invoice notes / payment terms</td></tr>
@@ -177,6 +177,9 @@
   <tr><td><code>invoice.subtotal</code></td><td>Decimal</td><td>Subtotal before tax and discount</td></tr>
   <tr><td><code>invoice.tax</code></td><td>Decimal</td><td>Primary tax rate (percentage)</td></tr>
   <tr><td><code>invoice.taxAmount</code></td><td>Decimal</td><td>Primary tax amount</td></tr>
+  <tr><td><code>invoice.dueAmount</code></td><td>Decimal</td><td>Remaining balance (estimate total for estimates)</td></tr>
+  <tr><td><code>invoice.amountSettled</code></td><td>Decimal</td><td>Payments and credits applied to the invoice</td></tr>
+  <tr><td><code>invoice.hasPayments</code></td><td>Boolean</td><td>Whether the remaining balance is below the invoice total</td></tr>
   <tr><td><code>invoice.tax2</code></td><td>Decimal</td><td>Secondary tax rate (percentage)</td></tr>
   <tr><td><code>invoice.tax2Amount</code></td><td>Decimal</td><td>Secondary tax amount</td></tr>
   <tr><td><code>invoice.discount</code></td><td>Decimal</td><td>Discount rate (percentage)</td></tr>

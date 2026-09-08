@@ -19,6 +19,7 @@ struct TemplateContext {
     struct InvoiceContext {
         let number: String
         let amount: Decimal
+        let dueAmount: Decimal?
         let currency: String
         let subject: String
         let notes: String
@@ -59,12 +60,13 @@ struct TemplateContext {
             if let items = invoice.lineItems {
                 return items.reduce(Decimal.zero) { $0 + $1.amount }
             }
-            return invoice.amount - (invoice.taxAmount ?? 0) + (invoice.discountAmount ?? 0)
+            return invoice.amount - (invoice.taxAmount ?? 0) - (invoice.tax2Amount ?? 0) + (invoice.discountAmount ?? 0)
         }()
 
         let invoiceCtx = InvoiceContext(
             number: invoice.number,
             amount: invoice.amount,
+            dueAmount: invoice.dueAmount,
             currency: invoice.currency,
             subject: invoice.subject ?? "",
             notes: invoice.notes ?? "",
@@ -124,12 +126,13 @@ struct TemplateContext {
             if let items = estimate.lineItems {
                 return items.reduce(Decimal.zero) { $0 + $1.amount }
             }
-            return estimate.amount - (estimate.taxAmount ?? 0) + (estimate.discountAmount ?? 0)
+            return estimate.amount - (estimate.taxAmount ?? 0) - (estimate.tax2Amount ?? 0) + (estimate.discountAmount ?? 0)
         }()
 
         let invoiceCtx = InvoiceContext(
             number: estimate.number,
             amount: estimate.amount,
+            dueAmount: nil,
             currency: estimate.currency,
             subject: estimate.subject ?? "",
             notes: estimate.notes ?? "",
@@ -193,6 +196,9 @@ struct TemplateContext {
         let invoiceDict: [String: Any] = [
             "number": invoice.number,
             "amount": invoice.amount,
+            "dueAmount": invoice.dueAmount ?? invoice.amount,
+            "amountSettled": invoice.amount - (invoice.dueAmount ?? invoice.amount),
+            "hasPayments": invoice.dueAmount.map { $0 < invoice.amount } ?? false,
             "currency": invoice.currency,
             "subject": invoice.subject,
             "notes": invoice.notes,
@@ -280,6 +286,9 @@ struct TemplateContext {
             "invoice": [
                 "number": "2024-042",
                 "amount": Decimal(9427.08),
+                "dueAmount": Decimal(9427.08),
+                "amountSettled": Decimal.zero,
+                "hasPayments": false,
                 "currency": "CHF",
                 "subject": "Website Redesign - Phase 2",
                 "notes": "Payment terms: 30 days net. Thank you for your business.",

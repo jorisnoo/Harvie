@@ -61,6 +61,12 @@
             <span class="totals-value">{{invoice.taxAmount | currency}}</span>
         </div>
         {{/if}}
+        {{#if invoice.hasTax2}}
+        <div class="totals-row tax">
+            <span class="totals-label">{{labels.tax2}} {{invoice.tax2}}%</span>
+            <span class="totals-value">{{invoice.tax2Amount | currency}}</span>
+        </div>
+        {{/if}}
         {{#if invoice.hasDiscount}}
         <div class="totals-row discount">
             <span class="totals-label">{{labels.discount}} {{invoice.discount}}%</span>
@@ -71,6 +77,16 @@
             <span class="totals-label">{{labels.total}} ({{invoice.currency}})</span>
             <span class="totals-value">{{invoice.amount | currency}}</span>
         </div>
+        {{#if invoice.hasPayments}}
+        <div class="totals-row">
+            <span class="totals-label">{{labels.payments}}</span>
+            <span class="totals-value">-{{invoice.amountSettled | currency}}</span>
+        </div>
+        <div class="totals-row total">
+            <span class="totals-label">{{labels.balanceDue}} ({{invoice.currency}})</span>
+            <span class="totals-value">{{invoice.dueAmount | currency}}</span>
+        </div>
+        {{/if}}
     </div>
 
     <div class="footer-section">
