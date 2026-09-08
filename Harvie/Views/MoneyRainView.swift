@@ -18,14 +18,18 @@ final class MoneyRainState {
 
 struct MoneyRainOverlay: View {
     private var rain = MoneyRainState.shared
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
         Color.clear
             .frame(width: 0, height: 0)
             .onChange(of: rain.trigger) { _, triggered in
                 if triggered {
-                    MoneyRainWindowController.shared.show()
+                    if reduceMotion { rain.trigger = false } else { MoneyRainWindowController.shared.show() }
                 }
+            }
+            .onChange(of: reduceMotion) { _, enabled in
+                if enabled { MoneyRainWindowController.shared.dismiss() }
             }
     }
 }
@@ -37,6 +41,7 @@ private final class MoneyRainWindowController {
     static let shared = MoneyRainWindowController()
 
     private var window: NSWindow?
+    private var escapeMonitor: Any?
 
     static let gifData: [Data] = {
         guard let resourceURL = Bundle.main.resourceURL else { return [] }
@@ -53,6 +58,10 @@ private final class MoneyRainWindowController {
     }()
 
     func show() {
+        guard !NSWorkspace.shared.accessibilityDisplayShouldReduceMotion else {
+            MoneyRainState.shared.trigger = false
+            return
+        }
         guard window == nil, !Self.gifData.isEmpty else {
             if Self.gifData.isEmpty { MoneyRainState.shared.trigger = false }
             return
@@ -72,7 +81,8 @@ private final class MoneyRainWindowController {
         win.hasShadow = false
         win.ignoresMouseEvents = true
         win.level = .floating
-        win.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
+        win.collectionBehavior = [.fullScreenAuxiliary]
+        win.hidesOnDeactivate = true
 
         let rainView = MoneyRainContentView(gifData: Self.gifData) { [weak self] in
             self?.dismiss()
@@ -80,10 +90,19 @@ private final class MoneyRainWindowController {
         win.contentView = NSHostingView(rootView: rainView)
 
         window = win
+        escapeMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
+            if event.keyCode == 53 {
+                self?.dismiss()
+                return nil
+            }
+            return event
+        }
         win.orderFrontRegardless()
     }
 
-    private func dismiss() {
+    func dismiss() {
+        if let escapeMonitor { NSEvent.removeMonitor(escapeMonitor) }
+        escapeMonitor = nil
         window?.orderOut(nil)
         window = nil
         MoneyRainState.shared.trigger = false
@@ -110,6 +129,7 @@ private struct MoneyRainContentView: View {
             ZStack {
                 ForEach(drops) { drop in
                     AnimatedGIFView(data: drop.gifData)
+                        .accessibilityHidden(true)
                         .frame(width: drop.size, height: drop.size)
                         .offset(
                             x: drop.xFraction * geo.size.width - geo.size.width / 2,
@@ -134,6 +154,13 @@ private struct MoneyRainContentView: View {
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
+        }
+        .overlay(alignment: .topTrailing) {
+            Text("Press Esc to dismiss celebration")
+                .font(.callout)
+                .padding(10)
+                .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 8))
+                .padding(24)
         }
         .onAppear {
             startRain()

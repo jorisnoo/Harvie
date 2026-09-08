@@ -592,8 +592,8 @@ struct InvoiceDetailView: View {
                                             .allowsHitTesting(false)
                                     }
                                 }
-                                .onChange(of: focusedField) {
-                                    if focusedField != .lineItem(item.id), isLineItemModified(item) {
+                                .onChange(of: focusedField) { previous, current in
+                                    if previous == .lineItem(item.id), current != .lineItem(item.id), isLineItemModified(item) {
                                         Task { await saveLineItem(item) }
                                     }
                                 }
@@ -610,8 +610,8 @@ struct InvoiceDetailView: View {
                             .focused($focusedField, equals: .quantity(item.id))
                             .fixedSize()
                             .onSubmit { focusedField = nil }
-                            .onChange(of: focusedField) {
-                                if focusedField != .quantity(item.id), isQuantityModified(item) {
+                            .onChange(of: focusedField) { previous, current in
+                                if previous == .quantity(item.id), current != .quantity(item.id), isQuantityModified(item) {
                                     Task { await saveLineItem(item) }
                                 }
                             }
@@ -630,8 +630,8 @@ struct InvoiceDetailView: View {
                             .focused($focusedField, equals: .unitPrice(item.id))
                             .fixedSize()
                             .onSubmit { focusedField = nil }
-                            .onChange(of: focusedField) {
-                                if focusedField != .unitPrice(item.id), isUnitPriceModified(item) {
+                            .onChange(of: focusedField) { previous, current in
+                                if previous == .unitPrice(item.id), current != .unitPrice(item.id), isUnitPriceModified(item) {
                                     Task { await saveLineItem(item) }
                                 }
                             }
