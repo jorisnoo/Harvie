@@ -30,7 +30,10 @@
       shouldUseLaunchSchemeArgsEnv = "NO"
       shouldAutocreateTestPlan = "YES">
       <EnvironmentVariables>
-         <EnvironmentVariable key = "HARVIE_TESTING" value = "1" isEnabled = "YES">
+         <EnvironmentVariable
+            key = "HARVIE_TESTING"
+            value = "1"
+            isEnabled = "YES">
          </EnvironmentVariable>
       </EnvironmentVariables>
       <Testables>

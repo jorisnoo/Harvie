@@ -13,10 +13,6 @@
 		<key>clientOverrides</key>
 		<true/>
 	</dict>
-	<key>GHRepositoryName</key>
-	<string>Harvie</string>
-	<key>GHRepositoryOwner</key>
-	<string>jorisnoo</string>
 	<key>UTExportedTypeDeclarations</key>
 	<array>
 		<dict>

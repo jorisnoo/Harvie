@@ -6,8 +6,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/jorisnoo/AppUpdater.git",
       "state" : {
-        "revision" : "2bb85cd74b7a30914b6c0f1a6c2d55947969e975",
-        "version" : "3.0.0"
+        "revision" : "09b3531ce382476641bcd4d39cc6ba7471ae1684",
+        "version" : "4.0.0"
       }
     },
     {

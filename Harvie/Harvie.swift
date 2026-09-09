@@ -69,7 +69,7 @@ struct HarvieApp: App {
 
             #if !APP_STORE
             CommandGroup(after: .appInfo) {
-                UpdateMenuCommands(updater: appDelegate.updater, checkForUpdates: appDelegate.checkForUpdates)
+                AppUpdateMenu(controller: appDelegate.updates)
             }
             #endif
         }
@@ -101,24 +101,3 @@ private struct ExportMenuButton: View {
         .keyboardShortcut("e", modifiers: [.command, .shift])
     }
 }
-
-#if !APP_STORE
-struct UpdateMenuCommands: View {
-    @ObservedObject var updater: AppUpdater
-    var checkForUpdates: () -> Void
-
-    var body: some View {
-        Button(Strings.App.checkForUpdates) {
-            checkForUpdates()
-        }
-
-        if case .downloaded(_, _, let bundle) = updater.state {
-            Button(Strings.App.restartAndUpdate) {
-                Task {
-                    try await updater.installThrowing(bundle)
-                }
-            }
-        }
-    }
-}
-#endif
