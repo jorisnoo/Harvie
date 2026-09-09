@@ -2,6 +2,23 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.8.3](https://github.com/jorisnoo/Harvie/releases/tag/v0.8.3) (2026-09-09)
+
+### Bug Fixes
+
+- respect reduced motion and save edits only when leaving their field ([c9a0256](https://github.com/jorisnoo/Harvie/commit/c9a0256ea9fb168ebca709977af7e89178cc0628))
+- escape template data and show accurate tax and remaining balances ([b1645d1](https://github.com/jorisnoo/Harvie/commit/b1645d177049ca75cc29ef3c5251906d9c38ba55))
+- isolate account caches and preserve state after partial refreshes ([01f095f](https://github.com/jorisnoo/Harvie/commit/01f095f95f7f75c80983f3419331e9c83d912c15))
+- validate invoice amounts and QR bills before recording or exporting ([e48892f](https://github.com/jorisnoo/Harvie/commit/e48892fabf8c7f7eacef5d0f0bb6783985babb24))
+- preserve complete account exports and prevent PDF overwrites ([358c451](https://github.com/jorisnoo/Harvie/commit/358c451508486a0e1c8baf17e71c772d93c78bb8))
+
+### Tests
+
+- isolate app launches from user credentials and persistent data ([74f96f1](https://github.com/jorisnoo/Harvie/commit/74f96f1298973efac4a3b5af939579de1121a582))
+
+### Chores
+
+- remove concurrency warnings and generated dependency lint noise ([2ba413b](https://github.com/jorisnoo/Harvie/commit/2ba413bc1ec8b0942d54c6453e6ba8efdff38331))
 ## [0.8.2](https://github.com/jorisnoo/Harvie/releases/tag/v0.8.2) (2026-07-20)
 
 ### Features
