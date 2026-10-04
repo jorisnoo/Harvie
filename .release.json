@@ -1,0 +1,21 @@
+{
+  "branch": "main",
+  "sign_tag": true,
+  "version_files": [],
+  "checks": [
+    [
+      "xcodebuild",
+      "-project",
+      "Harvie.xcodeproj",
+      "-scheme",
+      "Harvie",
+      "-configuration",
+      "Debug",
+      "-derivedDataPath",
+      "/tmp/Harvie-release-check",
+      "CODE_SIGNING_ALLOWED=NO",
+      "build"
+    ]
+  ],
+  "stable_only": true
+}

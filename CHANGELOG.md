@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## [0.8.3](https://github.com/jorisnoo/Harvie/releases/tag/v0.8.3) (2026-09-09)
+## [0.8.3](https://github.com/jorisnoo/Harvie/releases/tag/0.8.3) (2026-09-09)
 
 ### Bug Fixes
 
@@ -19,7 +19,7 @@ All notable changes to this project will be documented in this file.
 ### Chores
 
 - remove concurrency warnings and generated dependency lint noise ([2ba413b](https://github.com/jorisnoo/Harvie/commit/2ba413bc1ec8b0942d54c6453e6ba8efdff38331))
-## [0.8.2](https://github.com/jorisnoo/Harvie/releases/tag/v0.8.2) (2026-07-20)
+## [0.8.2](https://github.com/jorisnoo/Harvie/releases/tag/0.8.2) (2026-07-20)
 
 ### Features
 
@@ -32,7 +32,7 @@ All notable changes to this project will be documented in this file.
 ### Chores
 
 - update Aptabase host endpoint to harvie.app ([ebd9f47](https://github.com/jorisnoo/Harvie/commit/ebd9f47a5c0db521e7905be26b5e0c102a7a75fc))
-## [0.8.1](https://github.com/jorisnoo/Harvie/releases/tag/v0.8.1) (2026-07-03)
+## [0.8.1](https://github.com/jorisnoo/Harvie/releases/tag/0.8.1) (2026-07-03)
 
 ### Features
 
@@ -51,7 +51,7 @@ All notable changes to this project will be documented in this file.
 ### Styles
 
 - **invoices:** use primary color for selected drafts ([1319620](https://github.com/jorisnoo/Harvie/commit/13196202b636f3bf59058d2d8b60784137aa66ee))
-## [0.8.0](https://github.com/jorisnoo/Harvie/releases/tag/v0.8.0) (2026-07-03)
+## [0.8.0](https://github.com/jorisnoo/Harvie/releases/tag/0.8.0) (2026-07-03)
 
 ### Features
 
@@ -64,7 +64,7 @@ All notable changes to this project will be documented in this file.
 ### Code Refactoring
 
 - redesign markAsSent sheet with side-by-side date picker layout ([3303a1d](https://github.com/jorisnoo/Harvie/commit/3303a1dbcff3d75bd4f3a6ba917f92868a86b13d))
-## [0.7.2](https://github.com/jorisnoo/Harvie/releases/tag/v0.7.2) (2026-05-28)
+## [0.7.2](https://github.com/jorisnoo/Harvie/releases/tag/0.7.2) (2026-05-28)
 
 ### Features
 
@@ -81,7 +81,7 @@ All notable changes to this project will be documented in this file.
 
 - **settings:** add client name to remove override button and improve spacing ([30d4038](https://github.com/jorisnoo/Harvie/commit/30d4038e33e4323c71f56f8e581d0399b0a3c31f))
 - consolidate sort and filter controls in ContentView ([0ac4365](https://github.com/jorisnoo/Harvie/commit/0ac436517eddd2c7f5331e55780667f05864022b))
-## [0.7.1](https://github.com/jorisnoo/Harvie/releases/tag/v0.7.1) (2026-04-22)
+## [0.7.1](https://github.com/jorisnoo/Harvie/releases/tag/0.7.1) (2026-04-22)
 
 ### Features
 
@@ -93,7 +93,7 @@ All notable changes to this project will be documented in this file.
 - **feature-flags:** restructure with enum-based system and runtime overrides ([d4c015e](https://github.com/jorisnoo/Harvie/commit/d4c015ed1d640a335238e110300fcbb6cf5a37db))
 - extract update prompt and improve code formatting ([c35eedd](https://github.com/jorisnoo/Harvie/commit/c35eedd534b65346ab7b9cbfea1154fc35f346c8))
 - **address:** improve parsing and rendering of multi-line addresses ([3ec9995](https://github.com/jorisnoo/Harvie/commit/3ec999526ae93cb3a100568a8f3671c9342261c1))
-## [0.7.0](https://github.com/jorisnoo/Harvie/releases/tag/v0.7.0) (2026-03-23)
+## [0.7.0](https://github.com/jorisnoo/Harvie/releases/tag/0.7.0) (2026-03-23)
 
 ### Features
 
@@ -102,7 +102,7 @@ All notable changes to this project will be documented in this file.
 - add payment terms with automatic due date calculation ([f795791](https://github.com/jorisnoo/Harvie/commit/f7957917d3ec6e10b9d16869b03d74d8bdf7ed69))
 - make email subject configurable in settings ([ab26058](https://github.com/jorisnoo/Harvie/commit/ab26058a39c0cdd352f258830a9a9e7b2def9555))
 - allow date changes on sent invoices and prompt before sending ([35b2d67](https://github.com/jorisnoo/Harvie/commit/35b2d670dd3086df3cb4cd717d6d8e0a9e0ee0e5))
-## [0.6.0](https://github.com/jorisnoo/Harvie/releases/tag/v0.6.0) (2026-03-16)
+## [0.6.0](https://github.com/jorisnoo/Harvie/releases/tag/0.6.0) (2026-03-16)
 
 ### Features
 
@@ -126,7 +126,7 @@ All notable changes to this project will be documented in this file.
 ### Chores
 
 - cleanup from code review ([b98753c](https://github.com/jorisnoo/Harvie/commit/b98753c737a2dca5df567b72806593f0c53ccad6))
-## [0.5.0](https://github.com/jorisnoo/Harvie/releases/tag/v0.5.0) (2026-03-13)
+## [0.5.0](https://github.com/jorisnoo/Harvie/releases/tag/0.5.0) (2026-03-13)
 
 ### Features
 
@@ -143,7 +143,7 @@ All notable changes to this project will be documented in this file.
 ### Continuous Integration
 
 - update website repo download URL path from YAML to config.php ([a222550](https://github.com/jorisnoo/Harvie/commit/a2225506b30982514b2610aeb890f46a96d9ad65))
-## [0.4.5](https://github.com/jorisnoo/Harvie/releases/tag/v0.4.5) (2026-03-11)
+## [0.4.5](https://github.com/jorisnoo/Harvie/releases/tag/0.4.5) (2026-03-11)
 
 ### Features
 
@@ -160,7 +160,7 @@ All notable changes to this project will be documented in this file.
 ### Documentation
 
 - compressed images ([e5bfcdc](https://github.com/jorisnoo/Harvie/commit/e5bfcdc4d24955c0085f2ef3fd6c0fdeae768277))
-## [0.4.4](https://github.com/jorisnoo/Harvie/releases/tag/v0.4.4) (2026-03-10)
+## [0.4.4](https://github.com/jorisnoo/Harvie/releases/tag/0.4.4) (2026-03-10)
 
 ### Features
 
@@ -170,12 +170,12 @@ All notable changes to this project will be documented in this file.
 
 - universal build ([604373b](https://github.com/jorisnoo/Harvie/commit/604373bcf187b3629d925bf0076517643f6c011e))
 - rename to Harvie ([9be9e87](https://github.com/jorisnoo/Harvie/commit/9be9e87f54f70026e817733e95e70c5f44a1a87a))
-## [0.4.3](https://github.com/jorisnoo/HarvestQRBill/releases/tag/v0.4.3) (2026-03-09)
+## [0.4.3](https://github.com/jorisnoo/HarvestQRBill/releases/tag/0.4.3) (2026-03-09)
 
 ### Bug Fixes
 
 - ignore double-clicks in click-outside-text-fields monitor to prevent unintended field deselection ([868ea06](https://github.com/jorisnoo/HarvestQRBill/commit/868ea06b0c386d0b473e611ce88642093fe191b5))
-## [0.4.2](https://github.com/jorisnoo/HarvestQRBill/releases/tag/v0.4.2) (2026-03-09)
+## [0.4.2](https://github.com/jorisnoo/HarvestQRBill/releases/tag/0.4.2) (2026-03-09)
 
 ### Features
 
@@ -200,7 +200,7 @@ All notable changes to this project will be documented in this file.
 - replace custom MultilineTextField with native TextEditor for line item editing ([c713f10](https://github.com/jorisnoo/HarvestQRBill/commit/c713f100ddd918a1f0272153551e17845ad21805))
 - replace hardcoded strings with Strings constants for localization ([59862d9](https://github.com/jorisnoo/HarvestQRBill/commit/59862d94d845b6bd716286edc1d6217f7b3ae096))
 - move column visibility from per-template to global app settings ([5ba89b8](https://github.com/jorisnoo/HarvestQRBill/commit/5ba89b827eaa6d516b31d08ffcef9caa6334fea9))
-## [0.4.1](https://github.com/jorisnoo/HarvestQRBill/releases/tag/v0.4.1) (2026-03-09)
+## [0.4.1](https://github.com/jorisnoo/HarvestQRBill/releases/tag/0.4.1) (2026-03-09)
 
 ### Features
 
@@ -220,7 +220,7 @@ All notable changes to this project will be documented in this file.
 ### Chores
 
 - add SwiftLint configuration and build phase integration ([2b87fc4](https://github.com/jorisnoo/HarvestQRBill/commit/2b87fc4f62accc126bd92c5988dd29965e60ba15))
-## [0.4.0](https://github.com/jorisnoo/HarvestQRBill/releases/tag/v0.4.0) (2026-03-04)
+## [0.4.0](https://github.com/jorisnoo/HarvestQRBill/releases/tag/0.4.0) (2026-03-04)
 
 ### Features
 
@@ -259,7 +259,7 @@ All notable changes to this project will be documented in this file.
 ### Chores
 
 - add .worktrees directory to .gitignore ([859cce5](https://github.com/jorisnoo/HarvestQRBill/commit/859cce55bb88e75c7331db5c6e67ac7336be0557))
-## [0.3.0](https://github.com/jorisnoo/HarvestQRBill/releases/tag/v0.3.0) (2026-02-16)
+## [0.3.0](https://github.com/jorisnoo/HarvestQRBill/releases/tag/0.3.0) (2026-02-16)
 
 ### Features
 
@@ -286,7 +286,7 @@ All notable changes to this project will be documented in this file.
 ### Chores
 
 - downgrade Xcode project objectVersion to 70 for broader compatibility ([f5cb4ef](https://github.com/jorisnoo/HarvestQRBill/commit/f5cb4ef5741bfb1093da78bd9f5b2e0504aae141))
-## [0.2.6](https://github.com/jorisnoo/HarvestQRBill/releases/tag/v0.2.6) (2026-02-12)
+## [0.2.6](https://github.com/jorisnoo/HarvestQRBill/releases/tag/0.2.6) (2026-02-12)
 
 ### Features
 
@@ -309,7 +309,7 @@ All notable changes to this project will be documented in this file.
 
 - switch to forked aptabase-swift with custom host support and remove debug-only analytics guard ([059c02b](https://github.com/jorisnoo/HarvestQRBill/commit/059c02b47cdc40b62a8e3da2467f57c73d200ae8))
 - remove badge section from README ([055380c](https://github.com/jorisnoo/HarvestQRBill/commit/055380c07db746f6f8f573dc666f81bf3e58f73a))
-## [0.2.5](https://github.com/jorisnoo/HarvestQRBill/releases/tag/v0.2.5) (2026-02-11)
+## [0.2.5](https://github.com/jorisnoo/HarvestQRBill/releases/tag/0.2.5) (2026-02-11)
 
 ### Features
 
@@ -340,25 +340,25 @@ All notable changes to this project will be documented in this file.
 ### Chores
 
 - disable customPDFTemplates feature flag and mark templates tab as beta ([208d2e1](https://github.com/jorisnoo/HarvestQRBill/commit/208d2e1bb5eb6cb89cf4facd11ac2cb650c49461))
-## [0.2.4](https://github.com/jorisnoo/HarvestQRBill/releases/tag/v0.2.4) (2026-02-11)
+## [0.2.4](https://github.com/jorisnoo/HarvestQRBill/releases/tag/0.2.4) (2026-02-11)
 
 ### Features
 
 - reload invoices and creditor info when settings are saved, add retry button to setup prompt ([3e9d676](https://github.com/jorisnoo/HarvestQRBill/commit/3e9d6768f58cc4858ffede08d3b4c9110b18fb91))
 - show setup required prompt with open settings button when credentials are missing ([705afd9](https://github.com/jorisnoo/HarvestQRBill/commit/705afd9035e3b2981ace4d363c270aaa62fc24c0))
-## [0.2.3](https://github.com/jorisnoo/HarvestQRBill/releases/tag/v0.2.3) (2026-02-11)
+## [0.2.3](https://github.com/jorisnoo/HarvestQRBill/releases/tag/0.2.3) (2026-02-11)
 
 ### Code Refactoring
 
 - use focusedSceneValue instead of NotificationCenter for menu refresh action ([14560f7](https://github.com/jorisnoo/HarvestQRBill/commit/14560f78490227292587908fcfe343ed31c91413))
 - use native Settings scene and NotificationCenter instead of focused values for settings and refresh ([88f2a6f](https://github.com/jorisnoo/HarvestQRBill/commit/88f2a6fe458a17f6327da7d4e6bca036ecec6024))
-## [0.2.2](https://github.com/jorisnoo/HarvestQRBill/releases/tag/v0.2.2) (2026-02-11)
+## [0.2.2](https://github.com/jorisnoo/HarvestQRBill/releases/tag/0.2.2) (2026-02-11)
 
 ### Features
 
 - wrap demo mode code in #if DEBUG to exclude it from release builds ([ea6d2e6](https://github.com/jorisnoo/HarvestQRBill/commit/ea6d2e649fdc1edc63fbc95a556ac1206a74d73a))
 - add auto-update install flow with restart prompt and disable app sandbox for direct distribution ([b8df5b7](https://github.com/jorisnoo/HarvestQRBill/commit/b8df5b7e6ab3ebf2693ecf26fa9692e1f58cffae))
-## [0.2.1](https://github.com/jorisnoo/HarvestQRBill/releases/tag/v0.2.1) (2026-02-11)
+## [0.2.1](https://github.com/jorisnoo/HarvestQRBill/releases/tag/0.2.1) (2026-02-11)
 
 ### Features
 
@@ -369,7 +369,7 @@ All notable changes to this project will be documented in this file.
 ### Code Refactoring
 
 - add in-memory cache to KeychainService and use update-or-add instead of delete-then-add ([eefd204](https://github.com/jorisnoo/HarvestQRBill/commit/eefd204986e51628a2448f7498cf4e9bba9a3677))
-## [0.2.0](https://github.com/jorisnoo/HarvestQRBill/releases/tag/v0.2.0) (2026-02-11)
+## [0.2.0](https://github.com/jorisnoo/HarvestQRBill/releases/tag/0.2.0) (2026-02-11)
 
 ### Features
 
@@ -421,12 +421,12 @@ All notable changes to this project will be documented in this file.
 - switch AppUpdater to jorisnoo fork v3.0.0 and remove PromiseKit dependency ([422c2ae](https://github.com/jorisnoo/HarvestQRBill/commit/422c2aeb0e7c1bee369bf60ee2d05d32608c1c9e))
 - remove files from xcode ([4d63b67](https://github.com/jorisnoo/HarvestQRBill/commit/4d63b67ae603300c65d6aafb8d20dab9325ef127))
 - sync version 0.1.3 to Xcode ([fa58577](https://github.com/jorisnoo/HarvestQRBill/commit/fa585774233abe08ca5fc971abc60cd0871805c9))
-## [0.1.3](https://github.com/jorisnoo/HarvestQRBill/releases/tag/v0.1.3) (2026-01-20)
+## [0.1.3](https://github.com/jorisnoo/HarvestQRBill/releases/tag/0.1.3) (2026-01-20)
 
 ### Bug Fixes
 
 - use git-auto-commit-action for version sync ([9d93ca9](https://github.com/jorisnoo/HarvestQRBill/commit/9d93ca9c9e318df0d98b608e774e36bed9a1123c))
-## [0.1.2](https://github.com/jorisnoo/HarvestQRBill/releases/tag/v0.1.2) (2026-01-20)
+## [0.1.2](https://github.com/jorisnoo/HarvestQRBill/releases/tag/0.1.2) (2026-01-20)
 
 ### Documentation
 

@@ -77,25 +77,9 @@ This app generates QR Bills according to the [Swiss Payment Standards](https://w
 
 ## Development
 
-### Release Workflow
+### Releases
 
-Releases are automated via GitHub Actions:
-
-```bash
-# 1. Make changes with conventional commits
-git commit -m "feat: new feature"
-
-# 2. Run Shipmark to bump version and create tag
-shipmark release
-
-# 3. Push to trigger the release workflow
-git push --follow-tags
-```
-
-GitHub Actions will automatically:
-- Build and code sign the app
-- Create a notarised DMG
-- Publish a GitHub Release with changelog
+See [RELEASING.md](RELEASING.md) for the release command, curated changelog and automated signed builds.
 
 ## License
 
