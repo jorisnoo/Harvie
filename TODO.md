@@ -10,6 +10,9 @@ Open items from the October 2026 app review.
 ## To verify
 
 - **`launchservicesd` mach-lookup exception** in `Harvie/Harvie.entitlements` (App Store build). No code obviously needs it; it may have been added for `NSSharingService(named: .composeEmail)` under the sandbox. Test "Send via Email" in a sandboxed build without it and drop it if email still works. App Review rejects temporary exceptions it can't see a reason for.
+- **Swiss cross artwork.** `QRBillRenderer` draws the cross at 7 × 7 mm using Swiss flag proportions. Compare it against the official SIX graphic.
+- **Total hours on templates.** Harvest line items don't say whether they came from time entries, so every line except the "Product" category counts as hours. A renamed product category would be counted.
+- **Template printing.** Templates are printed with WebKit's print operation, and a sliced screen render is the fallback when printing fails. Check page breaks and page margins with a long invoice in the real app.
 
 ## Deliberately not changed
 

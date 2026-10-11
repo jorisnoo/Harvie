@@ -12,8 +12,19 @@ struct TemplateEngine {
     private static let dateFormatters = NSCache<NSString, DateFormatter>()
     private static let numberFormatters = NSCache<NSString, NumberFormatter>()
 
+    /// The user's locale, but always with Western digits and the Gregorian calendar,
+    /// so dates on an invoice read like the amounts next to them.
+    private static let dateLocale: Locale = {
+        var components = Locale.Components(locale: .current)
+        components.calendar = .gregorian
+        components.numberingSystem = Locale.NumberingSystem("latn")
+        return Locale(components: components)
+    }()
+
     private static let mediumDateFormatter: DateFormatter = {
         let f = DateFormatter()
+        f.locale = dateLocale
+        f.calendar = Calendar(identifier: .gregorian)
         f.dateStyle = .medium
         return f
     }()
@@ -27,6 +38,8 @@ struct TemplateEngine {
             return cached
         }
         let formatter = DateFormatter()
+        formatter.locale = dateLocale
+        formatter.calendar = Calendar(identifier: .gregorian)
         formatter.dateFormat = format
         dateFormatters.setObject(formatter, forKey: key)
         return formatter

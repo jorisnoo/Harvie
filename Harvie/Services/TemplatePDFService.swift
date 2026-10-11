@@ -115,7 +115,12 @@ final class TemplatePDFService {
         <style>
         @page {
             size: A4;
-            margin: 0;
+            margin: 12mm 0;
+        }
+        /* The template's own padding frames the first page; later pages need a margin
+           so content doesn't run to the paper edge after a page break. */
+        @page :first {
+            margin-top: 0;
         }
         * {
             margin: 0;
@@ -400,7 +405,7 @@ private final class PDFNavigationDelegate: NSObject, WKNavigationDelegate {
         printInfo.jobDisposition = .save
         printInfo.paperSize = NSSize(width: TemplatePDFService.a4Width, height: TemplatePDFService.a4Height)
         printInfo.orientation = .portrait
-        // Templates set their own margins in CSS (`@page { margin: 0 }` plus padding).
+        // Margins come from the document's `@page` rules and the template's own padding.
         printInfo.topMargin = 0
         printInfo.bottomMargin = 0
         printInfo.leftMargin = 0
