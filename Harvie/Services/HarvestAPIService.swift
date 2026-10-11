@@ -16,6 +16,9 @@ actor HarvestAPIService {
     private let decoder: JSONDecoder
     private var paymentsInProgress: Set<String> = []
 
+    /// Largest page Harvest serves, so listing everything takes as few requests as possible.
+    static let maxPageSize = 2000
+
     private static let iso8601Style = Date.ISO8601FormatStyle()
 
     private static let dateOnlyFormatter: DateFormatter = {
@@ -63,6 +66,7 @@ actor HarvestAPIService {
         case invalidSubdomain
         case unauthorized
         case notFound
+        case rateLimited
         case serverError(Int)
         case networkError(Error)
         case decodingError(Error)
@@ -81,6 +85,8 @@ actor HarvestAPIService {
                 return Strings.Errors.unauthorized
             case .notFound:
                 return Strings.Errors.notFound
+            case .rateLimited:
+                return Strings.Errors.rateLimited
             case .serverError(let code):
                 return Strings.Errors.serverError(code)
             case .networkError:
@@ -117,7 +123,7 @@ actor HarvestAPIService {
     private func perform<T: Decodable>(
         _ request: URLRequest
     ) async throws -> T {
-        let (data, response) = try await session.data(for: request)
+        let (data, response) = try await HarvestRateLimit.data(for: request, using: session)
 
         guard let httpResponse = response as? HTTPURLResponse else {
             throw APIError.networkError(URLError(.badServerResponse))
@@ -152,13 +158,15 @@ actor HarvestAPIService {
             throw APIError.unauthorized
         case 404:
             throw APIError.notFound
+        case 429:
+            throw APIError.rateLimited
         default:
             throw APIError.serverError(httpResponse.statusCode)
         }
     }
 
     private func performMutation(_ request: URLRequest) async throws {
-        let (_, response) = try await session.data(for: request)
+        let (_, response) = try await HarvestRateLimit.data(for: request, using: session)
 
         guard let httpResponse = response as? HTTPURLResponse else {
             throw APIError.networkError(URLError(.badServerResponse))
@@ -171,6 +179,8 @@ actor HarvestAPIService {
             throw APIError.unauthorized
         case 404:
             throw APIError.notFound
+        case 429:
+            throw APIError.rateLimited
         default:
             throw APIError.serverError(httpResponse.statusCode)
         }
@@ -180,7 +190,7 @@ actor HarvestAPIService {
         credentials: HarvestCredentials,
         state: InvoiceState? = nil,
         page: Int = 1,
-        perPage: Int = 100
+        perPage: Int = maxPageSize
     ) async throws -> InvoicesResponse {
         var queryItems = [
             URLQueryItem(name: "page", value: String(page)),
@@ -220,7 +230,7 @@ actor HarvestAPIService {
             page += 1
         }
 
-        return allInvoices
+        return deduplicated(allInvoices) { $0.id }
     }
 
     func fetchInvoice(
@@ -241,7 +251,7 @@ actor HarvestAPIService {
         credentials: HarvestCredentials,
         state: EstimateState? = nil,
         page: Int = 1,
-        perPage: Int = 100
+        perPage: Int = maxPageSize
     ) async throws -> EstimatesResponse {
         var queryItems = [
             URLQueryItem(name: "page", value: String(page)),
@@ -281,7 +291,23 @@ actor HarvestAPIService {
             page += 1
         }
 
-        return all
+        return deduplicated(all) { $0.id }
+    }
+
+    /// Page-number paging shifts rows when a document is created mid-fetch, so the
+    /// same document can arrive twice. Keep its latest copy where it was first seen.
+    private func deduplicated<Document>(_ documents: [Document], id: (Document) -> Int) -> [Document] {
+        var positions: [Int: Int] = [:]
+        var unique: [Document] = []
+        for document in documents {
+            if let position = positions[id(document)] {
+                unique[position] = document
+            } else {
+                positions[id(document)] = unique.count
+                unique.append(document)
+            }
+        }
+        return unique
     }
 
     func fetchEstimate(
@@ -594,7 +620,7 @@ actor HarvestAPIService {
             credentials: credentials
         )
 
-        let (_, response) = try await session.data(for: request)
+        let (_, response) = try await HarvestRateLimit.data(for: request, using: session)
 
         guard let httpResponse = response as? HTTPURLResponse else {
             throw APIError.networkError(URLError(.badServerResponse))

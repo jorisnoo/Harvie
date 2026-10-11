@@ -14,29 +14,43 @@ enum LegacyMigration {
     private static let oldKeychainService = "ch.noordermeer.HarvestQRBill"
     private static let newKeychainService = "app.harvie"
 
+    /// App settings moved to UserDefaults; `AppSettingsStorage` migrates them itself.
     private static let keychainAccounts = [
         "harvest_credentials",
         "creditor_info",
-        "app_settings",
     ]
 
     static func migrateIfNeeded() {
         guard !UserDefaults.standard.bool(forKey: didMigrateKey) else { return }
-        defer { UserDefaults.standard.set(true, forKey: didMigrateKey) }
 
-        migrateKeychain()
+        let keychainMigrated = migrateKeychain()
         migrateAppSupport()
+
+        // A locked keychain or denied access must not lose the old items: retry next launch.
+        if keychainMigrated {
+            UserDefaults.standard.set(true, forKey: didMigrateKey)
+        }
     }
 
-    private static func migrateKeychain() {
+    /// Returns false when an item could not be read or copied.
+    private static func migrateKeychain() -> Bool {
+        var succeeded = true
         for account in keychainAccounts {
-            guard let data = readKeychain(service: oldKeychainService, account: account) else { continue }
+            do {
+                guard let data = try readKeychain(service: oldKeychainService, account: account) else { continue }
 
-            if writeKeychain(service: newKeychainService, account: account, data: data) {
-                deleteKeychain(service: oldKeychainService, account: account)
-                logger.info("Migrated keychain item: \(account)")
+                if writeKeychain(service: newKeychainService, account: account, data: data) {
+                    deleteKeychain(service: oldKeychainService, account: account)
+                    logger.info("Migrated keychain item: \(account)")
+                } else {
+                    succeeded = false
+                }
+            } catch {
+                logger.error("Failed to read keychain item \(account): \(error.localizedDescription)")
+                succeeded = false
             }
         }
+        return succeeded
     }
 
     private static func migrateAppSupport() {
@@ -75,7 +89,8 @@ enum LegacyMigration {
 
     // MARK: - Keychain Helpers
 
-    private static func readKeychain(service: String, account: String) -> Data? {
+    /// Returns nil when there is no such item; throws when the keychain can't be read.
+    private static func readKeychain(service: String, account: String) throws -> Data? {
         let query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: service,
@@ -86,16 +101,20 @@ enum LegacyMigration {
 
         var result: AnyObject?
         let status = SecItemCopyMatching(query as CFDictionary, &result)
-        return status == errSecSuccess ? result as? Data : nil
+        switch status {
+        case errSecSuccess: return result as? Data
+        case errSecItemNotFound: return nil
+        default: throw KeychainService.KeychainError.loadFailed(status)
+        }
     }
 
-    @discardableResult
     private static func writeKeychain(service: String, account: String, data: Data) -> Bool {
         let query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: service,
             kSecAttrAccount as String: account,
             kSecValueData as String: data,
+            kSecAttrAccessible as String: kSecAttrAccessibleWhenUnlocked,
         ]
 
         let status = SecItemAdd(query as CFDictionary, nil)

@@ -63,8 +63,12 @@ actor KeychainService {
             kSecAttrAccount as String: key.rawValue
         ]
 
+        // Only the foreground app reads these items. This stays on the file-based
+        // keychain: Developer ID builds lack the entitlement the data protection
+        // keychain requires (errSecMissingEntitlement).
         let updateAttributes: [String: Any] = [
-            kSecValueData as String: data
+            kSecValueData as String: data,
+            kSecAttrAccessible as String: kSecAttrAccessibleWhenUnlocked
         ]
 
         let status = SecItemUpdate(query as CFDictionary, updateAttributes as CFDictionary)
@@ -74,7 +78,8 @@ actor KeychainService {
                 kSecClass as String: kSecClassGenericPassword,
                 kSecAttrService as String: service,
                 kSecAttrAccount as String: key.rawValue,
-                kSecValueData as String: data
+                kSecValueData as String: data,
+                kSecAttrAccessible as String: kSecAttrAccessibleWhenUnlocked
             ]
 
             let addStatus = SecItemAdd(addQuery as CFDictionary, nil)

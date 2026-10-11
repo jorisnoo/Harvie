@@ -4,9 +4,6 @@
 //
 
 import Foundation
-import os.log
-
-nonisolated private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "app.harvie", category: "RawAPI")
 
 /// Sibling client to `HarvestAPIService` used by `HarvestExporter` to capture
 /// raw, untyped JSON responses for any Harvest endpoint. Returns `Data` only,
@@ -22,6 +19,7 @@ actor HarvestRawAPIClient {
         case invalidURL
         case unauthorized
         case notFound
+        case rateLimited
         case serverError(Int)
         case malformedResponse
         case missingResourceKey(String)
@@ -31,6 +29,7 @@ actor HarvestRawAPIClient {
             case .invalidURL: return Strings.Errors.invalidURL
             case .unauthorized: return Strings.Errors.unauthorized
             case .notFound: return Strings.Errors.notFound
+            case .rateLimited: return Strings.Errors.rateLimited
             case .serverError(let code): return Strings.Errors.serverError(code)
             case .malformedResponse: return Strings.Errors.decodingFailed
             case .missingResourceKey(let key): return "Response missing expected key '\(key)'."
@@ -51,7 +50,7 @@ actor HarvestRawAPIClient {
         resourceKey: String,
         credentials: HarvestCredentials,
         extraQuery: [URLQueryItem] = [],
-        perPage: Int = 100
+        perPage: Int = HarvestAPIService.maxPageSize
     ) async throws -> Data {
         var merged: [Any] = []
         var page = 1
@@ -121,7 +120,7 @@ actor HarvestRawAPIClient {
         request.setValue("Harvie (hello@harvie.app)", forHTTPHeaderField: "User-Agent")
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
 
-        let (data, response) = try await session.data(for: request)
+        let (data, response) = try await HarvestRateLimit.data(for: request, using: session)
 
         guard let http = response as? HTTPURLResponse else {
             throw RawAPIError.malformedResponse
@@ -135,13 +134,7 @@ actor HarvestRawAPIClient {
         case 404:
             throw RawAPIError.notFound
         case 429:
-            // Backoff: wait the duration Harvest tells us, default 15s.
-            let retryAfter = (http.value(forHTTPHeaderField: "Retry-After")).flatMap(Double.init) ?? 15
-            #if DEBUG
-            logger.debug("Rate limited, sleeping \(retryAfter)s before retry")
-            #endif
-            try await Task.sleep(for: .seconds(retryAfter))
-            return try await performRequest(path: path, credentials: credentials, queryItems: queryItems)
+            throw RawAPIError.rateLimited
         default:
             throw RawAPIError.serverError(http.statusCode)
         }
