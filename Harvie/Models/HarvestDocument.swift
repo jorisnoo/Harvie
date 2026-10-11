@@ -6,7 +6,7 @@
 import Foundation
 
 /// A Harvest document listed by the app: an invoice or an estimate.
-protocol HarvestDocument: Identifiable, Sendable where ID == Int {
+protocol HarvestDocument: Identifiable where ID == Int {
     var updatedAt: Date { get }
 }
 
