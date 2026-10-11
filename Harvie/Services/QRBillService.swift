@@ -73,17 +73,22 @@ struct QRBillService {
         let reference = CreditorReferenceGenerator.validate(generated)
             ? generated : CreditorReferenceGenerator.generate(from: String(invoice.id))
 
+        // Text is restricted to the QR bill's character set up front, so the slip
+        // renders exactly what the payload encodes and validation sees final lengths.
+        let debtor = debtorAddress?.sanitized()
+        let message = "\(language.resolvedQRBillLabels(overrides: labelOverrides).invoice) \(invoice.number)"
+
         let data = QRBillData(
             creditorIBAN: creditorInfo.iban.replacingOccurrences(of: " ", with: "").uppercased(),
-            creditorAddress: creditorInfo.structuredAddress,
+            creditorAddress: creditorInfo.structuredAddress.sanitized(),
             amount: invoice.dueAmount,
             currency: currency,
             // The spec requires postal code and town when a debtor is present; an
             // incomplete address (e.g. client fetch failed) would make scanners reject
             // the code. Omit the debtor instead — the renderer draws the blank field.
-            debtorAddress: debtorAddress?.isValid == true ? debtorAddress : nil,
+            debtorAddress: debtor?.isValid == true ? debtor : nil,
             reference: reference,
-            unstructuredMessage: "\(language.resolvedQRBillLabels(overrides: labelOverrides).invoice) \(invoice.number)",
+            unstructuredMessage: QRBillText.sanitize(message),
             billingInfo: nil
         )
         if let error = validate(data).first { throw error }
@@ -109,9 +114,12 @@ struct QRBillService {
             return nil
         }
 
-        let scaleX = size / outputImage.extent.size.width
-        let scaleY = size / outputImage.extent.size.height
-        let scaledImage = outputImage.transformed(by: CGAffineTransform(scaleX: scaleX, y: scaleY))
+        // Scale by a whole factor with nearest-neighbour sampling so every module stays a
+        // crisp square; the renderer then draws the image at exactly 46 x 46 mm.
+        let scale = max(1, (size / outputImage.extent.width).rounded(.up))
+        let scaledImage = outputImage
+            .samplingNearest()
+            .transformed(by: CGAffineTransform(scaleX: scale, y: scale))
 
         let context = CIContext()
         return context.createCGImage(scaledImage, from: scaledImage.extent)

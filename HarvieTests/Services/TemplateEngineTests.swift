@@ -104,6 +104,18 @@ struct TemplateEngineTests {
         #expect(result == "")
     }
 
+    @Test func emptyOptionalBoxedInAnyIsMissing() {
+        let context: [String: Any] = [
+            "invoice": ["discount": Decimal?.none as Any, "logo": String?.none as Any],
+            "wrapped": Optional(Optional("set")) as Any
+        ]
+        #expect(TemplateEngine.render("[{{invoice.discount}}]", with: context) == "[]")
+        #expect(TemplateEngine.render("[{{invoice.discount | currency}}]", with: context) == "[]")
+        #expect(TemplateEngine.render("{{#if invoice.logo}}logo{{/if}}", with: context) == "")
+        #expect(TemplateEngine.render("{{wrapped}}", with: context) == "set")
+        #expect(TemplateEngine.render("[{{nothing}}]{{#if nothing}}x{{/if}}", with: ["nothing": NSNull()]) == "[]")
+    }
+
     @Test func conditionalDotNotation() {
         let context: [String: Any] = [
             "invoice": ["hasNotes": true]
@@ -127,6 +139,13 @@ struct TemplateEngineTests {
         let context: [String: Any] = ["date": date]
         let result = TemplateEngine.render("{{date | date:\"dd.MM.yyyy\"}}", with: context)
         #expect(result == "15.03.2024")
+    }
+
+    @Test func numberFiltersUseFixedFormat() {
+        let context: [String: Any] = ["value": Decimal(string: "1234567.125")!]
+        #expect(TemplateEngine.render("{{value | currency}}", with: context) == "1'234'567.13")
+        #expect(TemplateEngine.render("{{value | number:1}}", with: context) == "1'234'567.1")
+        #expect(TemplateEngine.render("{{value | numberTrimmed:2}}", with: context) == "1'234'567.13")
     }
 
     @Test func numberFilter() {

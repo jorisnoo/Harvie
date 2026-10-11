@@ -26,8 +26,9 @@ struct QRBillRenderer {
     // QR code size (46 x 46 mm per spec)
     private let qrCodeSizeMM: CGFloat = 46
 
-    // Swiss cross size (7 x 7 mm per spec)
+    // Swiss cross size (7 x 7 mm per spec, including its white border)
     private let swissCrossSizeMM: CGFloat = 7
+    private let swissCrossBorderMM: CGFloat = 0.5
 
     // Margins
     private let marginMM: CGFloat = 5
@@ -55,7 +56,9 @@ struct QRBillRenderer {
         if let cached = fontCache[key] {
             return cached
         }
-        let font = bold ? NSFont.boldSystemFont(ofSize: size) : NSFont.systemFont(ofSize: size)
+        // The QR-bill standard allows only Arial, Frutiger, Helvetica or Liberation Sans.
+        let font = NSFont(name: bold ? "Helvetica-Bold" : "Helvetica", size: size)
+            ?? (bold ? NSFont.boldSystemFont(ofSize: size) : NSFont.systemFont(ofSize: size))
         fontCache[key] = font
         return font
     }
@@ -175,7 +178,11 @@ struct QRBillRenderer {
         let qrX = leftMargin
         let qrY = y - qrSize
 
+        // No interpolation: modules must stay sharp-edged when viewers scale the image.
+        context.saveGState()
+        context.interpolationQuality = .none
         context.draw(qrImage, in: CGRect(x: qrX, y: qrY, width: qrSize, height: qrSize))
+        context.restoreGState()
 
         // Draw Swiss cross in center of QR code
         drawSwissCross(context: context, centerX: qrX + qrSize / 2, centerY: qrY + qrSize / 2)
@@ -343,44 +350,35 @@ struct QRBillRenderer {
         context.restoreGState()
     }
 
+    /// The Swiss cross measures 7 x 7 mm overall, white border included. Proportions follow
+    /// the Swiss flag that SIX's reference graphic is based on: the white cross spans 20/32
+    /// of the black square, and each arm is 3/10 of that span wide (6/32 of the square).
     private func drawSwissCross(context: CGContext, centerX: CGFloat, centerY: CGFloat) {
-        let size = swissCrossSizeMM * mmToPoints
-        let halfSize = size / 2
-        let borderWidth: CGFloat = 1
+        let outerSize = swissCrossSizeMM * mmToPoints
+        let squareSize = (swissCrossSizeMM - 2 * swissCrossBorderMM) * mmToPoints
+        let crossSpan = squareSize * 20 / 32
+        let armWidth = crossSpan * 3 / 10
 
-        // White border (larger square behind the black one)
+        func centeredRect(width: CGFloat, height: CGFloat) -> CGRect {
+            CGRect(x: centerX - width / 2, y: centerY - height / 2, width: width, height: height)
+        }
+
+        context.saveGState()
+
+        // White border
         context.setFillColor(CGColor.white)
-        context.fill(CGRect(
-            x: centerX - halfSize - borderWidth,
-            y: centerY - halfSize - borderWidth,
-            width: size + 2 * borderWidth,
-            height: size + 2 * borderWidth
-        ))
+        context.fill(centeredRect(width: outerSize, height: outerSize))
 
-        // Black background square
+        // Black square
         context.setFillColor(CGColor.black)
-        context.fill(CGRect(x: centerX - halfSize, y: centerY - halfSize, width: size, height: size))
+        context.fill(centeredRect(width: squareSize, height: squareSize))
 
         // White cross
         context.setFillColor(CGColor.white)
-        let crossArmLength = size * 0.6
-        let crossArmWidth = crossArmLength / 3
+        context.fill(centeredRect(width: crossSpan, height: armWidth))
+        context.fill(centeredRect(width: armWidth, height: crossSpan))
 
-        // Horizontal bar
-        context.fill(CGRect(
-            x: centerX - crossArmLength / 2,
-            y: centerY - crossArmWidth / 2,
-            width: crossArmLength,
-            height: crossArmWidth
-        ))
-
-        // Vertical bar
-        context.fill(CGRect(
-            x: centerX - crossArmWidth / 2,
-            y: centerY - crossArmLength / 2,
-            width: crossArmWidth,
-            height: crossArmLength
-        ))
+        context.restoreGState()
     }
 
     private func drawCornerMarks(context: CGContext, xMM: CGFloat, yMM: CGFloat, widthMM: CGFloat, heightMM: CGFloat) {

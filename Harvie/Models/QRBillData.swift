@@ -46,7 +46,7 @@ struct QRBillData {
         lines.append("")
 
         if let amount {
-            lines.append(formatAmount(amount))
+            lines.append(Self.formatAmount(amount))
         } else {
             lines.append("")
         }
@@ -67,25 +67,34 @@ struct QRBillData {
 
         lines.append(referenceType.rawValue)
         lines.append(reference ?? "")
-        lines.append(unstructuredMessage ?? "")
+        lines.append(QRBillText.payloadField(unstructuredMessage ?? "", limit: 140))
         lines.append(trailer)
 
         if let billingInfo {
-            lines.append(billingInfo)
+            lines.append(QRBillText.payloadField(billingInfo, limit: 140))
         }
 
         return lines.joined(separator: "\r\n")
     }
 
-    private func formatAmount(_ amount: Decimal) -> String {
+    /// The payload amount: ASCII digits, "." and no grouping, whatever the user's locale
+    /// (which could otherwise produce e.g. Arabic-Indic digits and an unreadable code).
+    static func formatAmount(_ amount: Decimal) -> String {
+        amountFormatter.string(from: amount as NSDecimalNumber) ?? ""
+    }
+
+    static let amountFormatter: NumberFormatter = {
         let formatter = NumberFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
         formatter.numberStyle = .decimal
+        formatter.usesGroupingSeparator = false
+        formatter.decimalSeparator = "."
         formatter.minimumFractionDigits = 2
         formatter.maximumFractionDigits = 2
-        formatter.decimalSeparator = "."
-        formatter.groupingSeparator = ""
-        return formatter.string(from: amount as NSDecimalNumber) ?? ""
-    }
+        // Matches `CurrencyFormatter.rounded` (NSDecimalRound `.plain`): halves round away from zero.
+        formatter.roundingMode = .halfUp
+        return formatter
+    }()
 }
 
 struct StructuredAddress {
@@ -118,18 +127,28 @@ struct StructuredAddress {
         "\(postalCode) \(town)".trimmingCharacters(in: .whitespaces)
     }
 
+    /// A copy restricted to the characters a QR bill permits, so the slip shows exactly
+    /// what the payload encodes. Line breaks stay for the slip's layout.
+    func sanitized() -> StructuredAddress {
+        StructuredAddress(
+            name: QRBillText.sanitize(name),
+            streetName: streetName.map(QRBillText.sanitize),
+            buildingNumber: buildingNumber.map(QRBillText.sanitize),
+            postalCode: QRBillText.sanitize(postalCode),
+            town: QRBillText.sanitize(town),
+            country: country
+        )
+    }
+
     func toPayloadLines() -> [String] {
-        // Every field must occupy exactly one line in the QR payload.
-        func flat(_ value: String, limit: Int) -> String {
-            String(value.components(separatedBy: .newlines).joined(separator: " ").prefix(limit))
-        }
-        return [
+        // Every field must occupy exactly one line of permitted characters in the QR payload.
+        [
             addressType,
-            flat(name, limit: 70),
-            flat(streetName ?? "", limit: 70),
-            flat(buildingNumber ?? "", limit: 16),
-            flat(postalCode, limit: 16),
-            flat(town, limit: 35),
+            QRBillText.payloadField(name, limit: 70),
+            QRBillText.payloadField(streetName ?? "", limit: 70),
+            QRBillText.payloadField(buildingNumber ?? "", limit: 16),
+            QRBillText.payloadField(postalCode, limit: 16),
+            QRBillText.payloadField(town, limit: 35),
             country.uppercased()
         ]
     }

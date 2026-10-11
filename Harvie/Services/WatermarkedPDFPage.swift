@@ -22,16 +22,17 @@ final class WatermarkedPDFPage: PDFPage {
     nonisolated override func draw(with box: PDFDisplayBox, to context: CGContext) {
         originalPage.draw(with: box, to: context)
 
-        // Align watermark bounds to the original page so any mediaBox
-        // differences (origin offset, slight size mismatch) don't shift the overlay.
+        // Fit the watermark into the original page with one uniform scale, centred, so
+        // mediaBox differences (origin offset, other paper sizes) never distort it.
         let target = originalPage.bounds(for: box)
         let source = watermarkPage.bounds(for: box)
+        guard source.width > 0, source.height > 0 else { return }
+        let scale = min(target.width / source.width, target.height / source.height)
 
         context.saveGState()
-        context.translateBy(x: target.origin.x - source.origin.x,
-                            y: target.origin.y - source.origin.y)
-        context.scaleBy(x: target.width / source.width,
-                        y: target.height / source.height)
+        context.translateBy(x: target.midX - source.midX * scale,
+                            y: target.midY - source.midY * scale)
+        context.scaleBy(x: scale, y: scale)
         watermarkPage.draw(with: box, to: context)
         context.restoreGState()
     }
