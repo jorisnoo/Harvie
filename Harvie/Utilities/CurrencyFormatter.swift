@@ -48,8 +48,9 @@ struct CurrencyFormatter {
         groupingSeparator: String = "'"
     ) -> NumberFormatter {
         let f = NumberFormatter()
-        // Set the locale first: assigning it resets the separators.
-        f.locale = Locale(identifier: "en_US_POSIX")
+        // Set the locale first: assigning it resets the separators. en_US rather than
+        // en_US_POSIX, whose number pattern has no grouping at all.
+        f.locale = Locale(identifier: "en_US")
         f.numberStyle = .decimal
         f.roundingMode = .halfUp
         f.minimumFractionDigits = minimumFractionDigits
