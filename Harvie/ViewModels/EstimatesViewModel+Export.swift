@@ -5,12 +5,8 @@
 
 import AppKit
 import Foundation
-import os.log
 import PDFKit
-import SwiftData
 import UniformTypeIdentifiers
-
-private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "app.harvie", category: "EstimatesVM+Export")
 
 extension EstimatesViewModel {
 
@@ -45,21 +41,22 @@ extension EstimatesViewModel {
             }
 
             let total = toExport.count
-            var overrideCache: [Int: ClientOverride?] = [:]
+            let resolver = modelContext.map { TemplateResolver(context: $0) }
+            var settingsByClient: [Int: AppSettings] = [:]
 
             for (index, estimate) in toExport.enumerated() {
                 exportProgressMessage = Strings.Export.exportingProgress(index + 1, total, estimate.number)
                 exportProgress = Double(index) / Double(total)
 
                 let clientId = estimate.client.id
-                if overrideCache[clientId] == nil {
-                    overrideCache[clientId] = .some(fetchClientOverride(for: clientId))
-                }
-                let resolvedSettings = appSettings.resolved(with: overrideCache[clientId] ?? nil)
+                let resolvedSettings = settingsByClient[clientId]
+                    ?? resolver?.settings(appSettings, forClient: clientId)
+                    ?? appSettings
+                settingsByClient[clientId] = resolvedSettings
 
                 var template: InvoiceTemplate?
                 if resolvedSettings.effectivePDFSource == .template {
-                    guard let loaded = await resolveTemplate(for: resolvedSettings) else {
+                    guard let loaded = resolver?.template(for: resolvedSettings) else {
                         exportError = Strings.Errors.noTemplateSelected
                         isExporting = false
                         return
@@ -99,41 +96,6 @@ extension EstimatesViewModel {
         }
 
         isExporting = false
-    }
-
-    func loadTemplate(id: UUID) async -> InvoiceTemplate? {
-        guard let context = modelContext else { return nil }
-        let descriptor = FetchDescriptor<InvoiceTemplate>(
-            predicate: #Predicate { $0.id == id }
-        )
-        return try? context.fetch(descriptor).first
-    }
-
-    private func resolveTemplate(for settings: AppSettings? = nil) async -> InvoiceTemplate? {
-        let effectiveSettings = settings ?? appSettings
-
-        if let templateId = effectiveSettings.selectedTemplateId,
-           let template = await loadTemplate(id: templateId) {
-            return template
-        }
-
-        guard let context = modelContext else { return nil }
-        let descriptor = FetchDescriptor<InvoiceTemplate>(
-            sortBy: [SortDescriptor(\.name)]
-        )
-
-        guard let fallback = try? context.fetch(descriptor).first else { return nil }
-
-        appSettings.selectedTemplateId = fallback.id
-        return fallback
-    }
-
-    func fetchClientOverride(for clientId: Int) -> ClientOverride? {
-        guard let context = modelContext else { return nil }
-        let descriptor = FetchDescriptor<ClientOverride>(
-            predicate: #Predicate { $0.clientId == clientId }
-        )
-        return try? context.fetch(descriptor).first
     }
 
     // MARK: - PDF Generation

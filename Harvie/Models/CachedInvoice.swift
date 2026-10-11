@@ -98,7 +98,7 @@ final class CachedInvoice {
         }
     }
 
-    func toInvoice() -> Invoice {
+    func toDocument() -> Invoice {
         var lineItems: [LineItem]?
         if let data = lineItemsData {
             lineItems = try? Self.jsonDecoder.decode([LineItem].self, from: data)
@@ -135,4 +135,8 @@ final class CachedInvoice {
             lineItems: lineItems
         )
     }
+}
+
+extension CachedInvoice: CachedDocument {
+    var documentID: Int { id }
 }

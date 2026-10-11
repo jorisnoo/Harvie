@@ -84,7 +84,7 @@ final class CachedEstimate {
         }
     }
 
-    func toEstimate() -> Estimate {
+    func toDocument() -> Estimate {
         var lineItems: [LineItem]?
         if let data = lineItemsData {
             lineItems = try? Self.jsonDecoder.decode([LineItem].self, from: data)
@@ -116,4 +116,8 @@ final class CachedEstimate {
             lineItems: lineItems
         )
     }
+}
+
+extension CachedEstimate: CachedDocument {
+    var documentID: Int { id }
 }
