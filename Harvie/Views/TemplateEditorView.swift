@@ -34,6 +34,14 @@ struct TemplateEditorView: View {
 
             Spacer()
 
+            if let error = viewModel.error {
+                Label(error, systemImage: "exclamationmark.triangle.fill")
+                    .font(.caption)
+                    .foregroundStyle(.red)
+                    .lineLimit(1)
+                    .help(error)
+            }
+
             if viewModel.isBuiltIn {
                 Label(Strings.Templates.readOnly, systemImage: "lock")
                     .font(.caption)
@@ -72,12 +80,13 @@ struct TemplateEditorView: View {
 
     private var editorPanel: some View {
         VStack(spacing: 0) {
-            Picker("", selection: $viewModel.selectedTab) {
+            Picker(Strings.Templates.editorMode, selection: $viewModel.selectedTab) {
                 ForEach(TemplateEditorViewModel.EditorTab.allCases, id: \.self) { tab in
                     Text(tab.rawValue).tag(tab)
                 }
             }
             .pickerStyle(.segmented)
+            .labelsHidden()
             .padding(8)
 
             Divider()
@@ -131,6 +140,7 @@ private struct PreviewPanel: View {
                 .buttonStyle(.borderless)
                 .controlSize(.small)
                 .help(Strings.Templates.refreshPreview)
+                .accessibilityLabel(Strings.Templates.refreshPreview)
             }
             .padding(.horizontal, 12)
             .padding(.vertical, 8)

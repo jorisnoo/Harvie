@@ -15,7 +15,9 @@ final class TemplateEditorViewModel {
     var template: InvoiceTemplate
     var htmlContent: String
     var cssContent: String
-    var name: String
+    var name: String {
+        didSet { if name != oldValue { isDirty = true } }
+    }
     var columnVisibility: ColumnVisibility
     var isDirty = false
     var isRendering = false

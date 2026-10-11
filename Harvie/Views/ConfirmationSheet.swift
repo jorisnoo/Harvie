@@ -11,6 +11,8 @@ struct ConfirmationSheet<Content: View>: View {
     let detail: String?
     let confirmLabel: String
     let isProcessing: Bool
+    /// Shown inside the sheet, since an alert can't present over it.
+    let errorMessage: String?
     let onConfirm: () -> Void
     let onCancel: () -> Void
     let width: CGFloat
@@ -22,6 +24,7 @@ struct ConfirmationSheet<Content: View>: View {
         detail: String? = nil,
         confirmLabel: String,
         isProcessing: Bool,
+        errorMessage: String? = nil,
         onConfirm: @escaping () -> Void,
         onCancel: @escaping () -> Void,
         width: CGFloat = 280,
@@ -32,6 +35,7 @@ struct ConfirmationSheet<Content: View>: View {
         self.detail = detail
         self.confirmLabel = confirmLabel
         self.isProcessing = isProcessing
+        self.errorMessage = errorMessage
         self.onConfirm = onConfirm
         self.onCancel = onCancel
         self.width = width
@@ -54,6 +58,13 @@ struct ConfirmationSheet<Content: View>: View {
             }
 
             content
+
+            if let errorMessage {
+                Label(errorMessage, systemImage: "exclamationmark.triangle.fill")
+                    .font(.callout)
+                    .foregroundStyle(.red)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
 
             HStack {
                 Button(Strings.Common.cancel, role: .cancel) {
@@ -81,6 +92,7 @@ extension ConfirmationSheet where Content == EmptyView {
         detail: String? = nil,
         confirmLabel: String,
         isProcessing: Bool,
+        errorMessage: String? = nil,
         onConfirm: @escaping () -> Void,
         onCancel: @escaping () -> Void,
         width: CGFloat = 280
@@ -91,6 +103,7 @@ extension ConfirmationSheet where Content == EmptyView {
             detail: detail,
             confirmLabel: confirmLabel,
             isProcessing: isProcessing,
+            errorMessage: errorMessage,
             onConfirm: onConfirm,
             onCancel: onCancel,
             width: width

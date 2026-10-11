@@ -23,6 +23,10 @@ struct ExportView: View {
         .task {
             await viewModel.checkCredentials()
         }
+        // Closing the window ends the export rather than leaving it running unseen.
+        .onDisappear {
+            viewModel.cancelExport()
+        }
     }
 
     // MARK: - Header
@@ -158,7 +162,7 @@ struct ExportView: View {
     @ViewBuilder
     private func failureChip(summary: HarvestExporter.Summary) -> some View {
         if summary.hasFailures {
-            Label("\(summary.results.count - summary.successfulResources) failed", systemImage: "exclamationmark.triangle.fill")
+            Label(Strings.DataExport.failedCount(summary.results.count - summary.successfulResources), systemImage: "exclamationmark.triangle.fill")
                 .foregroundStyle(.orange)
                 .font(.caption)
         }

@@ -40,12 +40,13 @@ struct LabelEditorSheet: View {
             Text(Strings.LabelEditor.title)
                 .font(.headline)
             Spacer()
-            Picker("", selection: $selectedLanguage) {
+            Picker(Strings.Settings.language, selection: $selectedLanguage) {
                 ForEach(TemplateLanguage.allCases, id: \.self) { lang in
                     Text(lang.displayName).tag(lang)
                 }
             }
             .pickerStyle(.segmented)
+            .labelsHidden()
             .frame(width: 300)
         }
         .padding()
@@ -128,6 +129,7 @@ private struct LabelRow: View {
             HStack(spacing: 4) {
                 TextField("", text: binding)
                     .textFieldStyle(.roundedBorder)
+                    .accessibilityLabel(displayLabel)
                     .frame(maxWidth: 250)
 
                 if isCustomized {
@@ -139,6 +141,7 @@ private struct LabelRow: View {
                     }
                     .buttonStyle(.borderless)
                     .help(Strings.LabelEditor.resetToDefault)
+                    .accessibilityLabel(Strings.LabelEditor.resetToDefault)
                 }
             }
         }
