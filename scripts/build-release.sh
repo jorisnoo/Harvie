@@ -57,7 +57,7 @@ Options:
     --clean                  Remove build artifacts before building
     --version X.Y.Z          Override version (default: from git tag)
     --build-number N         Override build number / CFBundleVersion (default: from project)
-    --configuration CONFIG   Build configuration (default: Release)
+    --configuration CONFIG   Build configuration (default: Release; App Store builds use build-appstore.sh)
     --help                   Show this help message
 
 Environment Variables (for notarisation):
@@ -198,11 +198,12 @@ build_archive() {
         -scheme "$XCODE_SCHEME" \
         -configuration "$CONFIGURATION" \
         -archivePath "$BUILD_DIR/$XCODE_SCHEME.xcarchive" \
+        -onlyUsePackageVersionsFromResolvedFile \
         CODE_SIGN_STYLE=Manual \
         CODE_SIGN_IDENTITY="$cert_name" \
         DEVELOPMENT_TEAM="$team_id" \
         MARKETING_VERSION="$version" \
-        "${extra_args[@]}"
+        ${extra_args[@]+"${extra_args[@]}"}
 
     log_info "Archive created successfully."
 }
@@ -218,18 +219,9 @@ export_app() {
 
     log_info "Exporting app..."
 
-    # Use App Store export options if building for App Store
-    if [[ "$CONFIGURATION" == *"AppStore"* ]]; then
-        export_options_plist="$SCRIPT_DIR/ExportOptions-AppStore.plist"
-        if [ ! -f "$export_options_plist" ]; then
-            log_error "ExportOptions-AppStore.plist not found at $export_options_plist"
-            exit 1
-        fi
-        log_info "Using App Store export options"
-    else
-        # Create Developer ID export options
-        export_options_plist="$BUILD_DIR/ExportOptions.plist"
-        cat > "$export_options_plist" << EOF
+    # Create Developer ID export options
+    export_options_plist="$BUILD_DIR/ExportOptions.plist"
+    cat > "$export_options_plist" << EOF
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
@@ -245,8 +237,6 @@ export_app() {
 </dict>
 </plist>
 EOF
-        log_info "Using Developer ID export options"
-    fi
 
     xcodebuild -exportArchive \
         -archivePath "$BUILD_DIR/$XCODE_SCHEME.xcarchive" \
@@ -393,6 +383,10 @@ while [[ $# -gt 0 ]]; do
             ;;
         --configuration)
             CONFIGURATION="$2"
+            if [[ "$CONFIGURATION" == *"AppStore"* ]]; then
+                log_error "App Store builds use scripts/build-appstore.sh."
+                exit 1
+            fi
             shift 2
             ;;
         --help)

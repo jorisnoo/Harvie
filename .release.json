@@ -11,10 +11,15 @@
       "Harvie",
       "-configuration",
       "Debug",
+      "-destination",
+      "platform=macOS",
       "-derivedDataPath",
       "/tmp/Harvie-release-check",
+      "-onlyUsePackageVersionsFromResolvedFile",
+      "CODE_SIGN_IDENTITY=-",
+      "CODE_SIGNING_REQUIRED=NO",
       "CODE_SIGNING_ALLOWED=NO",
-      "build"
+      "test"
     ]
   ],
   "stable_only": true
