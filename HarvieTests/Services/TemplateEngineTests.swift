@@ -143,9 +143,10 @@ struct TemplateEngineTests {
 
     @Test func numberFiltersUseFixedFormat() {
         let context: [String: Any] = ["value": Decimal(string: "1234567.125")!]
-        #expect(TemplateEngine.render("{{value | currency}}", with: context) == "1'234'567.13")
-        #expect(TemplateEngine.render("{{value | number:1}}", with: context) == "1'234'567.1")
-        #expect(TemplateEngine.render("{{value | numberTrimmed:2}}", with: context) == "1'234'567.13")
+        // Rendered output is HTML-escaped, so the apostrophe separator appears as &#39;.
+        #expect(TemplateEngine.render("{{value | currency}}", with: context) == "1&#39;234&#39;567.13")
+        #expect(TemplateEngine.render("{{value | number:1}}", with: context) == "1&#39;234&#39;567.1")
+        #expect(TemplateEngine.render("{{value | numberTrimmed:2}}", with: context) == "1&#39;234&#39;567.13")
     }
 
     @Test func numberFilter() {
