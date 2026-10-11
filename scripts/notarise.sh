@@ -105,11 +105,11 @@ notarise_file() {
             --apple-id "$APPLE_ID" \
             --password "$APPLE_APP_PASSWORD" \
             --team-id "$APPLE_TEAM_ID" \
-            --wait
+            --wait || return 1
     else
         xcrun notarytool submit "$file_path" \
             --keychain-profile "$NOTARY_PROFILE" \
-            --wait
+            --wait || return 1
     fi
 
     log_info "Notarisation complete for: $file_path"
@@ -130,7 +130,7 @@ verify_file() {
     log_info "Verifying notarisation: $file_path"
 
     if [ "$extension" = "dmg" ]; then
-        spctl -a -vvv -t install "$file_path"
+        spctl -a -vvv -t install "$file_path" || return 1
     elif [ "$extension" = "zip" ]; then
         # For ZIP, extract and verify the app inside
         local temp_dir
@@ -139,7 +139,10 @@ verify_file() {
         local app_path
         app_path=$(find "$temp_dir" -name "*.app" -maxdepth 1 | head -1)
         if [ -n "$app_path" ]; then
-            spctl -a -vvv -t execute "$app_path"
+            if ! spctl -a -vvv -t execute "$app_path"; then
+                rm -rf "$temp_dir"
+                return 1
+            fi
         else
             log_warn "No .app found in ZIP for verification"
         fi
@@ -175,14 +178,14 @@ main() {
             staple_file "$file"
             if verify_file "$file"; then
                 log_info "Successfully notarised and verified: $file"
-                ((success_count++))
+                success_count=$((success_count + 1))
             else
                 log_error "Verification failed: $file"
-                ((fail_count++))
+                fail_count=$((fail_count + 1))
             fi
         else
             log_error "Notarisation failed: $file"
-            ((fail_count++))
+            fail_count=$((fail_count + 1))
         fi
     done
 

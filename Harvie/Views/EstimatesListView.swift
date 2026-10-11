@@ -184,9 +184,6 @@ private struct EstimatesOnChangeModifier: ViewModifier {
             .onReceive(NotificationCenter.default.publisher(for: .refreshEstimates)) { _ in
                 viewModel.refresh()
             }
-            .onReceive(NotificationCenter.default.publisher(for: SettingsViewModel.settingsSavedNotification)) { _ in
-                Task { await viewModel.reloadSettings() }
-            }
     }
 }
 

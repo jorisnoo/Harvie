@@ -156,7 +156,7 @@ private struct MoneyRainContentView: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .overlay(alignment: .topTrailing) {
-            Text("Press Esc to dismiss celebration")
+            Text(Strings.Alerts.celebrationDismissHint)
                 .font(.callout)
                 .padding(10)
                 .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 8))

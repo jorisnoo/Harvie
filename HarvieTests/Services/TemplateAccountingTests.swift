@@ -44,4 +44,33 @@ struct TemplateAccountingTests {
         #expect(html.contains("65.00"))
         #expect(html.contains("-40.00"))
     }
+
+    @Test func leavesMissingOptionalsOutOfTheContext() throws {
+        let context = TemplateContext.from(invoice: TestDocuments.invoice(), creditorInfo: TestDocuments.creditor).toDictionary()
+        let invoice = try #require(context["invoice"] as? [String: Any])
+        let creditor = try #require(context["creditor"] as? [String: Any])
+        #expect(invoice["discount"] == nil)
+        #expect(invoice["tax2Amount"] == nil)
+        #expect(creditor["logo"] == nil)
+        #expect(TemplateEngine.render("{{#if invoice.discount}}x{{/if}}[{{invoice.discount}}]", with: context) == "[]")
+    }
+
+    @Test func totalHoursCountsOnlyTimeBasedLines() throws {
+        let date = Date(timeIntervalSince1970: 1_788_220_800)
+        let items = [
+            LineItem(id: 1, kind: "Service", description: "Design", quantity: 8, unitPrice: 100, amount: 800,
+                     taxed: false, taxed2: false, project: nil),
+            LineItem(id: 2, kind: "Product", description: "Hosting", quantity: 12, unitPrice: 10, amount: 120,
+                     taxed: false, taxed2: false, project: nil),
+            LineItem(id: 3, kind: "Consulting", description: "Workshop", quantity: 2.5, unitPrice: 200, amount: 500,
+                     taxed: false, taxed2: false, project: nil)
+        ]
+        let invoice = Invoice(id: 1, clientKey: "fixture", number: "INV-1", amount: 1420, dueAmount: 1420,
+                              currency: "CHF", state: .open, issueDate: date, dueDate: date,
+                              createdAt: date, updatedAt: date, client: ClientReference(id: 1, name: "Fixture"),
+                              lineItems: items)
+        let context = TemplateContext.from(invoice: invoice, creditorInfo: TestDocuments.creditor).toDictionary()
+        let values = try #require(context["invoice"] as? [String: Any])
+        #expect(values["totalHours"] as? Decimal == Decimal(string: "10.5"))
+    }
 }

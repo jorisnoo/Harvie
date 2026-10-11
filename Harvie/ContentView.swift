@@ -14,7 +14,6 @@ extension Notification.Name {
 }
 
 struct ContentView: View {
-    @Environment(\.modelContext) private var modelContext
     @State private var invoicesVM = InvoicesViewModel()
     @State private var estimatesVM = EstimatesViewModel()
     @State private var columnVisibility: NavigationSplitViewVisibility = .all
@@ -30,29 +29,22 @@ struct ContentView: View {
 
     private var estimatesEnabled: Bool { FeatureFlags.estimates }
 
+    // Keep modifiers off the NavigationSplitView (see AGENTS.md): loading, overlays and
+    // notification handling live in sibling views so sidebar animation doesn't re-evaluate them.
     var body: some View {
-        NavigationSplitView(columnVisibility: $columnVisibility) {
-            sidebar
-                .navigationSplitViewColumnWidth(min: 300, ideal: 360)
-        } detail: {
-            detail
-        }
-        .searchable(text: searchTextBinding, isPresented: $isSearching, placement: .sidebar, prompt: searchPrompt)
-        .onReceive(NotificationCenter.default.publisher(for: .searchInvoices)) { _ in
-            isSearching = true
-        }
-        .overlay { ExportOverlayView(invoicesVM: invoicesVM, estimatesVM: estimatesVM, source: source.wrappedValue) }
-        .overlay { MoneyRainOverlay() }
-        .task {
-            invoicesVM.modelContext = modelContext
-            await invoicesVM.loadSavedState()
-            invoicesVM.loadInvoices()
+        ZStack {
+            DocumentsLifecycleView(invoicesVM: invoicesVM, estimatesVM: estimatesVM, estimatesEnabled: estimatesEnabled)
 
-            if estimatesEnabled {
-                estimatesVM.modelContext = modelContext
-                await estimatesVM.loadSavedState()
-                estimatesVM.loadEstimates()
+            NavigationSplitView(columnVisibility: $columnVisibility) {
+                sidebar
+                    .navigationSplitViewColumnWidth(min: 300, ideal: 360)
+            } detail: {
+                detail
+                    .modifier(DetailSaveErrorAlert())
             }
+
+            ExportOverlayView(invoicesVM: invoicesVM, estimatesVM: estimatesVM, source: source.wrappedValue)
+            MoneyRainOverlay()
         }
     }
 
@@ -65,6 +57,10 @@ struct ContentView: View {
             case .estimates:
                 EstimatesListView(viewModel: estimatesVM)
             }
+        }
+        .searchable(text: searchTextBinding, isPresented: $isSearching, placement: .sidebar, prompt: searchPrompt)
+        .onReceive(NotificationCenter.default.publisher(for: .searchInvoices)) { _ in
+            isSearching = true
         }
         .toolbar {
             if columnVisibility != .detailOnly {
@@ -87,7 +83,7 @@ struct ContentView: View {
     private var sortFilterMenu: some View {
         Menu {
             if estimatesEnabled {
-                Picker("Document", selection: source) {
+                Picker(Strings.DocumentSource.document, selection: source) {
                     ForEach(DocumentSource.allCases) { documentSource in
                         Text(documentSource.displayName).tag(documentSource)
                     }
@@ -108,7 +104,7 @@ struct ContentView: View {
 
     private var activeFilterLabel: String? {
         if source.wrappedValue == .invoices, let period = invoicesVM.selectedPeriod {
-            return invoicesVM.formatPeriod(period)
+            return invoicesVM.filterPeriod.displayLabel(for: period)
         }
         return nil
     }
@@ -126,7 +122,7 @@ struct ContentView: View {
                     }
                 } label: {
                     HStack {
-                        Text(option.rawValue)
+                        Text(option.displayName)
                         if invoicesVM.sortOption == option {
                             Image(systemName: invoicesVM.sortDirection == .ascending ? "chevron.up" : "chevron.down")
                         }
@@ -145,7 +141,7 @@ struct ContentView: View {
                     }
                 } label: {
                     HStack {
-                        Text(period.rawValue)
+                        Text(period.displayName)
                         if invoicesVM.filterPeriod == period {
                             Image(systemName: "checkmark")
                         }
@@ -154,7 +150,7 @@ struct ContentView: View {
             }
         }
 
-        Section(Strings.InvoicesList.filterByPeriod(invoicesVM.filterPeriod.rawValue)) {
+        Section(Strings.InvoicesList.filterByPeriod(invoicesVM.filterPeriod.displayName)) {
             Button {
                 invoicesVM.selectedPeriod = nil
             } label: {
@@ -171,7 +167,7 @@ struct ContentView: View {
                     invoicesVM.selectedPeriod = period
                 } label: {
                     HStack {
-                        Text(invoicesVM.formatPeriod(period))
+                        Text(invoicesVM.filterPeriod.displayLabel(for: period))
                         if invoicesVM.selectedPeriod == period {
                             Image(systemName: "checkmark")
                         }
@@ -205,6 +201,63 @@ struct ContentView: View {
         case .invoices: Strings.InvoicesList.filterPrompt
         case .estimates: Strings.EstimatesList.filterPrompt
         }
+    }
+}
+
+/// Zero-size helper that loads both document lists and applies saved settings to them.
+/// Lives outside the list views so a hidden list still picks up account changes.
+private struct DocumentsLifecycleView: View {
+    @Environment(\.modelContext) private var modelContext
+    let invoicesVM: InvoicesViewModel
+    let estimatesVM: EstimatesViewModel
+    let estimatesEnabled: Bool
+
+    var body: some View {
+        Color.clear
+            .frame(width: 0, height: 0)
+            .task {
+                invoicesVM.modelContext = modelContext
+                await invoicesVM.loadSavedState()
+                invoicesVM.loadInvoices()
+
+                if estimatesEnabled {
+                    estimatesVM.modelContext = modelContext
+                    await estimatesVM.loadSavedState()
+                    estimatesVM.loadEstimates()
+                }
+            }
+            .onReceive(NotificationCenter.default.publisher(for: SettingsViewModel.settingsSavedNotification)) { notification in
+                let needsAPIRefresh = notification.userInfo?["needsAPIRefresh"] as? Bool == true
+                Task {
+                    // Reload settings first so the refetch sees the new demo-mode flag.
+                    await invoicesVM.reloadSettings()
+                    if needsAPIRefresh { invoicesVM.loadInvoices() }
+
+                    guard estimatesEnabled else { return }
+                    await estimatesVM.reloadSettings()
+                    if needsAPIRefresh { estimatesVM.loadEstimates() }
+                }
+            }
+    }
+}
+
+/// Reports inline-edit saves that failed after their detail view was already gone.
+private struct DetailSaveErrorAlert: ViewModifier {
+    @State private var message: String?
+
+    func body(content: Content) -> some View {
+        content
+            .onReceive(NotificationCenter.default.publisher(for: .detailSaveFailed)) { notification in
+                message = notification.userInfo?["message"] as? String
+            }
+            .alert(Strings.Common.error, isPresented: Binding(
+                get: { message != nil },
+                set: { if !$0 { message = nil } }
+            )) {
+                Button(Strings.Common.ok) { message = nil }
+            } message: {
+                Text(message ?? "")
+            }
     }
 }
 
@@ -246,11 +299,9 @@ private struct InvoicesDetailContentView: View {
                 appSettings: viewModel.appSettings,
                 onRefresh: { viewModel.refreshInvoices(ids: [invoice.id]) },
                 onStateChanged: { id, newState in
-                    if newState == .paid {
-                        viewModel.refreshCurrentFilter()
-                    } else {
-                        viewModel.switchFilterAndSelect(invoiceId: id, to: newState)
-                    }
+                    // Keeps the invoice visible and selected (so the detail view and its
+                    // success alert stay up) and refreshes just that invoice.
+                    viewModel.switchFilterAndSelect(invoiceId: id, to: newState)
                 }
             )
             .id(invoice.id)

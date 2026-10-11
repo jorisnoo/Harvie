@@ -52,17 +52,19 @@ struct DocumentCacheTests {
         config.protocolClasses = [UnavailableAPIURLProtocol.self]
         let vm = InvoicesViewModel(apiService: HarvestAPIService(session: URLSession(configuration: config)), keychainService: keychain)
         vm.modelContext = store.mainContext
-        vm.updateCache(with: [TestDocuments.invoice(id: 1)], context: store.mainContext, accountId: "a")
-        vm.updateCache(with: [TestDocuments.invoice(id: 2)], context: store.mainContext, accountId: "b")
-        // Legacy records have no verified owner and must never appear in either account.
-        store.mainContext.insert(CachedInvoice(from: TestDocuments.invoice(id: 3)))
-        try store.mainContext.save()
         for (account, expectedID) in [("a", 1), ("b", 2)] {
+            vm.updateCache(with: [TestDocuments.invoice(id: 1)], context: store.mainContext, accountId: "a")
+            vm.updateCache(with: [TestDocuments.invoice(id: 2)], context: store.mainContext, accountId: "b")
+            // Legacy records have no verified owner and must never appear in either account.
+            store.mainContext.insert(CachedInvoice(from: TestDocuments.invoice(id: 3)))
+            try store.mainContext.save()
             try await keychain.saveHarvestCredentials(HarvestCredentials(accessToken: "fixture", accountId: account, subdomain: "fixture"))
             await vm.performLoadInvoices()
             #expect(vm.invoices.map(\.id) == [expectedID])
             #expect(vm.error != nil)
             #expect(vm.lastRefreshed != nil)
+            // Switching accounts also drops every other account's documents from disk.
+            #expect(try cachedInvoiceIDs(in: store) == [expectedID])
         }
         vm.selectedInvoiceIDs = [2]
         try await keychain.delete(for: .harvestCredentials)
@@ -70,6 +72,23 @@ struct DocumentCacheTests {
         #expect(vm.invoices.isEmpty)
         #expect(vm.selectedInvoiceIDs.isEmpty)
         #expect(!vm.hasValidCredentials)
+        #expect(try cachedInvoiceIDs(in: store).isEmpty)
+    }
+
+    @Test func purgeKeepsOnlyTheActiveAccount() throws {
+        let store = try container()
+        let cache = DocumentCache<CachedEstimate>(context: store.mainContext)
+        cache.store([TestDocuments.estimate(id: 1)], accountId: "a", replaceAll: false)
+        cache.store([TestDocuments.estimate(id: 2)], accountId: "b", replaceAll: false)
+        store.mainContext.insert(CachedEstimate(from: TestDocuments.estimate(id: 3)))
+        cache.purge(keeping: "a")
+        #expect(try store.mainContext.fetch(FetchDescriptor<CachedEstimate>()).map(\.documentID) == [1])
+        cache.purge(keeping: nil)
+        #expect(try store.mainContext.fetchCount(FetchDescriptor<CachedEstimate>()) == 0)
+    }
+
+    private func cachedInvoiceIDs(in store: ModelContainer) throws -> [Int] {
+        try store.mainContext.fetch(FetchDescriptor<CachedInvoice>()).map(\.documentID).sorted()
     }
 
     @Test func settingsSavePreservesLatestListState() {

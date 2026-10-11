@@ -7,7 +7,8 @@ import Foundation
 
 /// Flattens an array of JSON objects (as produced by `JSONSerialization`)
 /// into RFC 4180-compliant CSV. Nested objects and arrays are JSON-encoded
-/// into a single cell so no information is lost.
+/// into a single cell so no information is lost. Text that a spreadsheet would
+/// evaluate as a formula is prefixed with `'` so it opens as plain text.
 enum CSVWriter {
 
     /// Produces CSV bytes for the given rows. Column order: `id` first (if
@@ -17,7 +18,7 @@ enum CSVWriter {
         let columns = columnOrder(for: rows)
 
         var output = ""
-        output.append(columns.map(escape).joined(separator: ","))
+        output.append(columns.map { escape(neutralizingFormula($0)) }.joined(separator: ","))
         output.append("\r\n")
 
         for row in rows {
@@ -55,7 +56,7 @@ enum CSVWriter {
 
         switch value {
         case let s as String:
-            return s
+            return neutralizingFormula(s)
         case let n as NSNumber:
             // `as? Bool` would also match NSNumbers holding exactly 0 or 1 (SE-0170
             // bridging), so distinguish real JSON booleans by their CF type instead.
@@ -71,6 +72,19 @@ enum CSVWriter {
             return ""
         default:
             return String(describing: value)
+        }
+    }
+
+    /// Guards against CSV injection: spreadsheets treat text starting with these
+    /// characters as a formula. Numbers arrive as `NSNumber`, so negative values
+    /// never reach this and stay numeric.
+    nonisolated private static func neutralizingFormula(_ text: String) -> String {
+        guard let first = text.unicodeScalars.first else { return text }
+        switch first {
+        case "=", "+", "-", "@", "\t", "\r":
+            return "'" + text
+        default:
+            return text
         }
     }
 

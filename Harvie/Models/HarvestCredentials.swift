@@ -18,6 +18,12 @@ struct HarvestCredentials: Codable, Sendable, Equatable {
         canTestConnection && !subdomain.isEmpty
     }
 
+    /// Whether both use the same token and account, so a subdomain resolved for
+    /// one still belongs to the other.
+    func hasSameAccount(as other: HarvestCredentials?) -> Bool {
+        accessToken == other?.accessToken && accountId == other?.accountId
+    }
+
     private enum CodingKeys: String, CodingKey {
         case accessToken, accountId, subdomain
     }

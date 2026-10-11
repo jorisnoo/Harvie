@@ -8,11 +8,11 @@ struct RefreshWarningView: View {
     var body: some View {
         HStack(alignment: .top) {
             VStack(alignment: .leading, spacing: 4) {
-                Label("Refresh failed: \(error)", systemImage: "exclamationmark.triangle")
+                Label(Strings.RefreshWarning.refreshFailed(error), systemImage: "exclamationmark.triangle")
                 if let lastRefreshed {
-                    Text("Showing saved data from \(lastRefreshed.formatted(date: .abbreviated, time: .shortened)).")
+                    Text(Strings.RefreshWarning.showingSavedDataFrom(lastRefreshed.formatted(date: .abbreviated, time: .shortened)))
                 } else {
-                    Text("Showing saved data. Balances and statuses may be out of date.")
+                    Text(Strings.RefreshWarning.showingSavedData)
                 }
             }
             Spacer(minLength: 4)

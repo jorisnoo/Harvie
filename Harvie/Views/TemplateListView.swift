@@ -3,6 +3,7 @@
 //  Harvie
 //
 
+import AppKit
 import SwiftData
 import SwiftUI
 import UniformTypeIdentifiers
@@ -55,6 +56,7 @@ struct TemplateListView: View {
                         .frame(height: 16)
                 }
                 .help(Strings.Templates.newTemplate)
+                .accessibilityLabel(Strings.Templates.newTemplate)
 
                 Button {
                     guard let selected = selectedTemplate else { return }
@@ -65,6 +67,7 @@ struct TemplateListView: View {
                 }
                 .disabled(selectedTemplate == nil)
                 .help(Strings.Templates.duplicateTemplate)
+                .accessibilityLabel(Strings.Templates.duplicateTemplate)
 
                 Button {
                     guard let selected = selectedTemplate else { return }
@@ -81,6 +84,7 @@ struct TemplateListView: View {
                 }
                 .disabled(selectedTemplate == nil || selectedTemplate?.isBuiltIn == true)
                 .help(Strings.Templates.deleteTemplate)
+                .accessibilityLabel(Strings.Templates.deleteTemplate)
 
                 Spacer()
 
@@ -91,6 +95,7 @@ struct TemplateListView: View {
                         .frame(height: 16)
                 }
                 .help(Strings.Templates.importTemplate)
+                .accessibilityLabel(Strings.Templates.importTemplate)
 
                 Button {
                     guard let selected = selectedTemplate else { return }
@@ -101,6 +106,7 @@ struct TemplateListView: View {
                 }
                 .disabled(selectedTemplate == nil)
                 .help(Strings.Templates.exportTemplate)
+                .accessibilityLabel(Strings.Templates.exportTemplate)
 
                 Button {
                     TemplateFileManager.revealTemplatesFolder()
@@ -109,6 +115,7 @@ struct TemplateListView: View {
                         .frame(height: 16)
                 }
                 .help(Strings.Templates.revealTemplatesFolder)
+                .accessibilityLabel(Strings.Templates.revealTemplatesFolder)
 
                 Button {
                     guard let selected = selectedTemplate else { return }
@@ -343,6 +350,7 @@ struct TemplateListView: View {
         )
         window.title = template.isBuiltIn ? Strings.Templates.builtInWindowTitle(template.name) : template.name
         window.contentView = NSHostingView(rootView: editorView)
+        TemplateEditorWindowDelegate(viewModel: viewModel).attach(to: window)
 
         let controller = NSWindowController(window: window)
         editorControllers.append(controller)
@@ -431,6 +439,51 @@ private struct TemplateRow: View {
             }
         }
         .contentShape(Rectangle())
+    }
+}
+
+// MARK: - Editor Window Delegate
+
+/// Asks to save unsaved template edits before the editor window closes.
+@MainActor
+private final class TemplateEditorWindowDelegate: NSObject, NSWindowDelegate {
+    private let viewModel: TemplateEditorViewModel
+    /// `NSWindow.delegate` is weak, so the delegate keeps itself alive until its window closes.
+    private var retainedSelf: TemplateEditorWindowDelegate?
+
+    init(viewModel: TemplateEditorViewModel) {
+        self.viewModel = viewModel
+    }
+
+    func attach(to window: NSWindow) {
+        window.delegate = self
+        retainedSelf = self
+    }
+
+    func windowShouldClose(_ sender: NSWindow) -> Bool {
+        guard viewModel.isDirty, !viewModel.isBuiltIn else { return true }
+
+        let alert = NSAlert()
+        alert.messageText = Strings.Templates.unsavedChangesTitle(viewModel.name)
+        alert.informativeText = Strings.Templates.unsavedChangesMessage
+        alert.addButton(withTitle: Strings.Common.save)
+        alert.addButton(withTitle: Strings.Templates.dontSave)
+        alert.addButton(withTitle: Strings.Common.cancel)
+
+        switch alert.runModal() {
+        case .alertFirstButtonReturn:
+            viewModel.save()
+            // A failed save stays dirty and shows its error; keep the window open.
+            return !viewModel.isDirty
+        case .alertSecondButtonReturn:
+            return true
+        default:
+            return false
+        }
+    }
+
+    func windowWillClose(_ notification: Notification) {
+        retainedSelf = nil
     }
 }
 

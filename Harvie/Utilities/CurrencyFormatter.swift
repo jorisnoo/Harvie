@@ -7,15 +7,7 @@ import Foundation
 
 struct CurrencyFormatter {
     private static var currencyFormatters: [String: NumberFormatter] = [:]
-    private static let decimalFormatter: NumberFormatter = {
-        let f = NumberFormatter()
-        f.numberStyle = .decimal
-        f.minimumFractionDigits = 2
-        f.maximumFractionDigits = 2
-        f.decimalSeparator = "."
-        f.groupingSeparator = "'"
-        return f
-    }()
+    private static let decimalFormatter = fixedFormatter()
 
     static func format(_ amount: Decimal, currency: String) -> String {
         let formatter = currencyFormatters[currency] ?? {
@@ -43,12 +35,30 @@ struct CurrencyFormatter {
             return decimalFormatter.string(from: amount as NSDecimalNumber) ?? "\(amount)"
         }
 
-        let f = NumberFormatter()
-        f.numberStyle = .decimal
-        f.minimumFractionDigits = 2
-        f.maximumFractionDigits = 2
-        f.decimalSeparator = "."
-        f.groupingSeparator = groupingSeparator
+        let f = fixedFormatter(groupingSeparator: groupingSeparator)
         return f.string(from: amount as NSDecimalNumber) ?? "\(amount)"
+    }
+
+    /// A formatter for fixed-format numbers (invoice templates, the QR slip), unlike
+    /// `format`, which follows the user's locale for on-screen display: always ASCII
+    /// digits and "." as decimal separator, and halves round away from zero like `rounded`.
+    nonisolated static func fixedFormatter(
+        minimumFractionDigits: Int = 2,
+        maximumFractionDigits: Int = 2,
+        groupingSeparator: String = "'"
+    ) -> NumberFormatter {
+        let f = NumberFormatter()
+        // Set the locale first: assigning it resets the separators. en_US rather than
+        // en_US_POSIX, whose number pattern has no grouping at all.
+        f.locale = Locale(identifier: "en_US")
+        f.numberStyle = .decimal
+        f.roundingMode = .halfUp
+        f.minimumFractionDigits = minimumFractionDigits
+        f.maximumFractionDigits = maximumFractionDigits
+        f.decimalSeparator = "."
+        f.usesGroupingSeparator = !groupingSeparator.isEmpty
+        f.groupingSeparator = groupingSeparator
+        f.groupingSize = 3
+        return f
     }
 }

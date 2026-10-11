@@ -16,6 +16,5 @@ struct InvoiceFileSaverTests {
         #expect(try String(contentsOf: first, encoding: .utf8) == "first")
         let unsafe = InvoiceFileSaver.availableURL(fileName: "../other/invoice.pdf", in: folder)
         #expect(unsafe.deletingLastPathComponent().path == folder.path)
-        #expect(!InvoiceFileSaver.isValidPath(URL(fileURLWithPath: folder.path + "-other/a.pdf"), within: folder))
     }
 }

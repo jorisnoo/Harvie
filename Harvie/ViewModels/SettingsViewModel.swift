@@ -33,11 +33,16 @@ final class SettingsViewModel {
         case failure(String)
     }
 
-    private let keychainService = KeychainService.shared
-    private let apiService = HarvestAPIService.shared
+    private let keychainService: KeychainService
+    private let apiService: HarvestAPIService
     private var autoSaveTask: Task<Void, Never>?
     private var lastSavedCredentials: HarvestCredentials?
     private var lastSavedDemoMode: Bool?
+
+    init(keychainService: KeychainService = .shared, apiService: HarvestAPIService = .shared) {
+        self.keychainService = keychainService
+        self.apiService = apiService
+    }
 
     func loadSettings() async {
         harvestCredentials = (try? await keychainService.loadHarvestCredentials())
@@ -66,8 +71,15 @@ final class SettingsViewModel {
         autoSaveTask = Task { await saveSettings() }
     }
 
-    private func saveSettings() async {
-        let credentials = harvestCredentials
+    func saveSettings() async {
+        var credentials = harvestCredentials
+        if !credentials.hasSameAccount(as: lastSavedCredentials) {
+            // A subdomain resolved for another token or account would point PDF
+            // downloads at the wrong Harvest account, so never save it with these.
+            credentials.subdomain = await resolveSubdomain(for: credentials)
+            guard !Task.isCancelled else { return }
+            harvestCredentials.subdomain = credentials.subdomain
+        }
         let creditor = creditorInfo
         let preferences = appSettings
         let needsAPIRefresh = credentials != lastSavedCredentials || preferences.isDemoMode != lastSavedDemoMode
@@ -90,6 +102,18 @@ final class SettingsViewModel {
         } catch {
             logger.error("Failed to save settings: \(error.localizedDescription)")
             saveError = error.localizedDescription
+        }
+    }
+
+    /// Empty when the lookup fails; the app then asks for valid credentials and
+    /// Test Connection can resolve it again.
+    private func resolveSubdomain(for credentials: HarvestCredentials) async -> String {
+        guard credentials.canTestConnection else { return "" }
+        do {
+            return try await apiService.fetchCompany(credentials: credentials).subdomain
+        } catch {
+            logger.error("Failed to resolve Harvest subdomain: \(error.localizedDescription)")
+            return ""
         }
     }
 

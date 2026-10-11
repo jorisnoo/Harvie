@@ -76,6 +76,7 @@ struct InvoiceStateFilterBar: View {
                 }
         }
         .buttonStyle(.plain)
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 
     private func title(for state: InvoiceState) -> String {
@@ -155,6 +156,7 @@ struct EstimateStateFilterBar: View {
                 }
         }
         .buttonStyle(.plain)
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 
     private func title(for state: EstimateState) -> String {

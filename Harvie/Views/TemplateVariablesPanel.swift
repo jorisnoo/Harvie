@@ -8,81 +8,84 @@ import SwiftUI
 struct TemplateVariablesPanel: View {
     var onInsert: (String) -> Void
 
-    private let categories: [(String, [TemplateVariable])] = [
-        ("Invoice", [
-            TemplateVariable(token: "invoice.number", label: "Number"),
-            TemplateVariable(token: "invoice.amount", label: "Total Amount"),
-            TemplateVariable(token: "invoice.currency", label: "Currency"),
-            TemplateVariable(token: "invoice.subject", label: "Subject"),
-            TemplateVariable(token: "invoice.notes", label: "Notes"),
-            TemplateVariable(token: "invoice.issueDate", label: "Issue Date"),
-            TemplateVariable(token: "invoice.dueDate", label: "Due Date"),
-            TemplateVariable(token: "invoice.subtotal", label: "Subtotal"),
-            TemplateVariable(token: "invoice.tax", label: "Tax %"),
-            TemplateVariable(token: "invoice.taxAmount", label: "Tax Amount"),
-            TemplateVariable(token: "invoice.discount", label: "Discount %"),
-            TemplateVariable(token: "invoice.discountAmount", label: "Discount Amount"),
-            TemplateVariable(token: "invoice.totalHours", label: "Total Hours")
-        ]),
-        ("Client", [
-            TemplateVariable(token: "client.name", label: "Name"),
-            TemplateVariable(token: "client.address", label: "Address")
-        ]),
-        ("Creditor", [
-            TemplateVariable(token: "creditor.name", label: "Name"),
-            TemplateVariable(token: "creditor.iban", label: "IBAN"),
-            TemplateVariable(token: "creditor.street", label: "Street"),
-            TemplateVariable(token: "creditor.buildingNumber", label: "Building No."),
-            TemplateVariable(token: "creditor.postalCode", label: "Postal Code"),
-            TemplateVariable(token: "creditor.town", label: "Town"),
-            TemplateVariable(token: "creditor.country", label: "Country")
-        ]),
-        ("Line Items", [
-            TemplateVariable(token: "#lineItems", label: "Loop Start"),
-            TemplateVariable(token: "/lineItems", label: "Loop End"),
-            TemplateVariable(token: "description", label: "Description"),
-            TemplateVariable(token: "quantity", label: "Quantity"),
-            TemplateVariable(token: "unitPrice", label: "Unit Price"),
-            TemplateVariable(token: "amount", label: "Amount")
-        ]),
-        ("Conditionals", [
-            TemplateVariable(token: "#if invoice.hasNotes", label: "If Has Notes"),
-            TemplateVariable(token: "/if", label: "End If"),
-            TemplateVariable(token: "#if invoice.hasTax", label: "If Has Tax"),
-            TemplateVariable(token: "#if invoice.hasDiscount", label: "If Has Discount"),
-            TemplateVariable(token: "#if invoice.hasSubject", label: "If Has Subject")
-        ]),
-        ("Labels", [
-            TemplateVariable(token: "labels.invoice", label: "Invoice"),
-            TemplateVariable(token: "labels.description", label: "Description"),
-            TemplateVariable(token: "labels.quantity", label: "Quantity"),
-            TemplateVariable(token: "labels.unitPrice", label: "Unit Price"),
-            TemplateVariable(token: "labels.rate", label: "Rate"),
-            TemplateVariable(token: "labels.price", label: "Price"),
-            TemplateVariable(token: "labels.amount", label: "Amount"),
-            TemplateVariable(token: "labels.subtotal", label: "Subtotal"),
-            TemplateVariable(token: "labels.vat", label: "VAT"),
-            TemplateVariable(token: "labels.discount", label: "Discount"),
-            TemplateVariable(token: "labels.total", label: "Total"),
-            TemplateVariable(token: "labels.totalDue", label: "Total Due"),
-            TemplateVariable(token: "labels.totalHours", label: "Total Hours"),
-            TemplateVariable(token: "labels.due", label: "Due"),
-            TemplateVariable(token: "labels.date", label: "Date"),
-            TemplateVariable(token: "labels.currency", label: "Currency"),
-            TemplateVariable(token: "labels.from", label: "From"),
-            TemplateVariable(token: "labels.billTo", label: "Bill To"),
-            TemplateVariable(token: "labels.details", label: "Details"),
-            TemplateVariable(token: "labels.iban", label: "IBAN"),
-            TemplateVariable(token: "labels.paymentDetails", label: "Payment Details"),
-            TemplateVariable(token: "labels.notes", label: "Notes"),
-            TemplateVariable(token: "labels.re", label: "Re/Subject")
-        ]),
-        ("Filters", [
-            TemplateVariable(token: "invoice.issueDate | date:\"dd.MM.yyyy\"", label: "Date Format"),
-            TemplateVariable(token: "invoice.amount | currency", label: "Currency Format"),
-            TemplateVariable(token: "quantity | numberTrimmed:1", label: "Trimmed Number Format")
-        ])
-    ]
+    private var categories: [(String, [TemplateVariable])] {
+        typealias Vars = Strings.TemplateVariables
+        return [
+            (Vars.invoice, [
+                TemplateVariable(token: "invoice.number", label: Vars.number),
+                TemplateVariable(token: "invoice.amount", label: Vars.totalAmount),
+                TemplateVariable(token: "invoice.currency", label: Vars.currency),
+                TemplateVariable(token: "invoice.subject", label: Vars.subject),
+                TemplateVariable(token: "invoice.notes", label: Vars.notes),
+                TemplateVariable(token: "invoice.issueDate", label: Vars.issueDate),
+                TemplateVariable(token: "invoice.dueDate", label: Vars.dueDate),
+                TemplateVariable(token: "invoice.subtotal", label: Vars.subtotal),
+                TemplateVariable(token: "invoice.tax", label: Vars.taxPercent),
+                TemplateVariable(token: "invoice.taxAmount", label: Vars.taxAmount),
+                TemplateVariable(token: "invoice.discount", label: Vars.discountPercent),
+                TemplateVariable(token: "invoice.discountAmount", label: Vars.discountAmount),
+                TemplateVariable(token: "invoice.totalHours", label: Vars.totalHours)
+            ]),
+            (Vars.client, [
+                TemplateVariable(token: "client.name", label: Vars.name),
+                TemplateVariable(token: "client.address", label: Vars.address)
+            ]),
+            (Vars.creditor, [
+                TemplateVariable(token: "creditor.name", label: Vars.name),
+                TemplateVariable(token: "creditor.iban", label: Vars.iban),
+                TemplateVariable(token: "creditor.street", label: Vars.street),
+                TemplateVariable(token: "creditor.buildingNumber", label: Vars.buildingNumber),
+                TemplateVariable(token: "creditor.postalCode", label: Vars.postalCode),
+                TemplateVariable(token: "creditor.town", label: Vars.town),
+                TemplateVariable(token: "creditor.country", label: Vars.country)
+            ]),
+            (Vars.lineItems, [
+                TemplateVariable(token: "#lineItems", label: Vars.loopStart),
+                TemplateVariable(token: "/lineItems", label: Vars.loopEnd),
+                TemplateVariable(token: "description", label: Vars.description),
+                TemplateVariable(token: "quantity", label: Vars.quantity),
+                TemplateVariable(token: "unitPrice", label: Vars.unitPrice),
+                TemplateVariable(token: "amount", label: Vars.amount)
+            ]),
+            (Vars.conditionals, [
+                TemplateVariable(token: "#if invoice.hasNotes", label: Vars.ifHasNotes),
+                TemplateVariable(token: "/if", label: Vars.endIf),
+                TemplateVariable(token: "#if invoice.hasTax", label: Vars.ifHasTax),
+                TemplateVariable(token: "#if invoice.hasDiscount", label: Vars.ifHasDiscount),
+                TemplateVariable(token: "#if invoice.hasSubject", label: Vars.ifHasSubject)
+            ]),
+            (Vars.labels, [
+                TemplateVariable(token: "labels.invoice", label: Vars.invoice),
+                TemplateVariable(token: "labels.description", label: Vars.description),
+                TemplateVariable(token: "labels.quantity", label: Vars.quantity),
+                TemplateVariable(token: "labels.unitPrice", label: Vars.unitPrice),
+                TemplateVariable(token: "labels.rate", label: Vars.rate),
+                TemplateVariable(token: "labels.price", label: Vars.price),
+                TemplateVariable(token: "labels.amount", label: Vars.amount),
+                TemplateVariable(token: "labels.subtotal", label: Vars.subtotal),
+                TemplateVariable(token: "labels.vat", label: Vars.vat),
+                TemplateVariable(token: "labels.discount", label: Vars.discount),
+                TemplateVariable(token: "labels.total", label: Vars.total),
+                TemplateVariable(token: "labels.totalDue", label: Vars.totalDue),
+                TemplateVariable(token: "labels.totalHours", label: Vars.totalHours),
+                TemplateVariable(token: "labels.due", label: Vars.due),
+                TemplateVariable(token: "labels.date", label: Vars.date),
+                TemplateVariable(token: "labels.currency", label: Vars.currency),
+                TemplateVariable(token: "labels.from", label: Vars.from),
+                TemplateVariable(token: "labels.billTo", label: Vars.billTo),
+                TemplateVariable(token: "labels.details", label: Vars.details),
+                TemplateVariable(token: "labels.iban", label: Vars.iban),
+                TemplateVariable(token: "labels.paymentDetails", label: Vars.paymentDetails),
+                TemplateVariable(token: "labels.notes", label: Vars.notes),
+                TemplateVariable(token: "labels.re", label: Vars.reSubject)
+            ]),
+            (Vars.filters, [
+                TemplateVariable(token: "invoice.issueDate | date:\"dd.MM.yyyy\"", label: Vars.dateFormat),
+                TemplateVariable(token: "invoice.amount | currency", label: Vars.currencyFormat),
+                TemplateVariable(token: "quantity | numberTrimmed:1", label: Vars.trimmedNumberFormat)
+            ])
+        ]
+    }
 
     var body: some View {
         ScrollView {

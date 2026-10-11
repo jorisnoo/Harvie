@@ -47,7 +47,7 @@ cd Harvie
 open Harvie.xcodeproj
 ```
 
-Build and run with Xcode 15+.
+Build and run with Xcode 16+.
 
 ## Setup
 
