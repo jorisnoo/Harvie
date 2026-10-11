@@ -11,7 +11,7 @@ enum TemplateLanguage: String, Codable, CaseIterable, Sendable {
     struct QRBillLabels {
         let receipt, paymentPart, accountPayableTo, reference: String
         let additionalInfo, payableBy, payableByPlaceholder: String
-        let currency, amount, invoice: String
+        let currency, amount, acceptancePoint, invoice: String
     }
 
     nonisolated var qrBillLabels: QRBillLabels {
@@ -22,7 +22,7 @@ enum TemplateLanguage: String, Codable, CaseIterable, Sendable {
                 accountPayableTo: "Konto / Zahlbar an", reference: "Referenz",
                 additionalInfo: "Zusätzliche Informationen",
                 payableBy: "Zahlbar durch", payableByPlaceholder: "Zahlbar durch (Name/Adresse)",
-                currency: "Währung", amount: "Betrag", invoice: "Rechnung"
+                currency: "Währung", amount: "Betrag", acceptancePoint: "Annahmestelle", invoice: "Rechnung"
             )
         case .fr:
             QRBillLabels(
@@ -30,7 +30,7 @@ enum TemplateLanguage: String, Codable, CaseIterable, Sendable {
                 accountPayableTo: "Compte / Payable à", reference: "Référence",
                 additionalInfo: "Informations supplémentaires",
                 payableBy: "Payable par", payableByPlaceholder: "Payable par (nom/adresse)",
-                currency: "Monnaie", amount: "Montant", invoice: "Facture"
+                currency: "Monnaie", amount: "Montant", acceptancePoint: "Point de dépôt", invoice: "Facture"
             )
         case .it:
             QRBillLabels(
@@ -38,7 +38,7 @@ enum TemplateLanguage: String, Codable, CaseIterable, Sendable {
                 accountPayableTo: "Conto / Pagabile a", reference: "Riferimento",
                 additionalInfo: "Informazioni supplementari",
                 payableBy: "Pagabile da", payableByPlaceholder: "Pagabile da (nome/indirizzo)",
-                currency: "Valuta", amount: "Importo", invoice: "Fattura"
+                currency: "Valuta", amount: "Importo", acceptancePoint: "Punto di accettazione", invoice: "Fattura"
             )
         case .en:
             QRBillLabels(
@@ -46,7 +46,7 @@ enum TemplateLanguage: String, Codable, CaseIterable, Sendable {
                 accountPayableTo: "Account / Payable to", reference: "Reference",
                 additionalInfo: "Additional information",
                 payableBy: "Payable by", payableByPlaceholder: "Payable by (name/address)",
-                currency: "Currency", amount: "Amount", invoice: "Invoice"
+                currency: "Currency", amount: "Amount", acceptancePoint: "Acceptance point", invoice: "Invoice"
             )
         }
     }
@@ -245,7 +245,7 @@ enum TemplateLanguage: String, Codable, CaseIterable, Sendable {
     nonisolated static let qrBillLabelKeys: [String] = [
         "qr.receipt", "qr.paymentPart", "qr.accountPayableTo", "qr.reference",
         "qr.additionalInfo", "qr.payableBy", "qr.payableByPlaceholder",
-        "qr.currency", "qr.amount", "qr.invoice",
+        "qr.currency", "qr.amount", "qr.acceptancePoint", "qr.invoice",
     ]
 
     // MARK: - Resolved Labels
@@ -285,6 +285,7 @@ enum TemplateLanguage: String, Codable, CaseIterable, Sendable {
             payableByPlaceholder: resolve("payableByPlaceholder", defaults.payableByPlaceholder),
             currency: resolve("currency", defaults.currency),
             amount: resolve("amount", defaults.amount),
+            acceptancePoint: resolve("acceptancePoint", defaults.acceptancePoint),
             invoice: resolve("invoice", defaults.invoice)
         )
     }
@@ -304,6 +305,7 @@ enum TemplateLanguage: String, Codable, CaseIterable, Sendable {
             case "payableByPlaceholder": return l.payableByPlaceholder
             case "currency": return l.currency
             case "amount": return l.amount
+            case "acceptancePoint": return l.acceptancePoint
             case "invoice": return l.invoice
             default: return ""
             }

@@ -33,6 +33,16 @@ struct QRBillRenderer {
     // Margins
     private let marginMM: CGFloat = 5
 
+    // Receipt sections (heights per the Swiss QR-bill style guide)
+    private let receiptTitleSectionMM: CGFloat = 7
+    private let receiptAmountSectionMM: CGFloat = 14
+    private let receiptAcceptanceSectionMM: CGFloat = 18
+    private let receiptBlockSpacingMM: CGFloat = 3.5
+
+    // Scissors symbol on the cut lines, required when the bill is sent as a PDF
+    private let scissorsFontSize: CGFloat = 11
+    private let scissorsOffsetMM: CGFloat = 7
+
     // Font cache
     private struct FontKey: Hashable {
         let bold: Bool
@@ -42,9 +52,10 @@ struct QRBillRenderer {
     private static var fontCache: [FontKey: NSFont] = [:]
     private static let lineHeightMultiple: CGFloat = 1.2
 
-    private static func paragraphStyle(wrap: Bool, fontSize: CGFloat) -> NSParagraphStyle {
+    private static func paragraphStyle(wrap: Bool, fontSize: CGFloat, alignment: NSTextAlignment) -> NSParagraphStyle {
         let s = NSMutableParagraphStyle()
         s.lineBreakMode = wrap ? .byWordWrapping : .byTruncatingTail
+        s.alignment = alignment
         let lineHeight = fontSize * lineHeightMultiple
         s.minimumLineHeight = lineHeight
         s.maximumLineHeight = lineHeight
@@ -101,6 +112,19 @@ struct QRBillRenderer {
         // Draw separator line between receipt and payment part
         drawVerticalDashedLine(context: context, xMM: receiptWidthMM, maxHeightMM: qrBillHeightMM)
 
+        // Scissors on both cut lines: pointing along the horizontal line near the left
+        // edge, and down the vertical line near its top
+        drawScissors(
+            context: context,
+            center: CGPoint(x: scissorsOffsetMM * mmToPoints, y: qrBillHeightMM * mmToPoints),
+            rotation: 0
+        )
+        drawScissors(
+            context: context,
+            center: CGPoint(x: receiptWidthMM * mmToPoints, y: (qrBillHeightMM - scissorsOffsetMM) * mmToPoints),
+            rotation: -.pi / 2
+        )
+
         // Draw receipt section (left side, 62mm wide, at bottom)
         drawReceiptSection(context: context, data: data)
 
@@ -124,40 +148,47 @@ struct QRBillRenderer {
         let leftMargin = marginMM * mmToPoints
         let maxWidth = (receiptWidthMM - 2 * marginMM) * mmToPoints
         // Start from top of QR bill area (105mm from bottom, minus margin)
-        var y = (qrBillHeightMM - marginMM) * mmToPoints
+        let top = qrBillHeightMM - marginMM
 
-        // Title
-        y = drawText(context: context, text: labels.receipt, x: leftMargin, y: y, fontSize: 11, bold: true, maxWidth: maxWidth)
-        y -= 5 * mmToPoints
+        // Title section (7mm), then the information section down to the amount section
+        _ = drawText(context: context, text: labels.receipt, x: leftMargin, y: top * mmToPoints, fontSize: 11, bold: true, maxWidth: maxWidth)
+        var y = (top - receiptTitleSectionMM) * mmToPoints
 
         // Account / Payable to
         y = drawCreditorBlock(context: context, data: data, x: leftMargin, y: y, fontSize: 8, labelFontSize: 6, maxWidth: maxWidth)
-        y -= 5 * mmToPoints
+        y -= receiptBlockSpacingMM * mmToPoints
 
         // Reference
         if let reference = data.reference, !reference.isEmpty {
             y = drawText(context: context, text: labels.reference, x: leftMargin, y: y, fontSize: 6, bold: true, maxWidth: maxWidth)
             y = drawText(context: context, text: formatReference(reference), x: leftMargin, y: y, fontSize: 8, bold: false, maxWidth: maxWidth)
-            y -= 5 * mmToPoints
+            y -= receiptBlockSpacingMM * mmToPoints
         }
 
         // Payable by
-        y = drawDebtorBlock(
+        drawDebtorBlock(
             context: context, data: data, x: leftMargin, y: y,
             fontSize: 8, labelFontSize: 6, maxWidth: maxWidth,
             placeholderWidthMM: 52, placeholderHeightMM: 20
         )
 
-        // Currency and Amount - fixed position at bottom
-        let bottomY: CGFloat = 10 * mmToPoints
-        _ = drawText(context: context, text: labels.currency, x: leftMargin, y: bottomY + 10, fontSize: 6, bold: true, maxWidth: 20 * mmToPoints)
-        _ = drawText(context: context, text: data.currency, x: leftMargin, y: bottomY, fontSize: 8, bold: false, maxWidth: 20 * mmToPoints)
+        // Amount section (14mm), directly above the acceptance point section
+        let amountTop = (marginMM + receiptAcceptanceSectionMM + receiptAmountSectionMM) * mmToPoints
+        let currencyValueTop = drawText(context: context, text: labels.currency, x: leftMargin, y: amountTop, fontSize: 6, bold: true, maxWidth: 20 * mmToPoints)
+        _ = drawText(context: context, text: data.currency, x: leftMargin, y: currencyValueTop, fontSize: 8, bold: false, maxWidth: 20 * mmToPoints)
 
         let amountX = 25 * mmToPoints
-        _ = drawText(context: context, text: labels.amount, x: amountX, y: bottomY + 10, fontSize: 6, bold: true, maxWidth: 30 * mmToPoints)
+        let amountValueTop = drawText(context: context, text: labels.amount, x: amountX, y: amountTop, fontSize: 6, bold: true, maxWidth: 30 * mmToPoints)
         if let amount = data.amount {
-            _ = drawText(context: context, text: formatAmount(amount), x: amountX, y: bottomY, fontSize: 8, bold: false, maxWidth: 30 * mmToPoints)
+            _ = drawText(context: context, text: formatAmount(amount), x: amountX, y: amountValueTop, fontSize: 8, bold: false, maxWidth: 30 * mmToPoints)
         }
+
+        // Acceptance point section (18mm): heading right-aligned at its top
+        let acceptanceTop = (marginMM + receiptAcceptanceSectionMM) * mmToPoints
+        _ = drawText(
+            context: context, text: labels.acceptancePoint, x: leftMargin, y: acceptanceTop,
+            fontSize: 6, bold: true, maxWidth: maxWidth, alignment: .right
+        )
     }
 
     // MARK: - Payment Section (Right, 148mm wide, at bottom of A4)
@@ -350,6 +381,29 @@ struct QRBillRenderer {
         context.restoreGState()
     }
 
+    /// Draws the scissors symbol centred on a cut line, on a white patch so the dashes
+    /// don't run through it. Helvetica has no scissors glyph, so this uses Zapf Dingbats.
+    private func drawScissors(context: CGContext, center: CGPoint, rotation: CGFloat) {
+        let font = NSFont(name: "ZapfDingbatsITC", size: scissorsFontSize)
+            ?? NSFont.systemFont(ofSize: scissorsFontSize)
+        let attributes: [NSAttributedString.Key: Any] = [.font: font, .foregroundColor: NSColor.black]
+        let line = CTLineCreateWithAttributedString(NSAttributedString(string: "\u{2702}", attributes: attributes))
+        let bounds = CTLineGetBoundsWithOptions(line, .useGlyphPathBounds)
+
+        context.saveGState()
+        context.translateBy(x: center.x, y: center.y)
+        context.rotate(by: rotation)
+        context.setFillColor(CGColor.white)
+        context.fill(CGRect(
+            x: -bounds.width / 2 - 1, y: -bounds.height / 2 - 1,
+            width: bounds.width + 2, height: bounds.height + 2
+        ))
+        context.textMatrix = .identity
+        context.textPosition = CGPoint(x: -bounds.midX, y: -bounds.midY)
+        CTLineDraw(line, context)
+        context.restoreGState()
+    }
+
     /// The Swiss cross measures 7 x 7 mm overall, white border included. Proportions follow
     /// the Swiss flag that SIX's reference graphic is based on: the white cross spans 20/32
     /// of the black square, and each arm is 3/10 of that span wide (6/32 of the square).
@@ -428,10 +482,11 @@ struct QRBillRenderer {
         fontSize: CGFloat,
         bold: Bool,
         maxWidth: CGFloat,
-        wrap: Bool = false
+        wrap: Bool = false,
+        alignment: NSTextAlignment = .left
     ) -> CGFloat {
         let font = Self.cachedFont(bold: bold, size: fontSize)
-        let paragraphStyle = Self.paragraphStyle(wrap: wrap, fontSize: fontSize)
+        let paragraphStyle = Self.paragraphStyle(wrap: wrap, fontSize: fontSize, alignment: alignment)
 
         let attributes: [NSAttributedString.Key: Any] = [
             .font: font,

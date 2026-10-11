@@ -1,4 +1,5 @@
 import Foundation
+import PDFKit
 import Testing
 @testable import Harvie
 
@@ -87,6 +88,14 @@ struct QRBillServiceTests {
         #expect(fields[18] == "100.00")
         #expect(fields[27] == "SCOR")
         #expect(fields[29] == "Invoice INV-7")
+    }
+
+    @Test func slipShowsTheAcceptancePoint() throws {
+        let service = QRBillService()
+        let data = try service.createQRBillData(invoice: TestDocuments.invoice(), creditorInfo: TestDocuments.creditor)
+        let image = try #require(service.generateQRCodeImage(from: data))
+        let page = try #require(QRBillRenderer(labels: TemplateLanguage.de.qrBillLabels).renderQRBillPage(data: data, qrImage: image))
+        #expect(page.string?.contains("Annahmestelle") == true)
     }
 
     @Test(arguments: [("1234.5", "1234.50"), ("0.005", "0.01"), ("1000000", "1000000.00"), ("999999999.99", "999999999.99")])
