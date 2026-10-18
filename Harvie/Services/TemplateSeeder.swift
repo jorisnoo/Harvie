@@ -61,8 +61,15 @@ struct TemplateSeeder {
 
         seedStarterTemplatesIfNeeded()
         migrateUserTemplatesToDisk(context: context)
-        synchronizeDiskTemplates(context: context)
+        synchronize(context: context)
+    }
+
+    /// Brings SwiftData in line with the templates folder, e.g. after it moved or another
+    /// Mac synced changes into it.
+    @MainActor
+    static func synchronize(context: ModelContext) {
         seedVariablesReference()
+        synchronizeDiskTemplates(context: context)
         try? context.save()
     }
 
@@ -149,7 +156,8 @@ struct TemplateSeeder {
     /// Discovers template folders on disk and creates/removes SwiftData entries to match.
     @MainActor
     private static func synchronizeDiskTemplates(context: ModelContext) {
-        let discovered = TemplateFileManager.discoverTemplates()
+        // An unreadable folder (e.g. on a disconnected drive) isn't an empty one — keep the entries.
+        guard let discovered = TemplateFileManager.discoverTemplates() else { return }
 
         let descriptor = FetchDescriptor<InvoiceTemplate>(
             predicate: #Predicate { $0.isBuiltIn == false }
@@ -188,7 +196,8 @@ struct TemplateSeeder {
     }
 
     /// Copies the variables reference HTML from the app bundle to the user's templates directory.
-    /// Overwrites on every launch to keep it current with new releases.
+    /// Rewritten whenever it differs from the bundled copy, to keep it current with new releases
+    /// without churning synced folders.
     private static func seedVariablesReference() {
         guard let sourceURL = Bundle.main.url(forResource: "variables-reference", withExtension: "html", subdirectory: "Templates")
                 ?? Bundle.main.url(forResource: "variables-reference", withExtension: "html") else {
@@ -202,6 +211,7 @@ struct TemplateSeeder {
         do {
             try FileManager.default.createDirectory(at: dest.deletingLastPathComponent(), withIntermediateDirectories: true)
             let content = try String(contentsOf: sourceURL, encoding: .utf8)
+            guard (try? String(contentsOf: dest, encoding: .utf8)) != content else { return }
             try content.write(to: dest, atomically: true, encoding: .utf8)
         } catch {
             logger.error("Failed to seed variables reference: \(error.localizedDescription)")

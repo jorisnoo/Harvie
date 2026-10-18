@@ -129,6 +129,10 @@ struct TemplateListView: View {
             .controlSize(.small)
             .padding(8)
         }
+        .onAppear {
+            // Picks up templates synced into the folder since launch
+            TemplateSeeder.synchronize(context: modelContext)
+        }
         .alert(Strings.Templates.deleteTemplateTitle, isPresented: $showDeleteConfirmation) {
             Button(Strings.Common.cancel, role: .cancel) { }
             Button(Strings.Common.delete, role: .destructive) {

@@ -470,6 +470,8 @@ struct TemplatesSettings: View {
                     }
 
                 }
+
+                TemplatesFolderSection()
             }
             .sheet(isPresented: $showLabelEditor) {
                 LabelEditorSheet(
@@ -503,6 +505,108 @@ struct TemplatesSettings: View {
                 viewModel.appSettings.selectedTemplateId = first.id
             }
         }
+    }
+}
+
+// MARK: - Templates Folder
+
+private struct TemplatesFolderSection: View {
+    /// A requested folder change; a nil destination means the default folder.
+    private struct FolderChange {
+        let destination: URL?
+    }
+
+    @Environment(\.modelContext) private var modelContext
+    @State private var folder = TemplateFileManager.templatesRoot
+    @State private var usesCustomFolder = TemplateFileManager.usesCustomTemplatesRoot
+    @State private var pendingChange: FolderChange?
+    @State private var errorMessage: String?
+
+    var body: some View {
+        Section(Strings.Settings.templatesFolder) {
+            LabeledContent(Strings.Settings.folder) {
+                HStack {
+                    Text(folder.path(percentEncoded: false))
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                        .truncationMode(.middle)
+                        .help(folder.path(percentEncoded: false))
+
+                    Button(Strings.Settings.chooseFolder) {
+                        chooseFolder()
+                    }
+
+                    if usesCustomFolder {
+                        Button(Strings.Settings.useDefaultFolder) {
+                            requestChange(FolderChange(destination: nil))
+                        }
+                    }
+                }
+            }
+
+            Text(Strings.Settings.templatesFolderHint)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        }
+        .confirmationDialog(
+            Strings.Settings.moveTemplatesTitle,
+            isPresented: Binding(
+                get: { pendingChange != nil },
+                set: { if !$0 { pendingChange = nil } }
+            ),
+            presenting: pendingChange
+        ) { change in
+            Button(Strings.Settings.moveTemplates) { apply(change, moveTemplates: true) }
+            Button(Strings.Settings.dontMove) { apply(change, moveTemplates: false) }
+            Button(Strings.Common.cancel, role: .cancel) { }
+        } message: { _ in
+            Text(Strings.Settings.moveTemplatesMessage)
+        }
+        .alert(
+            Strings.Settings.templatesFolderErrorTitle,
+            isPresented: Binding(
+                get: { errorMessage != nil },
+                set: { if !$0 { errorMessage = nil } }
+            )
+        ) {
+            Button(Strings.Common.ok, role: .cancel) { }
+        } message: {
+            Text(errorMessage ?? "")
+        }
+    }
+
+    private func chooseFolder() {
+        let panel = NSOpenPanel()
+        panel.canChooseFiles = false
+        panel.canChooseDirectories = true
+        panel.canCreateDirectories = true
+        panel.allowsMultipleSelection = false
+        panel.message = Strings.Settings.selectTemplatesFolder
+        panel.prompt = Strings.Common.select
+
+        guard panel.runModal() == .OK, let url = panel.url else { return }
+        requestChange(FolderChange(destination: url))
+    }
+
+    /// Asks whether to move the templates along, unless there are none to move.
+    private func requestChange(_ change: FolderChange) {
+        if TemplateFileManager.discoverTemplates()?.isEmpty ?? true {
+            apply(change, moveTemplates: false)
+        } else {
+            pendingChange = change
+        }
+    }
+
+    private func apply(_ change: FolderChange, moveTemplates: Bool) {
+        do {
+            try TemplateFileManager.changeTemplatesRoot(to: change.destination, moveTemplates: moveTemplates)
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+
+        folder = TemplateFileManager.templatesRoot
+        usesCustomFolder = TemplateFileManager.usesCustomTemplatesRoot
+        TemplateSeeder.synchronize(context: modelContext)
     }
 }
 

@@ -418,6 +418,16 @@ enum Strings {
         static let templateColumnHint = "To hide columns on Harvest PDFs, change this in the Harvest web UI."
         // swiftlint:disable:next line_length
         static let harvestColumnHint = "Column visibility can be configured when using a custom template. For Harvest PDFs, change this in the Harvest web UI under Invoices \u{2192} Configure \u{2192} Hide columns."
+        static let templatesFolder = "Templates Folder"
+        static let useDefaultFolder = "Use Default"
+        static let templatesFolderHint = "Choose a folder in iCloud Drive or another synced location to share your templates between Macs."
+        static let selectTemplatesFolder = "Choose a folder for your templates"
+        static let moveTemplatesTitle = "Move Your Templates?"
+        // swiftlint:disable:next line_length
+        static let moveTemplatesMessage = "Your current templates can move to the new folder. Choose \u{201C}Don\u{2019}t Move\u{201D} if that folder already holds the templates you want, for example from another Mac. Templates you don\u{2019}t move stay in the old folder."
+        static let moveTemplates = "Move Templates"
+        static let dontMove = "Don\u{2019}t Move"
+        static let templatesFolderErrorTitle = "Couldn\u{2019}t Change Templates Folder"
 
         // Feedback
         static let contact = "Contact"

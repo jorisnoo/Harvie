@@ -11,9 +11,21 @@ import UniformTypeIdentifiers
 private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "app.harvie", category: "TemplateFileManager")
 
 enum TemplateFileManager {
+    private static let folderBookmarkKey = "harvie.templatesFolderBookmark"
+
+    static let defaultTemplatesRoot = FileManager.default
+        .urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
+        .appendingPathComponent("Harvie/Templates")
+
+    /// The user-chosen templates folder, if any. Its security scope stays open for the app's lifetime.
+    private static var customTemplatesRoot: URL? = resolveCustomTemplatesRoot()
+
     static var templatesRoot: URL {
-        let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
-        return appSupport.appendingPathComponent("Harvie/Templates")
+        customTemplatesRoot ?? defaultTemplatesRoot
+    }
+
+    static var usesCustomTemplatesRoot: Bool {
+        customTemplatesRoot != nil
     }
 
     /// Builds the canonical folder name: `<sanitized-name>-<uuid>`
@@ -90,40 +102,62 @@ enum TemplateFileManager {
 
     /// Scans the templates directory for folders matching `<name>-<UUID>` that contain
     /// both `template.html` and `styles.css`, returning discovered template metadata.
-    static func discoverTemplates() -> [(id: UUID, name: String)] {
+    /// Returns nil when the templates folder can't be read, which is not the same as it being empty.
+    static func discoverTemplates() -> [(id: UUID, name: String)]? {
         let fm = FileManager.default
-        let root = templatesRoot
-        guard let entries = try? fm.contentsOfDirectory(at: root, includingPropertiesForKeys: [.isDirectoryKey]) else {
-            return []
+        guard let entries = try? fm.contentsOfDirectory(at: templatesRoot, includingPropertiesForKeys: nil) else {
+            return nil
         }
 
-        var results: [(id: UUID, name: String)] = []
-        let uuidLength = 36 // "550E8400-E29B-41D4-A716-446655440000"
-
-        for entry in entries {
+        return entries.compactMap { entry in
             let folderName = entry.lastPathComponent
-
-            // Need at least a name, a hyphen, and a UUID
-            guard folderName.count > uuidLength + 1 else { continue }
-
-            let uuidStart = folderName.index(folderName.endIndex, offsetBy: -uuidLength)
-            guard let id = UUID(uuidString: String(folderName[uuidStart...])) else { continue }
+            guard let id = templateID(forFolderName: folderName) else { return nil }
 
             // Verify both required files exist
             let htmlExists = fm.fileExists(atPath: entry.appendingPathComponent("template.html").path)
             let cssExists = fm.fileExists(atPath: entry.appendingPathComponent("styles.css").path)
-            guard htmlExists && cssExists else { continue }
+            guard htmlExists && cssExists else { return nil }
 
             // Derive display name: strip "-UUID" suffix, replace hyphens with spaces, capitalize words
-            let prefix = folderName[..<folderName.index(before: uuidStart)] // drop the separator hyphen too
-            let displayName = String(prefix)
+            let displayName = String(folderName.dropLast(uuidLength + 1))
                 .replacingOccurrences(of: "-", with: " ")
                 .capitalized
 
-            results.append((id: id, name: displayName))
+            return (id: id, name: displayName)
+        }
+    }
+
+    /// Switches the templates folder to `newRoot`, or back to the default folder when nil.
+    /// With `moveTemplates`, template folders follow along; a folder whose name already exists
+    /// at the destination stays put. Without it, the current templates stay where they are.
+    static func changeTemplatesRoot(to newRoot: URL?, moveTemplates: Bool) throws {
+        let oldRoot = templatesRoot
+        guard (newRoot ?? defaultTemplatesRoot).standardizedFileURL != oldRoot.standardizedFileURL else { return }
+
+        if let newRoot {
+            _ = newRoot.startAccessingSecurityScopedResource()
+            let bookmark = try newRoot.bookmarkData(options: .withSecurityScope, includingResourceValuesForKeys: nil, relativeTo: nil)
+            UserDefaults.standard.set(bookmark, forKey: folderBookmarkKey)
+        } else {
+            UserDefaults.standard.removeObject(forKey: folderBookmarkKey)
         }
 
-        return results
+        let oldCustomRoot = customTemplatesRoot
+        customTemplatesRoot = newRoot
+        defer { oldCustomRoot?.stopAccessingSecurityScopedResource() }
+
+        guard moveTemplates else { return }
+
+        let fm = FileManager.default
+        let newTemplatesRoot = templatesRoot
+        try fm.createDirectory(at: newTemplatesRoot, withIntermediateDirectories: true)
+
+        let entries = (try? fm.contentsOfDirectory(at: oldRoot, includingPropertiesForKeys: nil)) ?? []
+        for entry in entries where templateID(forFolderName: entry.lastPathComponent) != nil {
+            let target = newTemplatesRoot.appendingPathComponent(entry.lastPathComponent)
+            guard !fm.fileExists(atPath: target.path) else { continue }
+            try fm.moveItem(at: entry, to: target)
+        }
     }
 
     static func revealTemplatesFolder() {
@@ -157,6 +191,36 @@ enum TemplateFileManager {
     }
 
     // MARK: - Private
+
+    private static let uuidLength = 36 // "550E8400-E29B-41D4-A716-446655440000"
+
+    /// Extracts the UUID from a `<name>-<UUID>` folder name.
+    private static func templateID(forFolderName folderName: String) -> UUID? {
+        // Need at least a name, a hyphen, and a UUID
+        guard folderName.count > uuidLength + 1 else { return nil }
+        return UUID(uuidString: String(folderName.suffix(uuidLength)))
+    }
+
+    private static func resolveCustomTemplatesRoot() -> URL? {
+        guard let bookmark = UserDefaults.standard.data(forKey: folderBookmarkKey) else { return nil }
+
+        var isStale = false
+        guard let url = try? URL(
+            resolvingBookmarkData: bookmark,
+            options: .withSecurityScope,
+            relativeTo: nil,
+            bookmarkDataIsStale: &isStale
+        ) else {
+            logger.error("Couldn't resolve the templates folder; falling back to the default folder")
+            return nil
+        }
+
+        _ = url.startAccessingSecurityScopedResource()
+        if isStale, let fresh = try? url.bookmarkData(options: .withSecurityScope, includingResourceValuesForKeys: nil, relativeTo: nil) {
+            UserDefaults.standard.set(fresh, forKey: folderBookmarkKey)
+        }
+        return url
+    }
 
     private static func sanitize(_ name: String) -> String {
         let allowed = CharacterSet.alphanumerics.union(CharacterSet(charactersIn: "-_ "))
