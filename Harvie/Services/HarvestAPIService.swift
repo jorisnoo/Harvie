@@ -235,6 +235,76 @@ actor HarvestAPIService {
         return try await perform(request)
     }
 
+    /// Creates a draft invoice. Harvest assigns the invoice number.
+    func createInvoice(
+        _ newInvoice: NewInvoice,
+        credentials: HarvestCredentials
+    ) async throws -> Invoice {
+        var request = try makeRequest(path: "invoices", credentials: credentials)
+        request.httpMethod = "POST"
+        let body = CreateInvoiceBody(
+            clientId: newInvoice.clientId,
+            subject: newInvoice.subject,
+            notes: newInvoice.notes,
+            tax: newInvoice.taxRate,
+            issueDate: Self.dateOnlyFormatter.string(from: newInvoice.issueDate),
+            dueDate: Self.dateOnlyFormatter.string(from: newInvoice.dueDate),
+            paymentTerm: newInvoice.paymentTerm.harvestValue,
+            lineItems: newInvoice.lineItems.map {
+                .init(
+                    kind: $0.kind,
+                    description: $0.description,
+                    quantity: $0.quantity,
+                    unitPrice: $0.unitPrice,
+                    taxed: newInvoice.taxRate != nil
+                )
+            }
+        )
+        request.httpBody = try JSONEncoder().encode(body)
+        return try await perform(request)
+    }
+
+    func deleteInvoice(
+        id: Int,
+        credentials: HarvestCredentials
+    ) async throws {
+        var request = try makeRequest(path: "invoices/\(id)", credentials: credentials)
+        request.httpMethod = "DELETE"
+        try await performMutation(request)
+    }
+
+    func fetchActiveClients(credentials: HarvestCredentials) async throws -> [Client] {
+        var clients: [Client] = []
+        var page: Int? = 1
+
+        while let current = page {
+            let request = try makeRequest(
+                path: "clients",
+                credentials: credentials,
+                queryItems: [
+                    URLQueryItem(name: "is_active", value: "true"),
+                    URLQueryItem(name: "page", value: String(current)),
+                    URLQueryItem(name: "per_page", value: "100"),
+                ]
+            )
+            let response: ClientsResponse = try await perform(request)
+            clients.append(contentsOf: response.clients)
+            page = response.nextPage
+        }
+
+        return clients
+    }
+
+    func fetchInvoiceItemCategories(credentials: HarvestCredentials) async throws -> [InvoiceItemCategory] {
+        let request = try makeRequest(
+            path: "invoice_item_categories",
+            credentials: credentials,
+            queryItems: [URLQueryItem(name: "per_page", value: "100")]
+        )
+        let response: InvoiceItemCategoriesResponse = try await perform(request)
+        return response.invoiceItemCategories
+    }
+
     // MARK: - Estimates
 
     func fetchEstimates(
@@ -560,6 +630,39 @@ actor HarvestAPIService {
         }
     }
 
+    private struct CreateInvoiceBody: Encodable {
+        let clientId: Int
+        let subject: String?
+        let notes: String?
+        let tax: Decimal?
+        let issueDate: String
+        let dueDate: String
+        let paymentTerm: String
+        let lineItems: [Item]
+
+        enum CodingKeys: String, CodingKey {
+            case subject, notes, tax
+            case clientId = "client_id"
+            case issueDate = "issue_date"
+            case dueDate = "due_date"
+            case paymentTerm = "payment_term"
+            case lineItems = "line_items"
+        }
+
+        struct Item: Encodable {
+            let kind: String
+            let description: String
+            let quantity: Decimal
+            let unitPrice: Decimal
+            let taxed: Bool
+
+            enum CodingKeys: String, CodingKey {
+                case kind, description, quantity, taxed
+                case unitPrice = "unit_price"
+            }
+        }
+    }
+
     private struct LineItemUpdatePayload: Encodable {
         let lineItems: [Item]
 
@@ -633,6 +736,24 @@ struct Company: Decodable, Sendable {
         baseUri = try container.decode(String.self, forKey: .baseUri)
         fullDomain = try container.decode(String.self, forKey: .fullDomain)
         name = try container.decode(String.self, forKey: .name)
+    }
+}
+
+struct InvoiceItemCategory: Decodable, Identifiable, Sendable {
+    let id: Int
+    let name: String
+}
+
+struct InvoiceItemCategoriesResponse: Decodable, Sendable {
+    let invoiceItemCategories: [InvoiceItemCategory]
+
+    private enum CodingKeys: String, CodingKey {
+        case invoiceItemCategories = "invoice_item_categories"
+    }
+
+    nonisolated init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        invoiceItemCategories = try container.decode([InvoiceItemCategory].self, forKey: .invoiceItemCategories)
     }
 }
 

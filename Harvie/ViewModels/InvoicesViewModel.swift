@@ -118,6 +118,8 @@ final class InvoicesViewModel {
     var showMarkAsPaidSheet = false
     var showMarkAsOpenSheet = false
     var showConfirmDateSheet = false
+    var showDeleteSheet = false
+    var showNewInvoiceSheet = false
     var batchIssueDate = Date()
     var batchPaymentDate = Date()
 
@@ -738,4 +740,149 @@ final class InvoicesViewModel {
         isUpdating = false
     }
 
+    // MARK: - Create & Delete
+
+    /// Active clients and line item kinds offered when creating an invoice.
+    func loadNewInvoiceOptions() async throws -> (clients: [Client], kinds: [String]) {
+        #if DEBUG
+        if appSettings.isDemoMode {
+            let clients = Dictionary(grouping: invoices, by: \.client.id).values.compactMap(\.first).map {
+                Client(id: $0.client.id, name: $0.client.name, currency: $0.currency)
+            }
+            return (clients.sorted { $0.name.localizedStandardCompare($1.name) == .orderedAscending }, ["Service", "Product"])
+        }
+        #endif
+
+        let credentials = try await keychainService.loadHarvestCredentials()
+        async let clients = apiService.fetchActiveClients(credentials: credentials)
+        async let categories = apiService.fetchInvoiceItemCategories(credentials: credentials)
+        return (
+            try await clients.sorted { $0.name.localizedStandardCompare($1.name) == .orderedAscending },
+            try await categories.map(\.name)
+        )
+    }
+
+    /// Creates the invoice in Harvest, then shows and selects it in the list.
+    func createInvoice(_ newInvoice: NewInvoice) async throws {
+        #if DEBUG
+        if appSettings.isDemoMode {
+            insertCreatedInvoice(Self.demoInvoice(from: newInvoice, existing: invoices))
+            return
+        }
+        #endif
+
+        let credentials = try await keychainService.loadHarvestCredentials()
+        let invoice = try await apiService.createInvoice(newInvoice, credentials: credentials)
+        guard credentials.accountId == activeAccountId else { return }
+
+        insertCreatedInvoice(invoice)
+        if let context = modelContext {
+            updateCache(with: [invoice], context: context, accountId: credentials.accountId)
+        }
+    }
+
+    private func insertCreatedInvoice(_ invoice: Invoice) {
+        if let index = invoices.firstIndex(where: { $0.id == invoice.id }) {
+            invoices[index] = invoice
+        } else {
+            invoices.append(invoice)
+        }
+        if !selectedStates.isEmpty {
+            selectedStates.insert(invoice.state)
+        }
+        if !sortedInvoices.contains(where: { $0.id == invoice.id }) {
+            selectedPeriod = nil
+            searchText = ""
+        }
+        selectedInvoiceIDs = [invoice.id]
+    }
+
+    /// Deletes the selected invoices from Harvest. Returns `true` when all were deleted.
+    func deleteSelectedInvoices() async -> Bool {
+        let ids = selectedInvoiceIDs
+        guard !ids.isEmpty, !isUpdating else { return false }
+
+        #if DEBUG
+        if appSettings.isDemoMode {
+            removeInvoices(ids: ids)
+            return true
+        }
+        #endif
+
+        isUpdating = true
+        updateError = nil
+        updatedCount = 0
+        updateTotalCount = ids.count
+
+        var deleted: Set<Int> = []
+        do {
+            let credentials = try await keychainService.loadHarvestCredentials()
+            for id in ids {
+                try await apiService.deleteInvoice(id: id, credentials: credentials)
+                deleted.insert(id)
+                updatedCount += 1
+            }
+        } catch {
+            updateError = error.localizedDescription
+        }
+
+        removeInvoices(ids: deleted)
+        isUpdating = false
+        return updateError == nil
+    }
+
+    private func removeInvoices(ids: Set<Int>) {
+        guard !ids.isEmpty else { return }
+        invoices.removeAll { ids.contains($0.id) }
+        selectedInvoiceIDs.subtract(ids)
+
+        guard let context = modelContext else { return }
+        let idList = Array(ids)
+        do {
+            try context.delete(model: CachedInvoice.self, where: #Predicate { idList.contains($0.id) })
+            try context.save()
+        } catch {
+            logger.warning("Failed to remove deleted invoices from cache: \(error.localizedDescription)")
+        }
+    }
+
+    #if DEBUG
+    private static func demoInvoice(from newInvoice: NewInvoice, existing: [Invoice]) -> Invoice {
+        let id = Int.random(in: 100_000...999_999)
+        let sameClient = existing.first { $0.client.id == newInvoice.clientId }
+        let amount = newInvoice.lineItems.reduce(Decimal.zero) { $0 + $1.quantity * $1.unitPrice }
+        let tax = amount * (newInvoice.taxRate ?? 0) / 100
+        return Invoice(
+            id: id,
+            clientKey: "demo-\(id)",
+            number: "INV-\(id)",
+            amount: amount + tax,
+            dueAmount: amount + tax,
+            tax: newInvoice.taxRate,
+            taxAmount: newInvoice.taxRate.map { _ in tax },
+            subject: newInvoice.subject,
+            notes: newInvoice.notes,
+            currency: sameClient?.currency ?? "CHF",
+            state: .draft,
+            issueDate: newInvoice.issueDate,
+            dueDate: newInvoice.dueDate,
+            createdAt: Date(),
+            updatedAt: Date(),
+            client: sameClient?.client ?? ClientReference(id: newInvoice.clientId, name: "Demo Client"),
+            lineItems: newInvoice.lineItems.enumerated().map { index, item in
+                LineItem(
+                    id: id * 100 + index,
+                    kind: item.kind,
+                    description: item.description,
+                    quantity: item.quantity,
+                    unitPrice: item.unitPrice,
+                    amount: item.quantity * item.unitPrice,
+                    taxed: newInvoice.taxRate != nil,
+                    taxed2: false,
+                    project: nil
+                )
+            }
+        )
+    }
+    #endif
 }

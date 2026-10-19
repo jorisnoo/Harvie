@@ -53,6 +53,10 @@ struct InvoicesListView: View {
                         .tag(invoice.id)
                     }
                 }
+                .onDeleteCommand {
+                    guard !viewModel.selectedInvoiceIDs.isEmpty, !viewModel.isUpdating else { return }
+                    viewModel.showDeleteSheet = true
+                }
                 .onKeyPress(.escape) {
                     guard !viewModel.selectedInvoiceIDs.isEmpty else { return .ignored }
                     viewModel.selectedInvoiceIDs.removeAll()
@@ -135,6 +139,16 @@ struct InvoicesListView: View {
                         } label: {
                             Label(Strings.InvoicesList.exportWithoutQRBill, systemImage: "doc.text")
                         }
+
+                        Divider()
+
+                        Button(role: .destructive) {
+                            viewModel.selectedInvoiceIDs = clickedIDs
+                            viewModel.showDeleteSheet = true
+                        } label: {
+                            Label(Strings.DeleteInvoice.delete, systemImage: "trash")
+                        }
+                        .disabled(viewModel.isUpdating)
                     }
                 } primaryAction: { selectedIDs in
                     if let firstID = selectedIDs.first {
@@ -188,6 +202,11 @@ struct InvoicesListView: View {
                 } description: {
                     Text(Strings.InvoicesList.noInvoicesDescription)
                 } actions: {
+                    Button(Strings.NewInvoice.title) {
+                        viewModel.showNewInvoiceSheet = true
+                    }
+                    .buttonStyle(.borderedProminent)
+
                     Button(Strings.Common.refresh) {
                         viewModel.refresh()
                     }
@@ -333,6 +352,28 @@ struct InvoicesActionSheetsModifier: ViewModifier {
                         }
                     },
                     onCancel: { viewModel.showMarkAsOpenSheet = false }
+                ) {
+                    if viewModel.isUpdating { batchProgressView }
+                }
+            }
+            .sheet(isPresented: $viewModel.showNewInvoiceSheet) {
+                NewInvoiceSheet(viewModel: viewModel)
+            }
+            .sheet(isPresented: $viewModel.showDeleteSheet) {
+                ConfirmationSheet(
+                    title: Strings.DeleteInvoice.title,
+                    message: Strings.DeleteInvoice.message(selectionCount, number: viewModel.selectedInvoices.first?.number),
+                    detail: Strings.DeleteInvoice.detail,
+                    confirmLabel: Strings.Common.delete,
+                    confirmRole: .destructive,
+                    isProcessing: viewModel.isUpdating,
+                    onConfirm: {
+                        Task {
+                            if await viewModel.deleteSelectedInvoices() { viewModel.showDeleteSheet = false }
+                        }
+                    },
+                    onCancel: { viewModel.showDeleteSheet = false },
+                    width: 300
                 ) {
                     if viewModel.isUpdating { batchProgressView }
                 }

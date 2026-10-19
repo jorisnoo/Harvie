@@ -75,6 +75,16 @@ struct Client: Codable, Identifiable, Sendable {
         case updatedAt = "updated_at"
     }
 
+    init(id: Int, name: String, currency: String?, isActive: Bool = true, address: String? = nil) {
+        self.id = id
+        self.name = name
+        self.isActive = isActive
+        self.address = address
+        self.currency = currency
+        createdAt = Date()
+        updatedAt = Date()
+    }
+
     nonisolated init(from decoder: any Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         id = try container.decode(Int.self, forKey: .id)
@@ -104,5 +114,16 @@ struct ClientsResponse: Codable, Sendable {
         case nextPage = "next_page"
         case previousPage = "previous_page"
         case page
+    }
+
+    nonisolated init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        clients = try container.decode([Client].self, forKey: .clients)
+        perPage = try container.decode(Int.self, forKey: .perPage)
+        totalPages = try container.decode(Int.self, forKey: .totalPages)
+        totalEntries = try container.decode(Int.self, forKey: .totalEntries)
+        nextPage = try container.decodeIfPresent(Int.self, forKey: .nextPage)
+        previousPage = try container.decodeIfPresent(Int.self, forKey: .previousPage)
+        page = try container.decode(Int.self, forKey: .page)
     }
 }

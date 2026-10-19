@@ -35,6 +35,18 @@ enum PaymentTerm: Hashable {
         }
     }
 
+    /// The `payment_term` value Harvest expects when creating an invoice.
+    nonisolated var harvestValue: String {
+        switch self {
+        case .uponReceipt: "upon receipt"
+        case .net15: "net 15"
+        case .net30: "net 30"
+        case .net45: "net 45"
+        case .net60: "net 60"
+        case .custom: "custom"
+        }
+    }
+
     static func from(issueDate: Date, dueDate: Date) -> PaymentTerm {
         let days = Calendar.current.dateComponents([.day], from: issueDate, to: dueDate).day ?? 0
         switch days {

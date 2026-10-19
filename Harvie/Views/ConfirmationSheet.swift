@@ -10,6 +10,7 @@ struct ConfirmationSheet<Content: View>: View {
     let message: String?
     let detail: String?
     let confirmLabel: String
+    let confirmRole: ButtonRole?
     let isProcessing: Bool
     let onConfirm: () -> Void
     let onCancel: () -> Void
@@ -21,6 +22,7 @@ struct ConfirmationSheet<Content: View>: View {
         message: String? = nil,
         detail: String? = nil,
         confirmLabel: String,
+        confirmRole: ButtonRole? = nil,
         isProcessing: Bool,
         onConfirm: @escaping () -> Void,
         onCancel: @escaping () -> Void,
@@ -31,6 +33,7 @@ struct ConfirmationSheet<Content: View>: View {
         self.message = message
         self.detail = detail
         self.confirmLabel = confirmLabel
+        self.confirmRole = confirmRole
         self.isProcessing = isProcessing
         self.onConfirm = onConfirm
         self.onCancel = onCancel
@@ -61,11 +64,13 @@ struct ConfirmationSheet<Content: View>: View {
                 }
                 .keyboardShortcut(.escape)
 
-                Button(confirmLabel) {
+                Button(confirmLabel, role: confirmRole) {
                     onConfirm()
                 }
-                .keyboardShortcut(.return)
+                // Return must not trigger a destructive action by accident.
+                .keyboardShortcut(confirmRole == .destructive ? nil : KeyboardShortcut(.return))
                 .buttonStyle(.borderedProminent)
+                .tint(confirmRole == .destructive ? .red : nil)
                 .disabled(isProcessing)
             }
         }
@@ -80,6 +85,7 @@ extension ConfirmationSheet where Content == EmptyView {
         message: String? = nil,
         detail: String? = nil,
         confirmLabel: String,
+        confirmRole: ButtonRole? = nil,
         isProcessing: Bool,
         onConfirm: @escaping () -> Void,
         onCancel: @escaping () -> Void,
@@ -90,6 +96,7 @@ extension ConfirmationSheet where Content == EmptyView {
             message: message,
             detail: detail,
             confirmLabel: confirmLabel,
+            confirmRole: confirmRole,
             isProcessing: isProcessing,
             onConfirm: onConfirm,
             onCancel: onCancel,

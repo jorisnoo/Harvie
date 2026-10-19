@@ -18,6 +18,7 @@ struct InvoiceDetailView: View {
     let appSettings: AppSettings
     var onRefresh: (() -> Void)?
     var onStateChanged: ((Int, InvoiceState) -> Void)?
+    var onDelete: (() -> Void)?
 
     @Environment(\.modelContext) private var modelContext
     @State private var isProcessing = false
@@ -305,6 +306,16 @@ struct InvoiceDetailView: View {
                     }
                     .disabled(isPerformingSheetAction)
                     .help(Strings.InvoiceDetail.markAsOpen)
+                }
+            }
+
+            if let onDelete {
+                ToolbarItem(placement: .primaryAction) {
+                    Button(role: .destructive, action: onDelete) {
+                        Label(Strings.DeleteInvoice.title, systemImage: "trash")
+                    }
+                    .disabled(isPerformingSheetAction)
+                    .help(Strings.DeleteInvoice.title)
                 }
             }
         }

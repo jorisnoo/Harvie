@@ -10,6 +10,7 @@ extension Notification.Name {
     static let refreshInvoices = Notification.Name("RefreshInvoices")
     static let refreshEstimates = Notification.Name("RefreshEstimates")
     static let searchInvoices = Notification.Name("SearchInvoices")
+    static let newInvoice = Notification.Name("NewInvoice")
     static let insertTemplateVariable = Notification.Name("InsertTemplateVariable")
 }
 
@@ -80,7 +81,24 @@ struct ContentView: View {
                         sortFilterMenu
                     }
                 }
+
+                if source.wrappedValue == .invoices {
+                    ToolbarItem(placement: .automatic) {
+                        Button {
+                            invoicesVM.showNewInvoiceSheet = true
+                        } label: {
+                            Label(Strings.NewInvoice.title, systemImage: "plus")
+                        }
+                        .disabled(!invoicesVM.hasValidCredentials)
+                        .help(Strings.NewInvoice.title)
+                    }
+                }
             }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .newInvoice)) { _ in
+            guard invoicesVM.hasValidCredentials else { return }
+            source.wrappedValue = .invoices
+            invoicesVM.showNewInvoiceSheet = true
         }
     }
 
@@ -251,7 +269,8 @@ private struct InvoicesDetailContentView: View {
                     } else {
                         viewModel.switchFilterAndSelect(invoiceId: id, to: newState)
                     }
-                }
+                },
+                onDelete: { viewModel.showDeleteSheet = true }
             )
             .id(invoice.id)
         } else {
