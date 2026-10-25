@@ -24,15 +24,15 @@ enum Analytics {
 
         let host = Bundle.main.infoDictionary?["AptabaseHost"] as? String
         let options = InitOptions(host: host)
-        Aptabase.shared.initialize(appKey: appKey, options: options)
+        Aptabase.shared.initialize(appKey: appKey, with: options)
         isInitialized = true
     }
 
-    private static func track(_ event: String, props: [String: EventValue] = [:]) {
+    private static func track(_ event: String, props: [String: Value] = [:]) {
         guard isInitialized else { return }
 
         var allProps = props
-        allProps["distribution"] = .string(distribution)
+        allProps["distribution"] = distribution
         Aptabase.shared.trackEvent(event, with: allProps)
     }
 
@@ -49,7 +49,7 @@ enum Analytics {
     }
 
     static func invoicesLoaded(count: Int) {
-        track("invoices_loaded", props: ["count": .integer(count)])
+        track("invoices_loaded", props: ["count": count])
     }
 
     static func pdfPreviewed() {
@@ -57,21 +57,21 @@ enum Analytics {
     }
 
     static func pdfExported(method: String) {
-        track("pdf_exported", props: ["method": .string(method)])
+        track("pdf_exported", props: ["method": method])
     }
 
     static func batchExportCompleted(count: Int, withQRBill: Bool) {
         track("batch_export_completed", props: [
-            "count": .integer(count),
-            "with_qr_bill": .boolean(withQRBill),
+            "count": count,
+            "with_qr_bill": withQRBill,
         ])
     }
 
     static func estimatesLoaded(count: Int) {
-        track("estimates_loaded", props: ["count": .integer(count)])
+        track("estimates_loaded", props: ["count": count])
     }
 
     static func estimatesExported(count: Int) {
-        track("estimates_exported", props: ["count": .integer(count)])
+        track("estimates_exported", props: ["count": count])
     }
 }
