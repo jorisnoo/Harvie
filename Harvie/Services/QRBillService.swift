@@ -110,9 +110,11 @@ struct QRBillService {
         filter.setValue(payloadData, forKey: "inputMessage")
         filter.setValue("M", forKey: "inputCorrectionLevel")
 
-        guard let outputImage = filter.outputImage else {
+        // The generator adds a one-module quiet zone; the 46 mm size excludes it.
+        guard let generated = filter.outputImage else {
             return nil
         }
+        let outputImage = generated.cropped(to: generated.extent.insetBy(dx: 1, dy: 1))
 
         // Scale by a whole factor with nearest-neighbour sampling so every module stays a
         // crisp square; the renderer then draws the image at exactly 46 x 46 mm.

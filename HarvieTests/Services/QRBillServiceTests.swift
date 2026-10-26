@@ -90,6 +90,22 @@ struct QRBillServiceTests {
         #expect(fields[29] == "Invoice INV-7")
     }
 
+    @Test func qrCodeImageHasNoQuietZone() throws {
+        // The renderer draws the image at 46 mm, which must be the code itself.
+        let service = QRBillService()
+        let data = try service.createQRBillData(invoice: TestDocuments.invoice(), creditorInfo: TestDocuments.creditor)
+        let image = try #require(service.generateQRCodeImage(from: data))
+
+        var pixel: UInt8 = 255
+        let context = try #require(CGContext(
+            data: &pixel, width: 1, height: 1, bitsPerComponent: 8, bytesPerRow: 1,
+            space: CGColorSpaceCreateDeviceGray(), bitmapInfo: CGImageAlphaInfo.none.rawValue
+        ))
+        // Draw so that only the top-left image pixel, a finder pattern corner, lands in the context.
+        context.draw(image, in: CGRect(x: 0, y: 1 - CGFloat(image.height), width: CGFloat(image.width), height: CGFloat(image.height)))
+        #expect(pixel < 128)
+    }
+
     @Test func slipShowsTheAcceptancePoint() throws {
         let service = QRBillService()
         let data = try service.createQRBillData(invoice: TestDocuments.invoice(), creditorInfo: TestDocuments.creditor)
