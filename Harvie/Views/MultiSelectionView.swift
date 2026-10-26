@@ -48,6 +48,8 @@ struct MultiSelectionView: View {
                 markAsOpenButton
             }
 
+            deleteButton
+
             Divider()
                 .padding(.horizontal, 40)
             invoicesList
@@ -105,6 +107,17 @@ struct MultiSelectionView: View {
             viewModel.showMarkAsOpenSheet = true
         } label: {
             Label(Strings.InvoiceDetail.markAsOpen, systemImage: "arrow.uturn.backward")
+                .frame(maxWidth: 150)
+        }
+        .buttonStyle(.bordered)
+        .disabled(viewModel.isUpdating)
+    }
+
+    private var deleteButton: some View {
+        Button(role: .destructive) {
+            viewModel.showDeleteSheet = true
+        } label: {
+            Label(Strings.DeleteInvoice.delete, systemImage: "trash")
                 .frame(maxWidth: 150)
         }
         .buttonStyle(.bordered)

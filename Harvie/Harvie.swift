@@ -48,7 +48,12 @@ struct HarvieApp: App {
         .windowStyle(.automatic)
         .defaultSize(width: 900, height: 600)
         .commands {
-            CommandGroup(replacing: .newItem) { }
+            CommandGroup(replacing: .newItem) {
+                Button(Strings.NewInvoice.newInvoiceMenu) {
+                    NotificationCenter.default.post(name: .newInvoice, object: nil)
+                }
+                .keyboardShortcut("n", modifiers: .command)
+            }
 
             CommandGroup(after: .saveItem) {
                 ExportMenuButton()

@@ -218,6 +218,46 @@ enum Strings {
         static let emailNotConfigured = "Email is not configured on this Mac."
     }
 
+    // MARK: - New Invoice
+
+    enum NewInvoice {
+        static let title = "New Invoice"
+        static let newInvoiceMenu = "New Invoice\u{2026}"
+        static let create = "Create Draft"
+        static let loading = "Loading clients\u{2026}"
+        static let loadFailed = "Couldn\u{2019}t Load Clients"
+        static let client = "Client"
+        static let selectClient = "Select a client\u{2026}"
+        static let subject = "Subject"
+        static let subjectPlaceholder = "Optional"
+        static let paymentTerms = "Payment Terms"
+        static let lineItems = "Line Items"
+        static let kind = "Kind"
+        static let quantity = "Qty"
+        static let unitPrice = "Unit Price"
+        static let addLineItem = "Add Line Item"
+        static let removeLineItem = "Remove line item"
+        static let taxRate = "Tax %"
+        static let taxPlaceholder = "None"
+        static let subtotal = "Subtotal"
+        static let draftHint = "The invoice is created as a draft. Harvest assigns the number."
+    }
+
+    // MARK: - Delete Invoice
+
+    enum DeleteInvoice {
+        static let title = "Delete Invoice"
+        static let delete = "Delete\u{2026}"
+        static let detail = "This permanently deletes the invoice and its payments from Harvest. This cannot be undone."
+
+        static func message(_ count: Int, number: String?) -> String {
+            if count == 1, let number {
+                return "Delete invoice \(number)?"
+            }
+            return "Delete \(count) invoices?"
+        }
+    }
+
     // MARK: - Estimates List
 
     enum EstimatesList {
