@@ -98,11 +98,4 @@ enum InvoiceFileSaver {
 
         return sanitized == "pdf" || sanitized == ".pdf" ? "invoice.pdf" : sanitized
     }
-
-    static func isValidPath(_ fileURL: URL, within folderURL: URL) -> Bool {
-        let resolvedFile = fileURL.standardizedFileURL.path
-        let resolvedFolder = folderURL.standardizedFileURL.path
-
-        return resolvedFile.hasPrefix(resolvedFolder == "/" ? "/" : resolvedFolder + "/")
-    }
 }

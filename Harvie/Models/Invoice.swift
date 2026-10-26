@@ -185,6 +185,8 @@ struct Invoice: Codable, Identifiable, Hashable, Sendable {
     }
 }
 
+extension Invoice: HarvestDocument {}
+
 enum InvoiceState: String, Codable, CaseIterable, Sendable {
     case draft
     case open

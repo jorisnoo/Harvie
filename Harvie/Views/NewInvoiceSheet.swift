@@ -85,7 +85,7 @@ struct NewInvoiceSheet: View {
 
             Section(Strings.NewInvoice.lineItems) {
                 ForEach($draft.lines) { $line in
-                    LineItemRow(
+                    DraftLineItemRow(
                         line: $line,
                         kinds: kinds,
                         formattedAmount: line.amount.map(format) ?? "\u{2014}",
@@ -170,7 +170,7 @@ struct NewInvoiceSheet: View {
     }
 }
 
-private struct LineItemRow: View {
+private struct DraftLineItemRow: View {
     @Binding var line: InvoiceDraft.Line
     let kinds: [String]
     let formattedAmount: String

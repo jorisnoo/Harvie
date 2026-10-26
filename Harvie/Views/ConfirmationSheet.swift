@@ -12,6 +12,8 @@ struct ConfirmationSheet<Content: View>: View {
     let confirmLabel: String
     let confirmRole: ButtonRole?
     let isProcessing: Bool
+    /// Shown inside the sheet, since an alert can't present over it.
+    let errorMessage: String?
     let onConfirm: () -> Void
     let onCancel: () -> Void
     let width: CGFloat
@@ -24,6 +26,7 @@ struct ConfirmationSheet<Content: View>: View {
         confirmLabel: String,
         confirmRole: ButtonRole? = nil,
         isProcessing: Bool,
+        errorMessage: String? = nil,
         onConfirm: @escaping () -> Void,
         onCancel: @escaping () -> Void,
         width: CGFloat = 280,
@@ -35,6 +38,7 @@ struct ConfirmationSheet<Content: View>: View {
         self.confirmLabel = confirmLabel
         self.confirmRole = confirmRole
         self.isProcessing = isProcessing
+        self.errorMessage = errorMessage
         self.onConfirm = onConfirm
         self.onCancel = onCancel
         self.width = width
@@ -57,6 +61,13 @@ struct ConfirmationSheet<Content: View>: View {
             }
 
             content
+
+            if let errorMessage {
+                Label(errorMessage, systemImage: "exclamationmark.triangle.fill")
+                    .font(.callout)
+                    .foregroundStyle(.red)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
 
             HStack {
                 Button(Strings.Common.cancel, role: .cancel) {
@@ -87,6 +98,7 @@ extension ConfirmationSheet where Content == EmptyView {
         confirmLabel: String,
         confirmRole: ButtonRole? = nil,
         isProcessing: Bool,
+        errorMessage: String? = nil,
         onConfirm: @escaping () -> Void,
         onCancel: @escaping () -> Void,
         width: CGFloat = 280
@@ -98,6 +110,7 @@ extension ConfirmationSheet where Content == EmptyView {
             confirmLabel: confirmLabel,
             confirmRole: confirmRole,
             isProcessing: isProcessing,
+            errorMessage: errorMessage,
             onConfirm: onConfirm,
             onCancel: onCancel,
             width: width

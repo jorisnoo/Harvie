@@ -234,13 +234,19 @@ struct InvoicesActionSheetsModifier: ViewModifier {
 
     private var selectionCount: Int { viewModel.selectedInvoices.count }
 
+    /// Closes a batch sheet and drops any error it was showing.
+    private func dismiss(_ sheet: ReferenceWritableKeyPath<InvoicesViewModel, Bool>) {
+        viewModel[keyPath: sheet] = false
+        viewModel.updateError = nil
+    }
+
     private var batchProgressView: some View {
         VStack(spacing: 6) {
             ProgressView(
                 value: Double(viewModel.updatedCount),
                 total: Double(viewModel.updateTotalCount)
             )
-            Text("\(viewModel.updatedCount) of \(viewModel.updateTotalCount)")
+            Text(Strings.MultiSelection.batchProgress(viewModel.updatedCount, viewModel.updateTotalCount))
                 .font(.caption)
                 .foregroundStyle(.secondary)
         }
@@ -254,12 +260,13 @@ struct InvoicesActionSheetsModifier: ViewModifier {
             confirmLabel: Strings.Common.delete,
             confirmRole: .destructive,
             isProcessing: viewModel.isUpdating,
+            errorMessage: viewModel.updateError,
             onConfirm: {
                 Task {
                     if await viewModel.deleteSelectedInvoices() { viewModel.showDeleteSheet = false }
                 }
             },
-            onCancel: { viewModel.showDeleteSheet = false },
+            onCancel: { dismiss(\.showDeleteSheet) },
             width: 300
         ) {
             if viewModel.isUpdating { batchProgressView }
@@ -274,13 +281,14 @@ struct InvoicesActionSheetsModifier: ViewModifier {
                     message: Strings.MultiSelection.setIssueDateMessage(selectionCount),
                     confirmLabel: Strings.Common.apply,
                     isProcessing: viewModel.isUpdating,
+                    errorMessage: viewModel.updateError,
                     onConfirm: {
                         Task {
                             await viewModel.updateIssueDateForSelected(to: viewModel.batchIssueDate)
                             if viewModel.showUpdateSuccess { viewModel.showChangeDateSheet = false }
                         }
                     },
-                    onCancel: { viewModel.showChangeDateSheet = false },
+                    onCancel: { dismiss(\.showChangeDateSheet) },
                     width: 300
                 ) {
                     HStack {
@@ -305,13 +313,14 @@ struct InvoicesActionSheetsModifier: ViewModifier {
                     detail: Strings.MultiSelection.sentDateDetail,
                     confirmLabel: Strings.InvoiceDetail.markAsSent,
                     isProcessing: viewModel.isUpdating,
+                    errorMessage: viewModel.updateError,
                     onConfirm: {
                         Task {
                             await viewModel.markSelectedAsSent()
                             if viewModel.showUpdateSuccess { viewModel.showMarkAsSentSheet = false }
                         }
                     },
-                    onCancel: { viewModel.showMarkAsSentSheet = false },
+                    onCancel: { dismiss(\.showMarkAsSentSheet) },
                     width: 300
                 ) {
                     if viewModel.isUpdating { batchProgressView }
@@ -323,13 +332,14 @@ struct InvoicesActionSheetsModifier: ViewModifier {
                     message: Strings.MultiSelection.markAsDraftMessage(selectionCount),
                     confirmLabel: Strings.InvoiceDetail.markAsDraft,
                     isProcessing: viewModel.isUpdating,
+                    errorMessage: viewModel.updateError,
                     onConfirm: {
                         Task {
                             await viewModel.markSelectedAsDraft()
                             if viewModel.showUpdateSuccess { viewModel.showMarkAsDraftSheet = false }
                         }
                     },
-                    onCancel: { viewModel.showMarkAsDraftSheet = false }
+                    onCancel: { dismiss(\.showMarkAsDraftSheet) }
                 ) {
                     if viewModel.isUpdating { batchProgressView }
                 }
@@ -340,13 +350,14 @@ struct InvoicesActionSheetsModifier: ViewModifier {
                     message: Strings.MultiSelection.markAsPaidMessage(selectionCount),
                     confirmLabel: Strings.InvoiceDetail.markAsPaid,
                     isProcessing: viewModel.isUpdating,
+                    errorMessage: viewModel.updateError,
                     onConfirm: {
                         Task {
                             await viewModel.markSelectedAsPaid(paidAt: viewModel.batchPaymentDate)
                             if viewModel.showUpdateSuccess { viewModel.showMarkAsPaidSheet = false }
                         }
                     },
-                    onCancel: { viewModel.showMarkAsPaidSheet = false },
+                    onCancel: { dismiss(\.showMarkAsPaidSheet) },
                     width: 300
                 ) {
                     HStack {
@@ -369,13 +380,14 @@ struct InvoicesActionSheetsModifier: ViewModifier {
                     detail: Strings.InvoiceDetail.reopenDetail,
                     confirmLabel: Strings.InvoiceDetail.markAsOpen,
                     isProcessing: viewModel.isUpdating,
+                    errorMessage: viewModel.updateError,
                     onConfirm: {
                         Task {
                             await viewModel.markSelectedAsOpen()
                             if viewModel.showUpdateSuccess { viewModel.showMarkAsOpenSheet = false }
                         }
                     },
-                    onCancel: { viewModel.showMarkAsOpenSheet = false }
+                    onCancel: { dismiss(\.showMarkAsOpenSheet) }
                 ) {
                     if viewModel.isUpdating { batchProgressView }
                 }
@@ -391,6 +403,7 @@ struct InvoicesActionSheetsModifier: ViewModifier {
                     detail: Strings.InvoiceDetail.keepCurrentDate,
                     confirmLabel: Strings.InvoiceDetail.setToToday,
                     isProcessing: viewModel.isUpdating,
+                    errorMessage: viewModel.updateError,
                     onConfirm: {
                         Task {
                             await viewModel.updateIssueDateForSelected(to: Date())
@@ -401,7 +414,7 @@ struct InvoicesActionSheetsModifier: ViewModifier {
                         }
                     },
                     onCancel: {
-                        viewModel.showConfirmDateSheet = false
+                        dismiss(\.showConfirmDateSheet)
                         viewModel.showMarkAsSentSheet = true
                     }
                 ) {
@@ -431,8 +444,9 @@ private struct InvoicesAlertsModifier: ViewModifier {
             } message: {
                 Text(Strings.Alerts.exportedCount(viewModel.exportedCount))
             }
+            // Batch sheets show their own errors; an alert can't present over them.
             .alert(Strings.Alerts.updateError, isPresented: .init(
-                get: { viewModel.updateError != nil },
+                get: { viewModel.updateError != nil && !viewModel.isShowingBatchSheet },
                 set: { if !$0 { viewModel.updateError = nil } }
             )) {
                 Button(Strings.Common.ok) { viewModel.updateError = nil }
@@ -444,6 +458,13 @@ private struct InvoicesAlertsModifier: ViewModifier {
             } message: {
                 Text(Strings.Alerts.updatedCount(viewModel.updatedCount))
             }
+    }
+}
+
+private extension InvoicesViewModel {
+    var isShowingBatchSheet: Bool {
+        showChangeDateSheet || showMarkAsSentSheet || showMarkAsDraftSheet
+            || showMarkAsPaidSheet || showMarkAsOpenSheet || showConfirmDateSheet || showDeleteSheet
     }
 }
 
@@ -475,12 +496,6 @@ private struct InvoicesOnChangeModifier: ViewModifier {
             }
             .onReceive(NotificationCenter.default.publisher(for: .refreshInvoices)) { _ in
                 viewModel.refresh()
-            }
-            .onReceive(NotificationCenter.default.publisher(for: SettingsViewModel.settingsSavedNotification)) { notification in
-                Task { await viewModel.reloadSettings() }
-                if notification.userInfo?["needsAPIRefresh"] as? Bool == true {
-                    viewModel.loadInvoices()
-                }
             }
     }
 }

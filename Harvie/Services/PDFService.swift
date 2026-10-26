@@ -71,13 +71,19 @@ actor PDFService {
         return document
     }
 
-    /// Checks whether the bottom 110mm (105mm QR bill + 5mm buffer) of the last page is empty.
+    /// Checks whether the last page is A4 and its bottom 110mm (105mm QR bill + 5mm buffer)
+    /// is empty. The slip must print at its exact size, so it's only overlaid on A4 pages;
+    /// anything else gets the slip on a page of its own.
     func lastPageHasSpaceForQRBill(_ document: PDFDocument) -> Bool {
         guard document.pageCount > 0,
               let lastPage = document.page(at: document.pageCount - 1) else { return false }
 
         let pageBounds = lastPage.bounds(for: .mediaBox)
         let mmToPoints: CGFloat = 2.83465
+        guard lastPage.rotation % 180 == 0,
+              abs(pageBounds.width - 210 * mmToPoints) < 1,
+              abs(pageBounds.height - 297 * mmToPoints) < 1 else { return false }
+
         let checkHeightPt = 110 * mmToPoints // 105mm QR bill + 5mm buffer
 
         let width = Int(ceil(pageBounds.width))
@@ -289,19 +295,7 @@ actor PDFService {
         }
 
         // Build debtor address from already-fetched client
-        let debtorAddress: StructuredAddress?
-        if credentials != nil {
-            debtorAddress = buildDebtorAddress(from: fetchedClient, clientName: invoice.client.name)
-        } else {
-            debtorAddress = StructuredAddress(
-                name: invoice.client.name,
-                streetName: nil,
-                buildingNumber: nil,
-                postalCode: "",
-                town: "",
-                country: "CH"
-            )
-        }
+        let debtorAddress = buildDebtorAddress(from: fetchedClient, clientName: invoice.client.name)
 
         return try await attachQRBillAndPaidMark(
             to: basePDF, invoice: invoice, creditorInfo: creditorInfo,
@@ -404,32 +398,15 @@ actor PDFService {
             #if DEBUG
             logger.debug("Failed to fetch client details: \(error.localizedDescription)")
             #endif
+            return nil
         }
-
-        // Fallback: just use the client name without address
-        return StructuredAddress(
-            name: clientName,
-            streetName: nil,
-            buildingNumber: nil,
-            postalCode: "",
-            town: "",
-            country: "CH"
-        )
     }
 
-    private func buildDebtorAddress(from client: Client?, clientName: String) -> StructuredAddress {
-        if let addressString = client?.address, !addressString.isEmpty {
-            return parseAddress(addressString, name: clientName)
-        }
-
-        return StructuredAddress(
-            name: clientName,
-            streetName: nil,
-            buildingNumber: nil,
-            postalCode: "",
-            town: "",
-            country: "CH"
-        )
+    /// The client's address as a QR-bill debtor, or nil (the slip then leaves the debtor
+    /// blank) when there is no address or it can't be parsed with confidence.
+    private func buildDebtorAddress(from client: Client?, clientName: String) -> StructuredAddress? {
+        guard let address = client?.address, !address.isEmpty else { return nil }
+        return PostalAddressParser.parse(address, name: clientName)
     }
 
     #if DEBUG
@@ -567,85 +544,4 @@ actor PDFService {
         return PDFDocument(data: pdfData as Data) ?? PDFDocument()
     }
     #endif
-
-    private func parseAddress(_ address: String, name: String) -> StructuredAddress {
-        // Harvest addresses are free-form multi-line text. Typical shape:
-        //   Street 123
-        //   8000 Zürich
-        //   Switzerland
-        // But extra lines (c/o, department, suite) may appear above the street.
-        let lines = address.components(separatedBy: .newlines)
-            .map { $0.trimmingCharacters(in: .whitespaces) }
-            .filter { !$0.isEmpty }
-
-        // Locate the city line by scanning for "<postal-code> <town>".
-        let cityIndex = lines.firstIndex { line in
-            let parts = line.components(separatedBy: " ")
-            guard parts.count >= 2, let first = parts.first else { return false }
-            return first.count >= 3 && first.allSatisfy { $0.isNumber }
-        }
-
-        var streetLines: [String] = []
-        var postalCode = ""
-        var town = ""
-        var country = "CH"
-
-        if let idx = cityIndex {
-            streetLines = Array(lines.prefix(idx))
-            let cityParts = lines[idx].components(separatedBy: " ")
-            postalCode = cityParts.first ?? ""
-            town = cityParts.dropFirst().joined(separator: " ")
-            if idx + 1 < lines.count {
-                country = countryCode(from: lines[idx + 1])
-            }
-        } else if lines.count >= 2 {
-            streetLines = [lines[0]]
-            town = lines[1]
-        } else {
-            streetLines = lines
-        }
-
-        // Split building number from the last street line; preserve earlier lines as-is.
-        var streetName: String?
-        var buildingNumber: String?
-        if let lastStreet = streetLines.last {
-            let parts = lastStreet.components(separatedBy: " ")
-            if parts.count > 1, let lastPart = parts.last,
-               lastPart.rangeOfCharacter(from: .decimalDigits) != nil {
-                buildingNumber = lastPart
-                let streetOnly = parts.dropLast().joined(separator: " ")
-                streetName = (streetLines.dropLast() + [streetOnly]).joined(separator: "\n")
-            } else {
-                streetName = streetLines.joined(separator: "\n")
-            }
-        }
-
-        return StructuredAddress(
-            name: name,
-            streetName: streetName,
-            buildingNumber: buildingNumber,
-            postalCode: postalCode,
-            town: town,
-            country: country
-        )
-    }
-
-    private func countryCode(from line: String) -> String {
-        if line.count == 2 {
-            return line.uppercased()
-        }
-        let countryMap = [
-            "switzerland": "CH",
-            "schweiz": "CH",
-            "suisse": "CH",
-            "germany": "DE",
-            "deutschland": "DE",
-            "austria": "AT",
-            "österreich": "AT",
-            "france": "FR",
-            "italy": "IT",
-            "italia": "IT"
-        ]
-        return countryMap[line.lowercased()] ?? "CH"
-    }
 }

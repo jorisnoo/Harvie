@@ -52,7 +52,7 @@ struct EstimateDetailView: View {
             }
             .padding()
         }
-        .navigationTitle("Estimate \(estimate.number)")
+        .navigationTitle(Strings.Detail.estimateTitle(estimate.number))
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
                 Button {
@@ -67,6 +67,7 @@ struct EstimateDetailView: View {
                 .buttonStyle(.borderedProminent)
                 .disabled(isProcessing)
                 .help(Strings.EstimateDetail.exportTooltip)
+                .accessibilityLabel(Strings.EstimateDetail.export)
             }
 
             if let transition = primaryTransition {
@@ -133,13 +134,7 @@ struct EstimateDetailView: View {
                 EstimateStateIndicator(state: estimate.state)
             }
 
-            HStack(spacing: 4) {
-                Text(estimate.number)
-                Text("\u{00B7}")
-                Text(estimate.client.name)
-            }
-            .font(.subheadline)
-            .foregroundStyle(.secondary)
+            DocumentSubtitle(number: estimate.number, clientName: estimate.client.name)
         }
     }
 
@@ -322,12 +317,11 @@ struct EstimateDetailView: View {
         defer { isProcessing = false }
 
         do {
-            let clientId = estimate.client.id
-            let descriptor = FetchDescriptor<ClientOverride>(predicate: #Predicate { $0.clientId == clientId })
-            let settings = appSettings.resolved(with: try? modelContext.fetch(descriptor).first)
+            let resolver = TemplateResolver(context: modelContext)
+            let settings = resolver.settings(appSettings, forClient: estimate.client.id)
 
             let credentials = try await keychainService.loadHarvestCredentials()
-            let template: InvoiceTemplate? = settings.effectivePDFSource == .template ? resolveTemplate() : nil
+            let template: InvoiceTemplate? = settings.effectivePDFSource == .template ? resolver.template(for: settings) : nil
 
             let pdf: PDFDocument
             if let template {
@@ -374,17 +368,6 @@ struct EstimateDetailView: View {
             #endif
             self.error = error.localizedDescription
         }
-    }
-
-    private func resolveTemplate() -> InvoiceTemplate? {
-        if let templateId = appSettings.selectedTemplateId {
-            let descriptor = FetchDescriptor<InvoiceTemplate>(predicate: #Predicate { $0.id == templateId })
-            if let template = try? modelContext.fetch(descriptor).first {
-                return template
-            }
-        }
-        let fallback = FetchDescriptor<InvoiceTemplate>(sortBy: [SortDescriptor(\.name)])
-        return try? modelContext.fetch(fallback).first
     }
 
     enum CompletedAction: Identifiable {

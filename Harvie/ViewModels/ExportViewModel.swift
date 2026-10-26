@@ -24,10 +24,15 @@ final class ExportViewModel {
 
     private let exporter = HarvestExporter()
     private let keychain = KeychainService.shared
+    /// Set until the running export has actually finished, even after it was cancelled.
     private var exportTask: Task<Void, Never>?
+    /// Bumped on every start and cancel so late progress updates and results from an
+    /// earlier run are ignored.
+    @ObservationIgnored private var exportGeneration = 0
 
     var canStartExport: Bool {
         !isExporting
+            && exportTask == nil
             && outputFolder != nil
             && !selectedResources.isEmpty
             && credentialsAvailable
@@ -94,11 +99,14 @@ final class ExportViewModel {
         progress = 0
         progressMessage = ""
         isExporting = true
+        exportGeneration += 1
 
+        let generation = exportGeneration
         let resourcesToExport = selectedResources
         let exporter = self.exporter
 
         exportTask = Task { [weak self] in
+            let result: Result<HarvestExporter.Summary, Error>
             do {
                 let credentials = try await KeychainService.shared.loadHarvestCredentials()
                 let summary = try await exporter.runExport(
@@ -107,41 +115,48 @@ final class ExportViewModel {
                     credentials: credentials,
                     progress: { progressUpdate in
                         Task { @MainActor in
-                            self?.applyProgress(progressUpdate)
+                            self?.applyProgress(progressUpdate, generation: generation)
                         }
                     }
                 )
-
-                await MainActor.run {
-                    // A cancelled export finishes "normally" (the exporter records
-                    // per-resource cancellations) — don't report it as a success.
-                    guard let self, !Task.isCancelled else { return }
-                    self.lastSummary = summary
-                    self.progress = 1
-                    self.progressMessage = Strings.DataExport.successSummary(
-                        summary.successfulResources,
-                        summary.totalRecords
-                    )
-                    self.isExporting = false
-                }
+                result = .success(summary)
             } catch {
-                await MainActor.run {
-                    guard let self, !Task.isCancelled else { return }
-                    self.error = error.localizedDescription
-                    self.isExporting = false
-                }
+                result = .failure(error)
             }
+            self?.finishExport(with: result, generation: generation)
         }
     }
 
     func cancelExport() {
+        guard isExporting else { return }
         exportTask?.cancel()
-        exportTask = nil
+        exportGeneration += 1
         isExporting = false
         progressMessage = ""
     }
 
-    private func applyProgress(_ update: HarvestExporter.Progress) {
+    private func finishExport(with result: Result<HarvestExporter.Summary, Error>, generation: Int) {
+        exportTask = nil
+        // A cancelled export finishes "normally" (the exporter records per-resource
+        // cancellations) — don't report it as a success.
+        guard generation == exportGeneration else { return }
+        isExporting = false
+
+        switch result {
+        case .success(let summary):
+            lastSummary = summary
+            progress = 1
+            progressMessage = Strings.DataExport.successSummary(
+                summary.successfulResources,
+                summary.totalRecords
+            )
+        case .failure(let error):
+            self.error = error.localizedDescription
+        }
+    }
+
+    private func applyProgress(_ update: HarvestExporter.Progress, generation: Int) {
+        guard generation == exportGeneration, isExporting else { return }
         progress = update.totalResources == 0
             ? 0
             : Double(update.completedResources) / Double(update.totalResources)

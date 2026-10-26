@@ -12,10 +12,10 @@ private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "app.harv
 
 @Observable
 @MainActor
-final class EstimatesViewModel {
+final class EstimatesViewModel: BatchUpdating {
     var estimates: [Estimate] = [] {
         didSet {
-            estimatesById = Dictionary(uniqueKeysWithValues: estimates.map { ($0.id, $0) })
+            estimatesById = Dictionary(estimates.map { ($0.id, $0) }, uniquingKeysWith: { _, last in last })
             updateSortedEstimates()
             updateSelectedEstimate()
         }
@@ -51,6 +51,9 @@ final class EstimatesViewModel {
     @ObservationIgnored private var isBatchUpdating = false
     @ObservationIgnored private var loadTask: Task<Void, Never>?
     @ObservationIgnored private var saveStateTask: Task<Void, Never>?
+    /// Estimates refreshed one by one since the last full load started; they win over
+    /// older copies when a slow full load lands.
+    @ObservationIgnored private var refreshedDuringLoad: [Int: Estimate] = [:]
 
     var creditorInfo: CreditorInfo = .empty
     var appSettings: AppSettings = .default
@@ -207,26 +210,19 @@ final class EstimatesViewModel {
             try Task.checkCancellation()
 
             guard credentials.isValid else {
-                clearAccountData()
-                hasValidCredentials = false
-                error = Strings.Errors.configureCredentials
+                signOut()
                 isLoading = false
                 isRefreshing = false
                 return
             }
 
-            if activeAccountId != credentials.accountId {
-                clearAccountData()
-                activeAccountId = credentials.accountId
-            }
-            if let context = modelContext {
-                loadFromCache(context: context, accountId: credentials.accountId)
-            }
+            activateAccount(credentials.accountId)
             isLoading = estimates.isEmpty
             isRefreshing = !estimates.isEmpty
             hasValidCredentials = true
             try Task.checkCancellation()
 
+            refreshedDuringLoad = [:]
             let fetched = try await apiService.fetchAllEstimates(
                 credentials: credentials,
                 state: nil
@@ -234,21 +230,20 @@ final class EstimatesViewModel {
 
             try Task.checkCancellation()
 
-            estimates = fetched
+            estimates = fetched.uniquedByID().merging(Array(refreshedDuringLoad.values))
+            refreshedDuringLoad = [:]
             lastRefreshed = Date()
             clearInvalidSelections()
-            Analytics.estimatesLoaded(count: fetched.count)
+            Analytics.estimatesLoaded(count: estimates.count)
 
             if let context = modelContext {
-                updateCache(with: fetched, context: context, accountId: credentials.accountId, replaceAll: true)
+                updateCache(with: estimates, context: context, accountId: credentials.accountId, replaceAll: true)
             }
         } catch is CancellationError {
             return
         } catch KeychainService.KeychainError.notFound {
             guard !Task.isCancelled else { return }
-            clearAccountData()
-            hasValidCredentials = false
-            error = Strings.Errors.configureCredentials
+            signOut()
         } catch {
             // URLSession surfaces task cancellation as URLError(.cancelled), not
             // CancellationError — a superseded load must not clobber its replacement's state.
@@ -268,50 +263,42 @@ final class EstimatesViewModel {
         activeAccountId = nil
         lastRefreshed = nil
         hasValidCredentials = false
+        refreshedDuringLoad = [:]
+    }
+
+    /// Credentials are missing or incomplete: forget every account's estimates, on disk too.
+    private func signOut() {
+        clearAccountData()
+        purgeCache(keeping: nil)
+        error = Strings.Errors.configureCredentials
+    }
+
+    /// Switches to `accountId`, dropping other accounts' estimates from memory and disk,
+    /// and shows its cached estimates until the fetch completes.
+    private func activateAccount(_ accountId: String) {
+        if activeAccountId != accountId {
+            clearAccountData()
+            activeAccountId = accountId
+            purgeCache(keeping: accountId)
+        }
+        if let context = modelContext {
+            loadFromCache(context: context, accountId: accountId)
+        }
     }
 
     func loadFromCache(context: ModelContext, accountId: String) {
-        let descriptor = FetchDescriptor<CachedEstimate>(
-            predicate: #Predicate { $0.accountId == accountId },
-            sortBy: [SortDescriptor(\.issueDate, order: .reverse)]
-        )
-
-        do {
-            let cached = try context.fetch(descriptor)
-            lastRefreshed = cached.map(\.lastFetched).min()
-            estimates = cached.map { $0.toEstimate() }
-        } catch {
-            logger.warning("Failed to load estimate cache: \(error.localizedDescription)")
-        }
+        guard let cached = DocumentCache<CachedEstimate>(context: context).load(accountId: accountId) else { return }
+        lastRefreshed = cached.lastFetched
+        estimates = cached.documents
     }
 
     func updateCache(with estimates: [Estimate], context: ModelContext, accountId: String, replaceAll: Bool = false) {
-        let descriptor = FetchDescriptor<CachedEstimate>()
-        let existing = (try? context.fetch(descriptor)) ?? []
-        let existingById = Dictionary(uniqueKeysWithValues: existing.map { ($0.id, $0) })
+        DocumentCache<CachedEstimate>(context: context).store(estimates, accountId: accountId, replaceAll: replaceAll)
+    }
 
-        for estimate in estimates {
-            if let cached = existingById[estimate.id] {
-                cached.accountId = accountId
-                cached.update(from: estimate)
-            } else {
-                let cached = CachedEstimate(from: estimate, accountId: accountId)
-                context.insert(cached)
-            }
-        }
-
-        if replaceAll {
-            let fetchedIDs = Set(estimates.map(\.id))
-            for cached in existing where (cached.accountId == accountId || cached.accountId.isEmpty) && !fetchedIDs.contains(cached.id) {
-                context.delete(cached)
-            }
-        }
-
-        do {
-            try context.save()
-        } catch {
-            logger.warning("Failed to save estimate cache: \(error.localizedDescription)")
-        }
+    private func purgeCache(keeping accountId: String?) {
+        guard let context = modelContext else { return }
+        DocumentCache<CachedEstimate>(context: context).purge(keeping: accountId)
     }
 
     // MARK: - Refresh subset
@@ -329,41 +316,24 @@ final class EstimatesViewModel {
         refreshEstimates(ids: [estimateId])
     }
 
-    func refreshCurrentFilter() {
-        selectedEstimateIDs = []
-        loadTask?.cancel()
-        loadTask = Task { await performLoad() }
-    }
-
     private func performRefresh(ids: Set<Int>) async {
         guard let credentials = try? await keychainService.loadHarvestCredentials(),
               credentials.accountId == activeAccountId else { return }
 
-        var fetched: [Estimate] = []
-        await withTaskGroup(of: Estimate?.self) { group in
-            for id in ids {
-                group.addTask {
-                    try? await self.apiService.fetchEstimate(id: id, credentials: credentials)
-                }
-            }
-            for await estimate in group {
-                if let estimate { fetched.append(estimate) }
-            }
+        let api = apiService
+        let (fetched, failures) = await fetchEach(ids) { id in
+            try await api.fetchEstimate(id: id, credentials: credentials)
+        }
+        for failure in failures {
+            // The list keeps the estimate's previous copy.
+            logger.warning("Failed to refresh estimate \(failure.id): \(failure.error.localizedDescription)")
         }
 
         guard credentials.accountId == activeAccountId else { return }
-        var updated = estimates
         for estimate in fetched {
-            if let index = updated.firstIndex(where: { $0.id == estimate.id }) {
-                updated[index] = estimate
-            } else {
-                updated.append(estimate)
-            }
+            refreshedDuringLoad[estimate.id] = estimate
         }
-        estimates = updated
-
-        let currentIDs = Set(updated.map(\.id))
-        selectedEstimateIDs = selectedEstimateIDs.intersection(currentIDs)
+        estimates = estimates.merging(fetched)
 
         if let context = modelContext {
             updateCache(with: fetched, context: context, accountId: credentials.accountId)
@@ -400,60 +370,36 @@ final class EstimatesViewModel {
 
     // MARK: - State transitions
 
-    private func performBatchOperation(
+    private func runBatch(
         on estimates: [Estimate],
         operation: (Int, HarvestCredentials) async throws -> Void
     ) async {
-        guard !estimates.isEmpty else { return }
-
-        #if DEBUG
-        if appSettings.isDemoMode {
-            showUpdateSuccess = true
-            return
+        await performBatchOperation(on: estimates.map(\.id), operation: operation) { ids in
+            await performRefresh(ids: ids)
         }
-        #endif
-
-        isUpdating = true
-        updateError = nil
-        updatedCount = 0
-        updateTotalCount = estimates.count
-
-        do {
-            let credentials = try await keychainService.loadHarvestCredentials()
-            for estimate in estimates {
-                try await operation(estimate.id, credentials)
-                updatedCount += 1
-            }
-            showUpdateSuccess = true
-            await performRefresh(ids: Set(estimates.map(\.id)))
-        } catch {
-            updateError = error.localizedDescription
-        }
-
-        isUpdating = false
     }
 
     func markSelectedAsSent() async {
-        await performBatchOperation(on: selectedEstimates.filter { $0.state == .draft }) { id, credentials in
+        await runBatch(on: selectedEstimates.filter { $0.state == .draft }) { id, credentials in
             try await self.apiService.markEstimateAsSent(estimateId: id, credentials: credentials)
         }
     }
 
     func markSelectedAsAccepted() async {
-        await performBatchOperation(on: selectedEstimates.filter { $0.state == .sent }) { id, credentials in
+        await runBatch(on: selectedEstimates.filter { $0.state == .sent }) { id, credentials in
             try await self.apiService.markEstimateAsAccepted(estimateId: id, credentials: credentials)
         }
     }
 
     func markSelectedAsDeclined() async {
-        await performBatchOperation(on: selectedEstimates.filter { $0.state == .sent }) { id, credentials in
+        await runBatch(on: selectedEstimates.filter { $0.state == .sent }) { id, credentials in
             try await self.apiService.markEstimateAsDeclined(estimateId: id, credentials: credentials)
         }
     }
 
     func reopenSelected() async {
         let targets = selectedEstimates.filter { $0.state == .accepted || $0.state == .declined }
-        await performBatchOperation(on: targets) { id, credentials in
+        await runBatch(on: targets) { id, credentials in
             try await self.apiService.reopenEstimate(estimateId: id, credentials: credentials)
         }
     }

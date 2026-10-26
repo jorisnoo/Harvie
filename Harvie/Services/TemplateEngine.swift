@@ -12,8 +12,19 @@ struct TemplateEngine {
     private static let dateFormatters = NSCache<NSString, DateFormatter>()
     private static let numberFormatters = NSCache<NSString, NumberFormatter>()
 
+    /// The user's locale, but always with Western digits and the Gregorian calendar,
+    /// so dates on an invoice read like the amounts next to them.
+    private static let dateLocale: Locale = {
+        var components = Locale.Components(locale: .current)
+        components.calendar = .gregorian
+        components.numberingSystem = Locale.NumberingSystem("latn")
+        return Locale(components: components)
+    }()
+
     private static let mediumDateFormatter: DateFormatter = {
         let f = DateFormatter()
+        f.locale = dateLocale
+        f.calendar = Calendar(identifier: .gregorian)
         f.dateStyle = .medium
         return f
     }()
@@ -27,6 +38,8 @@ struct TemplateEngine {
             return cached
         }
         let formatter = DateFormatter()
+        formatter.locale = dateLocale
+        formatter.calendar = Calendar(identifier: .gregorian)
         formatter.dateFormat = format
         dateFormatters.setObject(formatter, forKey: key)
         return formatter
@@ -37,12 +50,7 @@ struct TemplateEngine {
         if let cached = numberFormatters.object(forKey: key) {
             return cached
         }
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .decimal
-        formatter.minimumFractionDigits = digits
-        formatter.maximumFractionDigits = digits
-        formatter.decimalSeparator = "."
-        formatter.groupingSeparator = "'"
+        let formatter = CurrencyFormatter.fixedFormatter(minimumFractionDigits: digits, maximumFractionDigits: digits)
         numberFormatters.setObject(formatter, forKey: key)
         return formatter
     }
@@ -52,12 +60,7 @@ struct TemplateEngine {
         if let cached = numberFormatters.object(forKey: key) {
             return cached
         }
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .decimal
-        formatter.minimumFractionDigits = 0
-        formatter.maximumFractionDigits = digits
-        formatter.decimalSeparator = "."
-        formatter.groupingSeparator = "'"
+        let formatter = CurrencyFormatter.fixedFormatter(minimumFractionDigits: 0, maximumFractionDigits: digits)
         numberFormatters.setObject(formatter, forKey: key)
         return formatter
     }
@@ -284,10 +287,19 @@ struct TemplateEngine {
             guard let dict = current as? [String: Any] else {
                 return nil
             }
-            current = dict[part]
+            current = unwrapped(dict[part])
         }
 
         return current
+    }
+
+    /// Context values are `Any`, which can hide an empty optional (or `NSNull`); treat
+    /// those as missing so they neither render as "nil" nor pass `{{#if}}`.
+    private static func unwrapped(_ value: Any?) -> Any? {
+        guard let value, !(value is NSNull) else { return nil }
+        let mirror = Mirror(reflecting: value)
+        guard mirror.displayStyle == .optional else { return value }
+        return unwrapped(mirror.children.first?.value)
     }
 
     private static func isTruthy(_ value: Any?) -> Bool {

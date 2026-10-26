@@ -12,10 +12,10 @@ private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "app.harv
 
 @Observable
 @MainActor
-final class InvoicesViewModel {
+final class InvoicesViewModel: BatchUpdating {
     var invoices: [Invoice] = [] {
         didSet {
-            invoicesById = Dictionary(uniqueKeysWithValues: invoices.map { ($0.id, $0) })
+            invoicesById = Dictionary(invoices.map { ($0.id, $0) }, uniquingKeysWith: { _, last in last })
             updateSortedInvoices()
             updateSelectedInvoice()
         }
@@ -66,6 +66,9 @@ final class InvoicesViewModel {
     @ObservationIgnored private var isBatchUpdating = false
     @ObservationIgnored private var loadInvoicesTask: Task<Void, Never>?
     @ObservationIgnored private var saveStateTask: Task<Void, Never>?
+    /// Invoices refreshed one by one since the last full load started; they win over
+    /// older copies when a slow full load lands.
+    @ObservationIgnored private var refreshedDuringLoad: [Int: Invoice] = [:]
 
     private(set) var availablePeriods: [Date] = DateFilterPeriod.month.periods()
 
@@ -311,10 +314,6 @@ final class InvoicesViewModel {
         }
     }
 
-    func formatPeriod(_ date: Date) -> String {
-        filterPeriod.format(date)
-    }
-
     func loadInvoices() {
         loadInvoicesTask?.cancel()
         loadInvoicesTask = Task {
@@ -340,47 +339,38 @@ final class InvoicesViewModel {
             try Task.checkCancellation()
 
             guard credentials.isValid else {
-                clearAccountData()
-                hasValidCredentials = false
-                error = Strings.Errors.configureCredentials
+                signOut()
                 isLoading = false
                 isRefreshing = false
                 return
             }
 
-            if activeAccountId != credentials.accountId {
-                clearAccountData()
-                activeAccountId = credentials.accountId
-            }
-            if let context = modelContext {
-                loadFromCache(context: context, accountId: credentials.accountId)
-            }
+            activateAccount(credentials.accountId)
             isLoading = invoices.isEmpty
             isRefreshing = !invoices.isEmpty
             hasValidCredentials = true
 
             try Task.checkCancellation()
 
+            refreshedDuringLoad = [:]
             let fetchedInvoices = try await apiService.fetchAllInvoices(credentials: credentials)
 
             try Task.checkCancellation()
 
-            invoices = fetchedInvoices
+            invoices = fetchedInvoices.uniquedByID().merging(Array(refreshedDuringLoad.values))
+            refreshedDuringLoad = [:]
             lastRefreshed = Date()
             clearInvalidSelections()
-            Analytics.invoicesLoaded(count: fetchedInvoices.count)
+            Analytics.invoicesLoaded(count: invoices.count)
 
-            // Update cache
             if let context = modelContext {
-                updateCache(with: fetchedInvoices, context: context, accountId: credentials.accountId, replaceAll: true)
+                updateCache(with: invoices, context: context, accountId: credentials.accountId, replaceAll: true)
             }
         } catch is CancellationError {
             return
         } catch KeychainService.KeychainError.notFound {
             guard !Task.isCancelled else { return }
-            clearAccountData()
-            hasValidCredentials = false
-            error = Strings.Errors.configureCredentials
+            signOut()
         } catch {
             // URLSession surfaces task cancellation as URLError(.cancelled), not
             // CancellationError — a superseded load must not clobber its replacement's state.
@@ -410,54 +400,43 @@ final class InvoicesViewModel {
         activeAccountId = nil
         lastRefreshed = nil
         hasValidCredentials = false
+        refreshedDuringLoad = [:]
+    }
+
+    /// Credentials are missing or incomplete: forget every account's invoices, on disk too.
+    private func signOut() {
+        clearAccountData()
+        purgeCache(keeping: nil)
+        error = Strings.Errors.configureCredentials
+    }
+
+    /// Switches to `accountId`, dropping other accounts' invoices from memory and disk,
+    /// and shows its cached invoices until the fetch completes.
+    private func activateAccount(_ accountId: String) {
+        if activeAccountId != accountId {
+            clearAccountData()
+            activeAccountId = accountId
+            purgeCache(keeping: accountId)
+        }
+        if let context = modelContext {
+            loadFromCache(context: context, accountId: accountId)
+        }
     }
 
     func loadFromCache(context: ModelContext, accountId: String) {
-        let descriptor = FetchDescriptor<CachedInvoice>(
-            predicate: #Predicate { $0.accountId == accountId },
-            sortBy: [SortDescriptor(\.issueDate, order: .reverse)]
-        )
-
-        do {
-            let cached = try context.fetch(descriptor)
-            lastRefreshed = cached.map(\.lastFetched).min()
-            // Load all states; updateSortedInvoices applies the client-side state filter.
-            invoices = cached.map { $0.toInvoice() }
-        } catch {
-            logger.warning("Failed to load from cache: \(error.localizedDescription)")
-        }
+        guard let cached = DocumentCache<CachedInvoice>(context: context).load(accountId: accountId) else { return }
+        lastRefreshed = cached.lastFetched
+        // Load all states; updateSortedInvoices applies the client-side state filter.
+        invoices = cached.documents
     }
 
     func updateCache(with invoices: [Invoice], context: ModelContext, accountId: String, replaceAll: Bool = false) {
-        // Fetch existing cached invoices
-        let descriptor = FetchDescriptor<CachedInvoice>()
-        let existing = (try? context.fetch(descriptor)) ?? []
-        let existingById = Dictionary(uniqueKeysWithValues: existing.map { ($0.id, $0) })
+        DocumentCache<CachedInvoice>(context: context).store(invoices, accountId: accountId, replaceAll: replaceAll)
+    }
 
-        // Update or insert
-        for invoice in invoices {
-            if let cached = existingById[invoice.id] {
-                cached.accountId = accountId
-                cached.update(from: invoice)
-            } else {
-                let cached = CachedInvoice(from: invoice, accountId: accountId)
-                context.insert(cached)
-            }
-        }
-
-        if replaceAll {
-            let fetchedIDs = Set(invoices.map(\.id))
-            for cached in existing where (cached.accountId == accountId || cached.accountId.isEmpty) && !fetchedIDs.contains(cached.id) {
-                context.delete(cached)
-            }
-        }
-
-        // Save changes
-        do {
-            try context.save()
-        } catch {
-            logger.warning("Failed to save cache: \(error.localizedDescription)")
-        }
+    private func purgeCache(keeping accountId: String?) {
+        guard let context = modelContext else { return }
+        DocumentCache<CachedInvoice>(context: context).purge(keeping: accountId)
     }
 
     func refresh() {
@@ -481,47 +460,26 @@ final class InvoicesViewModel {
         refreshInvoices(ids: [invoiceId])
     }
 
-    func refreshCurrentFilter() {
-        selectedInvoiceIDs = []
-        loadInvoicesTask?.cancel()
-        loadInvoicesTask = Task {
-            await performLoadInvoices()
-        }
-    }
-
     private func performRefreshInvoices(ids: Set<Int>) async {
         guard let credentials = try? await keychainService.loadHarvestCredentials(),
               credentials.accountId == activeAccountId else { return }
 
-        var fetched: [Invoice] = []
-
-        await withTaskGroup(of: Invoice?.self) { group in
-            for id in ids {
-                group.addTask {
-                    try? await self.apiService.fetchInvoice(id: id, credentials: credentials)
-                }
-            }
-
-            for await invoice in group {
-                if let invoice {
-                    fetched.append(invoice)
-                }
-            }
+        let api = apiService
+        let (fetched, failures) = await fetchEach(ids) { id in
+            try await api.fetchInvoice(id: id, credentials: credentials)
+        }
+        for failure in failures {
+            // The list keeps the invoice's previous copy.
+            logger.warning("Failed to refresh invoice \(failure.id): \(failure.error.localizedDescription)")
         }
 
         guard credentials.accountId == activeAccountId else { return }
-        var updatedInvoices = invoices
         for invoice in fetched {
-            if let index = updatedInvoices.firstIndex(where: { $0.id == invoice.id }) {
-                // Update in place; updateSortedInvoices re-applies the client-side state filter.
-                updatedInvoices[index] = invoice
-            }
+            refreshedDuringLoad[invoice.id] = invoice
         }
-        invoices = updatedInvoices
-
-        // Clean up stale selection IDs (computed property handles the rest)
-        let currentIDs = Set(updatedInvoices.map(\.id))
-        selectedInvoiceIDs = selectedInvoiceIDs.intersection(currentIDs)
+        // Unknown IDs are added: they exist in this account, and are cached below either way.
+        // updateSortedInvoices re-applies the client-side state filter.
+        invoices = invoices.merging(fetched)
 
         if let context = modelContext {
             updateCache(with: fetched, context: context, accountId: credentials.accountId)
@@ -573,51 +531,25 @@ final class InvoicesViewModel {
 
     // MARK: - Batch Operations
 
-    private func performBatchOperation(
+    private func runBatch(
         on invoices: [Invoice],
         operation: (Int, HarvestCredentials) async throws -> Void
     ) async {
-        guard !invoices.isEmpty else { return }
-
-        #if DEBUG
-        if appSettings.isDemoMode {
-            showUpdateSuccess = true
-            return
+        await performBatchOperation(on: invoices.map(\.id), operation: operation) { ids in
+            await performRefreshInvoices(ids: ids)
         }
-        #endif
-
-        isUpdating = true
-        updateError = nil
-        updatedCount = 0
-        updateTotalCount = invoices.count
-
-        do {
-            let credentials = try await keychainService.loadHarvestCredentials()
-
-            for invoice in invoices {
-                try await operation(invoice.id, credentials)
-                updatedCount += 1
-            }
-
-            showUpdateSuccess = true
-            await performRefreshInvoices(ids: Set(invoices.map(\.id)))
-        } catch {
-            updateError = error.localizedDescription
-        }
-
-        isUpdating = false
     }
 
     func updateIssueDateForSelected(to date: Date) async {
-        let invoices = selectedInvoices.filter { $0.state == .draft }
-        let calendar = Calendar.current
-        let dueDates: [Int: Date] = Dictionary(uniqueKeysWithValues: invoices.map { invoice in
-            let dayOffset = calendar.dateComponents([.day], from: invoice.issueDate, to: invoice.dueDate).day ?? 0
-            let newDueDate = calendar.date(byAdding: .day, value: dayOffset, to: date) ?? date
-            return (invoice.id, newDueDate)
-        })
-        await performBatchOperation(on: invoices) { id, credentials in
-            let dueDate = dueDates[id] ?? date
+        // Harvest accepts date changes on open invoices too; the due date keeps the
+        // invoice's payment term, as in the detail view.
+        let invoices = selectedInvoices.filter { $0.state == .draft || $0.state == .open }
+        let paymentTerms = Dictionary(
+            invoices.map { ($0.id, PaymentTerm.from(issueDate: $0.issueDate, dueDate: $0.dueDate)) },
+            uniquingKeysWith: { first, _ in first }
+        )
+        await runBatch(on: invoices) { id, credentials in
+            let dueDate = paymentTerms[id]?.dueDate(from: date) ?? date
             try await self.apiService.updateInvoiceDates(invoiceId: id, issueDate: date, dueDate: dueDate, credentials: credentials)
         }
     }
@@ -635,7 +567,7 @@ final class InvoicesViewModel {
     }
 
     func markSelectedAsSent() async {
-        await performBatchOperation(on: selectedInvoices.filter { $0.state == .draft }) { id, credentials in
+        await runBatch(on: selectedInvoices.filter { $0.state == .draft }) { id, credentials in
             try await self.apiService.markInvoiceAsSent(invoiceId: id, credentials: credentials)
         }
     }
@@ -653,43 +585,15 @@ final class InvoicesViewModel {
     }
 
     func markSelectedAsDraft() async {
-        await performBatchOperation(on: selectedInvoices.filter { $0.state == .open }) { id, credentials in
+        await runBatch(on: selectedInvoices.filter { $0.state == .open }) { id, credentials in
             try await self.apiService.markInvoiceAsDraft(invoiceId: id, credentials: credentials)
         }
     }
 
     func markSelectedAsPaid(paidAt: Date = Date()) async {
-        guard !isUpdating else { return }
-        let invoices = selectedInvoices.filter { $0.state == .open }
-        guard !invoices.isEmpty else { return }
-
-        #if DEBUG
-        if appSettings.isDemoMode {
-            showUpdateSuccess = true
-            return
+        await runBatch(on: selectedInvoices.filter { $0.state == .open }) { id, credentials in
+            try await self.apiService.payOutstandingBalance(invoiceId: id, paidAt: paidAt, credentials: credentials)
         }
-        #endif
-
-        isUpdating = true
-        updateError = nil
-        updatedCount = 0
-        updateTotalCount = invoices.count
-
-        do {
-            let credentials = try await keychainService.loadHarvestCredentials()
-
-            for invoice in invoices {
-                try await apiService.payOutstandingBalance(invoiceId: invoice.id, paidAt: paidAt, credentials: credentials)
-                updatedCount += 1
-            }
-
-            showUpdateSuccess = true
-        } catch {
-            updateError = error.localizedDescription
-        }
-
-        await performRefreshInvoices(ids: Set(invoices.map(\.id)))
-        isUpdating = false
     }
 
     func markAsOpen(invoiceId: Int) async throws {
@@ -698,46 +602,20 @@ final class InvoicesViewModel {
         #endif
 
         let credentials = try await keychainService.loadHarvestCredentials()
+        try await deletePayments(invoiceId: invoiceId, credentials: credentials)
+    }
+
+    func markSelectedAsOpen() async {
+        await runBatch(on: selectedInvoices.filter { $0.state == .paid }) { id, credentials in
+            try await self.deletePayments(invoiceId: id, credentials: credentials)
+        }
+    }
+
+    private func deletePayments(invoiceId: Int, credentials: HarvestCredentials) async throws {
         let payments = try await apiService.listPayments(invoiceId: invoiceId, credentials: credentials)
         for payment in payments {
             try await apiService.deletePayment(invoiceId: invoiceId, paymentId: payment.id, credentials: credentials)
         }
-    }
-
-    func markSelectedAsOpen() async {
-        let invoices = selectedInvoices.filter { $0.state == .paid }
-        guard !invoices.isEmpty else { return }
-
-        #if DEBUG
-        if appSettings.isDemoMode {
-            showUpdateSuccess = true
-            return
-        }
-        #endif
-
-        isUpdating = true
-        updateError = nil
-        updatedCount = 0
-        updateTotalCount = invoices.count
-
-        do {
-            let credentials = try await keychainService.loadHarvestCredentials()
-
-            for invoice in invoices {
-                let payments = try await apiService.listPayments(invoiceId: invoice.id, credentials: credentials)
-                for payment in payments {
-                    try await apiService.deletePayment(invoiceId: invoice.id, paymentId: payment.id, credentials: credentials)
-                }
-                updatedCount += 1
-            }
-
-            showUpdateSuccess = true
-            await performRefreshInvoices(ids: Set(invoices.map(\.id)))
-        } catch {
-            updateError = error.localizedDescription
-        }
-
-        isUpdating = false
     }
 
     // MARK: - Create & Delete

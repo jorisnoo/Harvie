@@ -457,6 +457,7 @@ struct TemplatesSettings: View {
                             Image(systemName: "character.textbox")
                         }
                         .help(Strings.Settings.customizeLabels)
+                        .accessibilityLabel(Strings.Settings.customizeLabels)
                     }
 
                     if viewModel.appSettings.pdfSource == .template {

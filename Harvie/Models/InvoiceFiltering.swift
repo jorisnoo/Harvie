@@ -92,22 +92,4 @@ enum DateFilterPeriod: String, CaseIterable {
             return calendar.isDate(date, equalTo: period, toGranularity: .year)
         }
     }
-
-    func format(_ date: Date) -> String {
-        let calendar = Calendar.current
-        let year = calendar.component(.year, from: date)
-
-        switch self {
-        case .month:
-            return date.formatted(.dateTime.month(.wide).year())
-        case .quarter:
-            let quarter = (calendar.component(.month, from: date) - 1) / 3 + 1
-            return "Q\(quarter) \(year)"
-        case .halfYear:
-            let half = calendar.component(.month, from: date) <= 6 ? 1 : 2
-            return "H\(half) \(year)"
-        case .year:
-            return "\(year)"
-        }
-    }
 }

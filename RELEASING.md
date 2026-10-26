@@ -11,7 +11,7 @@ Release from `main` using an explicit version without a `v` prefix. `CHANGELOG.m
 Configured release checks:
 
 ```sh
-xcodebuild -project Harvie.xcodeproj -scheme Harvie -configuration Debug -derivedDataPath /tmp/Harvie-release-check CODE_SIGNING_ALLOWED=NO build
+xcodebuild -project Harvie.xcodeproj -scheme Harvie -configuration Debug -destination platform=macOS -derivedDataPath /tmp/Harvie-release-check -onlyUsePackageVersionsFromResolvedFile CODE_SIGN_IDENTITY=- CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO test
 ```
 
 Install the project’s normal dependencies first. The helper runs these checks when publishing; dry-run prints them without executing them. Run any additional checks needed for the changed behavior before committing.
@@ -29,7 +29,7 @@ The helper requires the configured release branch, a clean working tree, a uniqu
 
 Publishing runs the configured checks, creates a signed annotated tag, and atomically pushes the branch and that specific tag to origin. It never generates changelog text, edits version files, stages files, commits, or pushes other tags. `.release.json` holds the branch, checks, version files and signing policy. A signing failure is an error; configure the agent’s signing access rather than silently disabling signing.
 
-The tag workflow validates the same changelog entry and publishes it with the exact version as the release title. It uses `--verify-tag` and links to the changelog at the released commit. Only this workflow creates the GitHub release. Package prereleases such as `1.2.3-beta.1` are marked prerelease and do not become Latest.
+The tag workflow runs the full test matrix first and only builds once it passes. It validates the same changelog entry and publishes it with the exact version as the release title. It uses `--verify-tag` and links to the changelog at the released commit. Only this workflow creates the GitHub release.
 
 Verify the workflow and published release/assets before reporting success. If a push fails after local tagging, the helper can reuse that tag only while it still points to the same HEAD and is unpublished remotely. For runner or secret failures, fix the configuration and rerun the workflow. For a problem in the tagged source, prepare a corrected new version. Never move, delete, or recreate a published tag. The workflows reuse an existing GitHub release on reruns so downstream publishing steps can recover. App workflows download the already-published assets before calculating cask checksums; unchanged cask/website updates do not create another commit.
 

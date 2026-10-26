@@ -154,6 +154,8 @@ struct Estimate: Codable, Identifiable, Hashable, Sendable {
     }
 }
 
+extension Estimate: HarvestDocument {}
+
 enum EstimateState: String, Codable, CaseIterable, Sendable {
     case draft
     case sent

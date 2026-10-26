@@ -171,7 +171,13 @@ actor HarvestExporter {
                     credentials: credentials,
                     into: folderURL
                 )
-                results.append(ResourceResult(resource: resource, recordCount: count, errorMessage: nil))
+                // Records of the remaining parents are kept; parents that vanished
+                // mid-export are still reported so the export isn't silently incomplete.
+                let skipped = state.skippedParentIDs[resource, default: []]
+                let note = skipped.isEmpty ? nil : resource.parent.map {
+                    Strings.DataExport.skippedParents($0.displayName, skipped)
+                }
+                results.append(ResourceResult(resource: resource, recordCount: count, errorMessage: note))
             } catch {
                 try Task.checkCancellation()
                 if case HarvestRawAPIClient.RawAPIError.unauthorized = error {
@@ -198,9 +204,11 @@ actor HarvestExporter {
     }
 
     /// Mutable bag of parent-id arrays collected during the export so that
-    /// per-parent sub-resources have something to iterate over.
+    /// per-parent sub-resources have something to iterate over, plus the parents
+    /// each sub-resource had to skip.
     private struct ExportState {
         var ids: [Resource: [Int]] = [:]
+        var skippedParentIDs: [Resource: [Int]] = [:]
     }
 
     private func export(
@@ -248,35 +256,35 @@ actor HarvestExporter {
             return try await exportList(resource, path: resource.rawValue, credentials: credentials, into: folderURL).count
 
         case .invoicePayments:
-            return try await exportPerParent(resource, parentIDs: state.ids[.invoices] ?? [],
+            return try await exportPerParent(resource, state: &state,
                 pathBuilder: { "invoices/\($0)/payments" }, parentKey: "invoice_id",
                 credentials: credentials, into: folderURL)
         case .invoiceMessages:
-            return try await exportPerParent(resource, parentIDs: state.ids[.invoices] ?? [],
+            return try await exportPerParent(resource, state: &state,
                 pathBuilder: { "invoices/\($0)/messages" }, parentKey: "invoice_id",
                 credentials: credentials, into: folderURL)
         case .estimateMessages:
-            return try await exportPerParent(resource, parentIDs: state.ids[.estimates] ?? [],
+            return try await exportPerParent(resource, state: &state,
                 pathBuilder: { "estimates/\($0)/messages" }, parentKey: "estimate_id",
                 credentials: credentials, into: folderURL)
         case .projectUserAssignments:
-            return try await exportPerParent(resource, parentIDs: state.ids[.projects] ?? [],
+            return try await exportPerParent(resource, state: &state,
                 pathBuilder: { "projects/\($0)/user_assignments" }, parentKey: "project_id",
                 credentials: credentials, into: folderURL)
         case .projectTaskAssignments:
-            return try await exportPerParent(resource, parentIDs: state.ids[.projects] ?? [],
+            return try await exportPerParent(resource, state: &state,
                 pathBuilder: { "projects/\($0)/task_assignments" }, parentKey: "project_id",
                 credentials: credentials, into: folderURL)
         case .userBillableRates:
-            return try await exportPerParent(resource, parentIDs: state.ids[.users] ?? [],
+            return try await exportPerParent(resource, state: &state,
                 pathBuilder: { "users/\($0)/billable_rates" }, parentKey: "user_id",
                 credentials: credentials, into: folderURL)
         case .userCostRates:
-            return try await exportPerParent(resource, parentIDs: state.ids[.users] ?? [],
+            return try await exportPerParent(resource, state: &state,
                 pathBuilder: { "users/\($0)/cost_rates" }, parentKey: "user_id",
                 credentials: credentials, into: folderURL)
         case .userProjectAssignments:
-            return try await exportPerParent(resource, parentIDs: state.ids[.users] ?? [],
+            return try await exportPerParent(resource, state: &state,
                 pathBuilder: { "users/\($0)/project_assignments" }, parentKey: "user_id",
                 credentials: credentials, into: folderURL)
         }
@@ -332,22 +340,32 @@ actor HarvestExporter {
 
     private func exportPerParent(
         _ resource: Resource,
-        parentIDs: [Int],
+        state: inout ExportState,
         pathBuilder: (Int) -> String,
         parentKey: String,
         credentials: HarvestCredentials,
         into folderURL: URL
     ) async throws -> Int {
         var merged: [[String: Any]] = []
+        var skipped: [Int] = []
+        let parentIDs = resource.parent.flatMap { state.ids[$0] } ?? []
 
         for parentID in parentIDs {
             let path = pathBuilder(parentID)
             try Task.checkCancellation()
-            let data = try await client.fetchAllPages(
-                path: path,
-                resourceKey: resource.responseKey,
-                credentials: credentials
-            )
+            let data: Data
+            do {
+                data = try await client.fetchAllPages(
+                    path: path,
+                    resourceKey: resource.responseKey,
+                    credentials: credentials
+                )
+            } catch HarvestRawAPIClient.RawAPIError.notFound, HarvestRawAPIClient.RawAPIError.serverError(403) {
+                // The parent was deleted or became inaccessible since it was listed.
+                logger.warning("Skipping \(resource.rawValue) for parent \(parentID): no longer readable")
+                skipped.append(parentID)
+                continue
+            }
             let rows = (try JSONSerialization.jsonObject(with: data) as? [Any] ?? [])
                 .compactMap { $0 as? [String: Any] }
             for var row in rows {
@@ -358,6 +376,7 @@ actor HarvestExporter {
             }
         }
 
+        state.skippedParentIDs[resource] = skipped
         let jsonData = try JSONSerialization.data(
             withJSONObject: merged,
             options: [.prettyPrinted, .sortedKeys]

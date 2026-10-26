@@ -189,11 +189,16 @@ struct TemplateContext {
     }()
 
     nonisolated func toDictionary() -> [String: Any] {
+        // Harvest's default item categories are "Service" (imported time) and "Product"
+        // (expenses and fixed-price items). Line items don't say whether they came from
+        // time entries, so every category but "Product" counts as hours.
         let totalHours = lineItems.reduce(Decimal.zero) { sum, item in
-            sum + ((item["quantity"] as? Decimal) ?? 0)
+            let kind = item["kind"] as? String ?? ""
+            guard kind.caseInsensitiveCompare("Product") != .orderedSame else { return sum }
+            return sum + ((item["quantity"] as? Decimal) ?? 0)
         }
 
-        let invoiceDict: [String: Any] = [
+        var invoiceDict: [String: Any] = [
             "number": invoice.number,
             "amount": invoice.amount,
             "dueAmount": invoice.dueAmount ?? invoice.amount,
@@ -204,12 +209,6 @@ struct TemplateContext {
             "notes": invoice.notes,
             "issueDate": invoice.issueDate,
             "dueDate": invoice.dueDate,
-            "tax": invoice.tax as Any,
-            "taxAmount": invoice.taxAmount as Any,
-            "tax2": invoice.tax2 as Any,
-            "tax2Amount": invoice.tax2Amount as Any,
-            "discount": invoice.discount as Any,
-            "discountAmount": invoice.discountAmount as Any,
             "subtotal": invoice.subtotal,
             "hasNotes": !invoice.notes.isEmpty,
             "hasSubject": !invoice.subject.isEmpty,
@@ -219,23 +218,41 @@ struct TemplateContext {
             "totalHours": totalHours
         ]
 
+        // Missing optionals are left out entirely: boxed in `Any`, they would render
+        // as "nil" and count as true in `{{#if}}`.
+        let optionalAmounts: [String: Decimal?] = [
+            "tax": invoice.tax,
+            "taxAmount": invoice.taxAmount,
+            "tax2": invoice.tax2,
+            "tax2Amount": invoice.tax2Amount,
+            "discount": invoice.discount,
+            "discountAmount": invoice.discountAmount
+        ]
+        for (key, value) in optionalAmounts {
+            if let value { invoiceDict[key] = value }
+        }
+
+        var creditorDict: [String: Any] = [
+            "name": creditor.name,
+            "iban": creditor.iban,
+            "street": creditor.street,
+            "buildingNumber": creditor.buildingNumber,
+            "postalCode": creditor.postalCode,
+            "town": creditor.town,
+            "country": creditor.country,
+            "hasLogo": creditor.logo != nil
+        ]
+        if let logo = creditor.logo {
+            creditorDict["logo"] = logo
+        }
+
         return [
             "invoice": invoiceDict,
             "client": [
                 "name": client.name,
                 "address": client.address
             ],
-            "creditor": [
-                "name": creditor.name,
-                "iban": creditor.iban,
-                "street": creditor.street,
-                "buildingNumber": creditor.buildingNumber,
-                "postalCode": creditor.postalCode,
-                "town": creditor.town,
-                "country": creditor.country,
-                "logo": creditor.logo as Any,
-                "hasLogo": creditor.logo != nil
-            ],
+            "creditor": creditorDict,
             "lineItems": lineItems
         ]
     }
@@ -296,10 +313,6 @@ struct TemplateContext {
                 "dueDate": Date().addingTimeInterval(86400 * 30),
                 "tax": Decimal(8.1),
                 "taxAmount": Decimal(707.08),
-                "tax2": nil as Decimal? as Any,
-                "tax2Amount": nil as Decimal? as Any,
-                "discount": nil as Decimal? as Any,
-                "discountAmount": nil as Decimal? as Any,
                 "subtotal": Decimal(8720),
                 "hasNotes": true,
                 "hasSubject": true,
