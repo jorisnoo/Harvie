@@ -27,6 +27,9 @@ final class TemplatePDFService {
     // A4 dimensions in points (72 dpi): 595.28 x 841.89
     static let a4Width: CGFloat = 595.28
     static let a4Height: CGFloat = 841.89
+    /// Space above and below content on printed pages (above only after the first page).
+    static let pageMarginMM = 12
+    static let pageMargin = CGFloat(pageMarginMM) * 72 / 25.4
 
     /// Hidden window that provides the window-server context WKWebView needs. It sits
     /// just past the bottom-left corner of the main display — one point stays on screen,
@@ -115,7 +118,7 @@ final class TemplatePDFService {
         <style>
         @page {
             size: A4;
-            margin: 12mm 0;
+            margin: \(Self.pageMarginMM)mm 0;
         }
         /* The template's own padding frames the first page; later pages need a margin
            so content doesn't run to the paper edge after a page break. */
@@ -387,7 +390,7 @@ private final class PDFNavigationDelegate: NSObject, WKNavigationDelegate {
     /// If printing yields nothing usable, the continuous rendering is sliced into A4 pages.
     private func a4Document(from webView: WKWebView) async throws -> PDFDocument {
         if let printed = await printA4(webView), Self.isUsableA4Document(printed) {
-            return printed
+            return MarginFilledPDFPage.fillingMargins(of: printed, margin: TemplatePDFService.pageMargin)
         }
         guard !hasCompleted else { throw PDFError.timeout }
         logger.error("Printing the template produced no usable pages; slicing the screen rendering instead")
