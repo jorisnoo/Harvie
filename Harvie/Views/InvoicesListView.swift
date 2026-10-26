@@ -57,10 +57,10 @@ struct InvoicesListView: View {
                 // With keyboard navigation on, the window otherwise focuses the sidebar toggle
                 .focused($isListFocused)
                 .onAppear { isListFocused = true }
-                .onDeleteCommand {
+                .onDeleteCommand(perform: FeatureFlags.invoiceManagement ? {
                     guard !viewModel.selectedInvoiceIDs.isEmpty, !viewModel.isUpdating else { return }
                     viewModel.showDeleteSheet = true
-                }
+                } : nil)
                 .onKeyPress(.escape) {
                     guard !viewModel.selectedInvoiceIDs.isEmpty else { return .ignored }
                     viewModel.selectedInvoiceIDs.removeAll()
@@ -144,15 +144,17 @@ struct InvoicesListView: View {
                             Label(Strings.InvoicesList.exportWithoutQRBill, systemImage: "doc.text")
                         }
 
-                        Divider()
+                        if FeatureFlags.invoiceManagement {
+                            Divider()
 
-                        Button(role: .destructive) {
-                            viewModel.selectedInvoiceIDs = clickedIDs
-                            viewModel.showDeleteSheet = true
-                        } label: {
-                            Label(Strings.DeleteInvoice.delete, systemImage: "trash")
+                            Button(role: .destructive) {
+                                viewModel.selectedInvoiceIDs = clickedIDs
+                                viewModel.showDeleteSheet = true
+                            } label: {
+                                Label(Strings.DeleteInvoice.delete, systemImage: "trash")
+                            }
+                            .disabled(viewModel.isUpdating)
                         }
-                        .disabled(viewModel.isUpdating)
                     }
                 } primaryAction: { selectedIDs in
                     if let firstID = selectedIDs.first {
@@ -206,10 +208,12 @@ struct InvoicesListView: View {
                 } description: {
                     Text(Strings.InvoicesList.noInvoicesDescription)
                 } actions: {
-                    Button(Strings.NewInvoice.title) {
-                        viewModel.showNewInvoiceSheet = true
+                    if FeatureFlags.invoiceManagement {
+                        Button(Strings.NewInvoice.title) {
+                            viewModel.showNewInvoiceSheet = true
+                        }
+                        .buttonStyle(.borderedProminent)
                     }
-                    .buttonStyle(.borderedProminent)
 
                     Button(Strings.Common.refresh) {
                         viewModel.refresh()

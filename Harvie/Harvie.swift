@@ -49,10 +49,12 @@ struct HarvieApp: App {
         .defaultSize(width: 900, height: 600)
         .commands {
             CommandGroup(replacing: .newItem) {
-                Button(Strings.NewInvoice.newInvoiceMenu) {
-                    NotificationCenter.default.post(name: .newInvoice, object: nil)
+                if FeatureFlags.invoiceManagement {
+                    Button(Strings.NewInvoice.newInvoiceMenu) {
+                        NotificationCenter.default.post(name: .newInvoice, object: nil)
+                    }
+                    .keyboardShortcut("n", modifiers: .command)
                 }
-                .keyboardShortcut("n", modifiers: .command)
             }
 
             CommandGroup(after: .saveItem) {

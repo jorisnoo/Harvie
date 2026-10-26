@@ -77,7 +77,7 @@ struct ContentView: View {
                 ToolbarItemGroup(placement: .automatic) {
                     sortFilterMenu
 
-                    if source.wrappedValue == .invoices {
+                    if source.wrappedValue == .invoices, FeatureFlags.invoiceManagement {
                         Button {
                             invoicesVM.showNewInvoiceSheet = true
                         } label: {
@@ -327,7 +327,7 @@ private struct InvoicesDetailContentView: View {
                     // success alert stay up) and refreshes just that invoice.
                     viewModel.switchFilterAndSelect(invoiceId: id, to: newState)
                 },
-                onDelete: { viewModel.showDeleteSheet = true }
+                onDelete: FeatureFlags.invoiceManagement ? { viewModel.showDeleteSheet = true } : nil
             )
             .id(invoice.id)
         } else {

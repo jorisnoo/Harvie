@@ -48,7 +48,9 @@ struct MultiSelectionView: View {
                 markAsOpenButton
             }
 
-            deleteButton
+            if FeatureFlags.invoiceManagement {
+                deleteButton
+            }
 
             Divider()
                 .padding(.horizontal, 40)

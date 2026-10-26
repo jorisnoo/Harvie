@@ -10,10 +10,12 @@ enum FeatureFlags {
         case customPDFTemplates
         case clientOverrides
         case estimates
+        /// Creating and deleting invoices in Harvest.
+        case invoiceManagement
 
         var defaultValue: Bool {
             switch self {
-            case .customPDFTemplates:
+            case .customPDFTemplates, .invoiceManagement:
                 return false
             case .clientOverrides:
                 #if DEBUG
@@ -60,4 +62,5 @@ enum FeatureFlags {
     static var customPDFTemplates: Bool { isEnabled(.customPDFTemplates) }
     static var clientOverrides: Bool { isEnabled(.clientOverrides) }
     static var estimates: Bool { isEnabled(.estimates) }
+    static var invoiceManagement: Bool { isEnabled(.invoiceManagement) }
 }
