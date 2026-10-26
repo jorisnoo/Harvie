@@ -59,27 +59,25 @@ struct ContentView: View {
                 EstimatesListView(viewModel: estimatesVM)
             }
         }
-        .searchable(text: searchTextBinding, isPresented: $isSearching, placement: .sidebar, prompt: searchPrompt)
+        .searchable(
+            text: searchTextBinding,
+            tokens: periodTokens,
+            isPresented: $isSearching,
+            placement: .sidebar,
+            prompt: searchPrompt
+        ) { token in
+            Text(token.label)
+        }
         .onReceive(NotificationCenter.default.publisher(for: .searchInvoices)) { _ in
             isSearching = true
         }
         .toolbar {
             if columnVisibility != .detailOnly {
-                ToolbarItem(placement: .automatic) {
-                    HStack(spacing: 6) {
-                        if let activeFilterLabel {
-                            Text(activeFilterLabel)
-                                .foregroundStyle(.secondary)
-                                .lineLimit(1)
-                                .fixedSize()
-                        }
+                // One group, so both share a single glass capsule.
+                ToolbarItemGroup(placement: .automatic) {
+                    sortFilterMenu
 
-                        sortFilterMenu
-                    }
-                }
-
-                if source.wrappedValue == .invoices {
-                    ToolbarItem(placement: .automatic) {
+                    if source.wrappedValue == .invoices {
                         Button {
                             invoicesVM.showNewInvoiceSheet = true
                         } label: {
@@ -115,16 +113,11 @@ struct ContentView: View {
                 sortFilterMenuItems
             }
         } label: {
-            Label(Strings.InvoicesList.sortAndFilter, systemImage: "line.3.horizontal.decrease.circle")
+            Label(Strings.InvoicesList.sortAndFilter, systemImage: "line.3.horizontal.decrease")
         }
+        .menuIndicator(.hidden)
         .focusable(false)
-    }
-
-    private var activeFilterLabel: String? {
-        if source.wrappedValue == .invoices, let period = invoicesVM.selectedPeriod {
-            return invoicesVM.filterPeriod.displayLabel(for: period)
-        }
-        return nil
+        .help(Strings.InvoicesList.sortAndFilter)
     }
 
     @ViewBuilder
@@ -203,6 +196,19 @@ struct ContentView: View {
         case .estimates:
             EstimatesDetailContentView(viewModel: estimatesVM)
         }
+    }
+
+    /// The period picked in the filter menu, shown as a removable token in the search field.
+    private var periodTokens: Binding<[PeriodToken]> {
+        Binding(
+            get: {
+                guard source.wrappedValue == .invoices, let period = invoicesVM.selectedPeriod else { return [] }
+                return [PeriodToken(id: period, label: invoicesVM.filterPeriod.displayLabel(for: period))]
+            },
+            set: { tokens in
+                if tokens.isEmpty { invoicesVM.selectedPeriod = nil }
+            }
+        )
     }
 
     private var searchTextBinding: Binding<String> {
@@ -361,4 +367,9 @@ private struct EstimatesDetailContentView: View {
 
 #Preview {
     ContentView()
+}
+
+private struct PeriodToken: Identifiable {
+    let id: Date
+    let label: String
 }
