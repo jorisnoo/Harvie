@@ -10,14 +10,14 @@ import Testing
 @Suite("Invoice detail inline edits")
 @MainActor
 struct InvoiceDetailModelTests {
-    private func invoice() -> Invoice {
+    private func invoice(subject: String? = nil, notes: String? = nil) -> Invoice {
         let date = Date(timeIntervalSince1970: 1_788_220_800)
         let items = [1, 2].map { id in
             LineItem(id: id, kind: "Service", description: "Item \(id)", quantity: 1, unitPrice: 50,
                      amount: 50, taxed: false, taxed2: false, project: nil)
         }
         return Invoice(id: 7, clientKey: "fixture", number: "INV-7", amount: 100, dueAmount: 100,
-                       currency: "CHF", state: .draft, issueDate: date, dueDate: date,
+                       subject: subject, notes: notes, currency: "CHF", state: .draft, issueDate: date, dueDate: date,
                        createdAt: date, updatedAt: date, client: ClientReference(id: 1, name: "Fixture"),
                        lineItems: items)
     }
@@ -35,6 +35,17 @@ struct InvoiceDetailModelTests {
         #expect(refreshes == 1)
         #expect(!model.isModified(.subject))
         #expect(model.showsSaved(.subject))
+    }
+
+    @Test func refreshedInvoiceUpdatesUneditedTextOnly() {
+        let model = InvoiceDetailModel(invoice: invoice(subject: "Old", notes: "Old notes")) { _ in }
+
+        model.setText("Typing", for: .notes)
+        model.update(invoice(subject: "Fetched", notes: "Fetched notes"))
+
+        #expect(model.text(for: .subject) == "Fetched")
+        #expect(!model.isModified(.subject))
+        #expect(model.text(for: .notes) == "Typing")
     }
 
     @Test func editsMadeDuringASaveAreKeptAndSavedInOrder() async {

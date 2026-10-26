@@ -131,6 +131,15 @@ final class InvoiceDetailModel {
 
     func update(_ invoice: Invoice) {
         self.invoice = invoice
+        // Show fetched text unless the user is editing that field or a save is on its way.
+        if !isModified(.subject), pendingSaves[.subject] == nil {
+            subject = invoice.subject ?? ""
+            savedSubject = subject
+        }
+        if !isModified(.notes), pendingSaves[.notes] == nil {
+            notes = invoice.notes ?? ""
+            savedNotes = notes
+        }
         // Forget confirmations the fetched invoice already reflects.
         for item in invoice.lineItems ?? [] where confirmed[item.id] == LineItemValues(item) {
             confirmed[item.id] = nil
