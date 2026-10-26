@@ -2,6 +2,7 @@
 """Release a prepared commit, or extract its curated changelog entry. Stdlib only."""
 
 import argparse
+import datetime
 import functools
 import json
 import re
@@ -13,6 +14,10 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 SEMVER = re.compile(
     r"(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-([0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*))?"
+)
+HEADING = re.compile(
+    r"## \[([^\]\s]+)\]\(https://github\.com/[\w.-]+/[\w.-]+/releases/tag/\1\) "
+    r"\((\d{4}-\d{2}-\d{2})\)"
 )
 
 
@@ -52,12 +57,11 @@ def compare_versions(left, right):
     return (len(pre_a) > len(pre_b)) - (len(pre_a) < len(pre_b))
 
 
-def release_notes(version):
-    lines = (ROOT / "CHANGELOG.md").read_text().splitlines()
+def changelog_entries(text):
     entries = []
     current = None
     fence = None
-    for line in lines:
+    for number, line in enumerate(text.splitlines(), 1):
         stripped = line.lstrip()
         if stripped.startswith(("```", "~~~")):
             marker = stripped[:3]
@@ -68,12 +72,25 @@ def release_notes(version):
         if fence is None and line.startswith("## "):
             if current is not None:
                 entries.append(current)
-            match = re.match(r"^## (?:\[([^\]]+)\]|(\S+))", line)
-            current = [match.group(1) or match.group(2), []] if match else None
+            match = HEADING.fullmatch(line)
+            try:
+                datetime.date.fromisoformat(match.group(2) if match else "")
+            except ValueError:
+                fail(
+                    f"CHANGELOG.md line {number}: write release headings as "
+                    "'## [X.Y.Z](https://github.com/OWNER/REPO/releases/tag/X.Y.Z) "
+                    "(YYYY-MM-DD)'."
+                )
+            current = [match.group(1), []]
         elif current is not None:
             current[1].append(line)
     if current is not None:
         entries.append(current)
+    return entries
+
+
+def release_notes(version):
+    entries = changelog_entries((ROOT / "CHANGELOG.md").read_text())
     matches = [body for heading, body in entries if heading == version]
     if len(matches) != 1:
         fail(

@@ -5,7 +5,7 @@ Release from `main` using an explicit version without a `v` prefix. `CHANGELOG.m
 ## Prepare
 
 1. Review changes since the last release and choose the version from compatibility: patch for fixes, minor for compatible additions, major for breaking changes. For a pre-1.0 package, describe incompatible changes explicitly and normally bump the minor version. Do not infer the bump solely from commit prefixes.
-2. Add a curated entry at the top of `CHANGELOG.md`: `## [X.Y.Z] - YYYY-MM-DD`. Use only relevant sections such as Added, Changed, Fixed, and Breaking. Explain user-visible behavior and migrations; combine related commits and omit routine dependency/CI noise. Preserve all historical entries. Use `X.Y.Z` everywhere, including release links.
+2. Add a curated entry at the top of `CHANGELOG.md`: `## [X.Y.Z](https://github.com/jorisnoo/Harvie/releases/tag/X.Y.Z) (YYYY-MM-DD)`. The helper rejects any `##` heading in another form, and the release-tooling tests check the whole changelog on every push. Use only relevant sections such as Added, Changed, Fixed, and Breaking. Explain user-visible behavior and migrations; combine related commits and omit routine dependency/CI noise. Preserve all historical entries. Use `X.Y.Z` everywhere, including release links.
 3. Update the version files and build outputs described below. Run the relevant checks, review the complete diff, and commit only the intended release changes (normally `release: X.Y.Z`). Respect configured Git commit signing. Never include unrelated local work.
 
 Configured release checks:

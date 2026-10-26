@@ -20,6 +20,17 @@ ENV = {
 }
 
 
+def heading(version, date="2026-10-05"):
+    return f"## [{version}](https://github.com/owner/repo/releases/tag/{version}) ({date})"
+
+
+def load_helper():
+    spec = importlib.util.spec_from_file_location("release_helper", SCRIPT)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
 class ReleaseTests(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
@@ -77,8 +88,8 @@ class ReleaseTests(unittest.TestCase):
     def notes(self, s=None):
         (self.repo / "CHANGELOG.md").write_text(
             s
-            or "# Changelog\n\n## [1.0.1] - 2026-10-05\n\n### Fixed\n\n"
-            "- A useful fix.\n\n## [1.0.0] - 2026-10-01\n\n- Old notes.\n"
+            or f"# Changelog\n\n{heading('1.0.1')}\n\n### Fixed\n\n"
+            f"- A useful fix.\n\n{heading('1.0.0', '2026-10-01')}\n\n- Old notes.\n"
         )
 
     def release(self, *args):
@@ -150,21 +161,40 @@ class ReleaseTests(unittest.TestCase):
     def test_missing_empty_duplicate_notes(self):
         for content, message in [
             ("# Changelog\n", "exactly one"),
-            ("## [1.0.1]\n\n### Fixed\n", "empty"),
-            ("## [1.0.1]\n- One\n## [1.0.1]\n- Two\n", "exactly one"),
+            (f"{heading('1.0.1')}\n\n### Fixed\n", "empty"),
+            (f"{heading('1.0.1')}\n- One\n{heading('1.0.1')}\n- Two\n", "exactly one"),
         ]:
             self.notes(content)
             self.assert_rejected(message, "1.0.1", "--notes")
 
-    def test_legacy_headers_fences_and_exact_version_match(self):
+    def test_fences_and_exact_version_match(self):
         self.notes(
-            "## 1.0.1 (2026-10-05)\n\n- Useful notes\n\n"
-            "```md\n## [2.0.0]\n```\n\n## [1.0.10]\n- Not this version\n"
+            f"{heading('1.0.1')}\n\n- Useful notes\n\n"
+            f"```md\n## [2.0.0]\n```\n\n{heading('1.0.10')}\n- Not this version\n"
         )
         r = self.release("1.0.1", "--notes")
         self.assertEqual(r.returncode, 0, r.stderr)
         self.assertIn("## [2.0.0]", r.stdout)
         self.assertNotIn("Not this version", r.stdout)
+
+    def test_inconsistent_headings(self):
+        link = "https://github.com/owner/repo/releases/tag"
+        for bad in [
+            "## [1.0.1] - 2026-10-05",
+            "## 1.0.1 (2026-10-05)",
+            f"## [1.0.1]({link}/1.0.1)",
+            f"## [1.0.1]({link}/1.0.0) (2026-10-05)",
+            f"## [1.0.1]({link}/1.0.1) - 2026-10-05",
+            f"## [1.0.1]({link}/1.0.1) (2026-13-05)",
+            "## Unreleased",
+        ]:
+            with self.subTest(bad=bad):
+                self.notes(f"{bad}\n- Notes.\n")
+                self.assert_rejected("line 1: write release headings", "1.0.1", "--notes")
+
+    def test_repository_changelog_is_consistent(self):
+        changelog = SCRIPT.parent.parent / "CHANGELOG.md"
+        self.assertTrue(load_helper().changelog_entries(changelog.read_text()))
 
     def test_version_mismatch(self):
         (self.repo / "package.json").write_text('{"version":"1.0.0"}')
@@ -189,18 +219,18 @@ class ReleaseTests(unittest.TestCase):
         self.assert_rejected("package.json version must equal", "1.0.1", "--notes")
 
     def test_ci_notes_stable_app_rejects_prerelease(self):
-        self.notes("## [1.1.0-beta.1]\n- Beta.\n")
+        self.notes(f"{heading('1.1.0-beta.1')}\n- Beta.\n")
         self.config["stable_only"] = True
         self.write_config()
         self.assert_rejected("numeric Apple", "1.1.0-beta.1", "--notes")
 
     def test_old_version_rejected(self):
-        self.notes("## [0.9.0]\n- Older version.\n")
+        self.notes(f"{heading('0.9.0')}\n- Older version.\n")
         self.commit()
         self.assert_rejected("must be newer", "0.9.0")
 
     def test_stable_app_rejects_prerelease(self):
-        self.notes("## [1.1.0-beta.1]\n- Beta.\n")
+        self.notes(f"{heading('1.1.0-beta.1')}\n- Beta.\n")
         self.config["stable_only"] = True
         self.write_config()
         self.commit()
@@ -279,9 +309,7 @@ class ReleaseTests(unittest.TestCase):
         self.assertIn("must be annotated", r.stderr)
 
     def test_semver_order(self):
-        spec = importlib.util.spec_from_file_location("release_helper", SCRIPT)
-        module = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(module)
+        module = load_helper()
         versions = [
             "1.0.0-alpha",
             "1.0.0-alpha.1",
