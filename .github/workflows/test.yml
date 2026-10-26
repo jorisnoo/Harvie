@@ -22,6 +22,8 @@ jobs:
             xcode: '16.2'
           - os: macos-26
             xcode: '26.2'
+          - os: xcode-27
+            xcode: '27.1'
     runs-on: ${{ matrix.os }}
     timeout-minutes: 45
 
