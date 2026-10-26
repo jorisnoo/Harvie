@@ -41,7 +41,7 @@ jobs:
 
   build:
     needs: [version, test]
-    runs-on: macos-26
+    runs-on: xcode-27
     timeout-minutes: 90
     concurrency:
       group: release-${{ needs.version.outputs.version }}
@@ -58,7 +58,7 @@ jobs:
           persist-credentials: false
 
       - name: Select Xcode
-        run: sudo xcode-select -s /Applications/Xcode_26.2.app/Contents/Developer
+        run: sudo xcode-select -s /Applications/Xcode_27.1.app/Contents/Developer
 
       - name: Validate release notes
         run: python3 scripts/release.py "$VERSION" --notes > "$RUNNER_TEMP/changelog-notes.md"
