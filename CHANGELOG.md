@@ -2,6 +2,35 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.9.0] - 2026-10-26
+
+### Added
+
+- Choose where your templates are stored in Settings > Templates, for example a folder in iCloud Drive to share them between Macs. Existing templates can move along to the new folder.
+- QR bills show the scissors symbols on both cut lines and the receipt's acceptance point, as the Swiss QR-bill style guide asks for bills sent as PDF.
+
+### Changed
+
+- Custom templates print onto real A4 pages. Content after a page break keeps a margin from the paper edge, and dark templates keep their background right up to it.
+- Templates can no longer load anything from the internet, and the template preview no longer runs scripts. Images and fonts stored in the template's own folder still work; move any web fonts or remote images there.
+- Debtor addresses on the QR bill are read according to their country. Addresses that can't be read with confidence leave the debtor field blank for the payer to fill in, instead of guessing.
+- CSV exports put an apostrophe before values starting with `=`, `+`, `-` or `@`, so spreadsheets don't run them as formulas.
+- On macOS 26 and later, the sidebar toolbar fits the new design. The selected period now shows as a token in the search field.
+
+### Fixed
+
+- The QR code is printed at the required 46 × 46 mm; it came out at about 44 mm before.
+- QR bill text is limited to the characters Swiss banks accept, and amounts no longer depend on the Mac's region settings.
+- Template numbers keep their thousands separators, and template dates always use Western digits and the Gregorian calendar.
+- Edits in an invoice are saved when you switch to another invoice, and changes made elsewhere show up when the invoice refreshes.
+- Changing the issue date of several invoices at once also updates open invoices.
+- Harvest's rate limits are retried after a short wait instead of failing, and large accounts load in fewer requests.
+- Duplicate documents from Harvest no longer crash the list, and a failed refresh keeps the copies you already had.
+- Signing out or switching accounts removes the other account's cached invoices and estimates.
+- A failed lookup of your Harvest subdomain no longer leaves the app asking for credentials until you test the connection.
+- Invoice notes line up with their heading in the invoice view.
+- Batch errors appear in the sheet that caused them, closing a template editor with unsaved changes asks first, and exports stop when their window closes.
+
 ## [0.8.3](https://github.com/jorisnoo/Harvie/releases/tag/0.8.3) (2026-09-09)
 
 ### Bug Fixes
