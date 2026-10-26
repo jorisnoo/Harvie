@@ -73,9 +73,10 @@ final class SettingsViewModel {
 
     func saveSettings() async {
         var credentials = harvestCredentials
-        if !credentials.hasSameAccount(as: lastSavedCredentials) {
+        if !credentials.hasSameAccount(as: lastSavedCredentials) || credentials.subdomain.isEmpty {
             // A subdomain resolved for another token or account would point PDF
             // downloads at the wrong Harvest account, so never save it with these.
+            // An empty one means an earlier lookup failed, so try again.
             credentials.subdomain = await resolveSubdomain(for: credentials)
             guard !Task.isCancelled else { return }
             harvestCredentials.subdomain = credentials.subdomain
