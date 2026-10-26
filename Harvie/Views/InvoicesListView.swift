@@ -8,6 +8,7 @@ import SwiftUI
 struct InvoicesListView: View {
     @Bindable var viewModel: InvoicesViewModel
     @Environment(\.openSettings) private var openSettings
+    @FocusState private var isListFocused: Bool
 
     private var warningBanner: some View {
         HStack(spacing: 8) {
@@ -53,6 +54,9 @@ struct InvoicesListView: View {
                         .tag(invoice.id)
                     }
                 }
+                // With keyboard navigation on, the window otherwise focuses the sidebar toggle
+                .focused($isListFocused)
+                .onAppear { isListFocused = true }
                 .onKeyPress(.escape) {
                     guard !viewModel.selectedInvoiceIDs.isEmpty else { return .ignored }
                     viewModel.selectedInvoiceIDs.removeAll()

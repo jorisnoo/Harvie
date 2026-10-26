@@ -512,7 +512,7 @@ struct InvoiceDetailView: View {
                 Text(Strings.InvoiceDetail.issued(invoice.issueDate.formatted(date: .long, time: .omitted)))
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
-                    .underline(invoice.state == .draft, pattern: .dash, color: .secondary.opacity(0.5))
+                    .underline(invoice.state == .draft, color: .secondary.opacity(0.5))
                     .onTapGesture { if invoice.state == .draft { openChangeDate() } }
                     .onHover { hovering in
                         guard invoice.state == .draft else { return }
@@ -529,7 +529,7 @@ struct InvoiceDetailView: View {
             Text(Strings.InvoiceDetail.due(invoice.dueDate.formatted(date: .long, time: .omitted)))
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
-                .underline(invoice.state == .draft, pattern: .dash, color: .secondary.opacity(0.5))
+                .underline(invoice.state == .draft, color: .secondary.opacity(0.5))
                 .onTapGesture { if invoice.state == .draft { openChangeDate() } }
                 .onHover { hovering in
                     guard invoice.state == .draft else { return }

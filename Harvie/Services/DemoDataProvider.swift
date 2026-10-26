@@ -10,12 +10,22 @@ enum DemoDataProvider {
     static let invoices: [Invoice] = {
         let now = Date()
         let day: TimeInterval = 86400
+        let calendar = Calendar.current
+
+        // Derive years from the relative dates so numbers never look stale.
+        func year(daysAgo: Double) -> Int {
+            calendar.component(.year, from: now.addingTimeInterval(-daysAgo * day))
+        }
+
+        func number(_ sequence: Int, daysAgo: Double) -> String {
+            "INV-\(year(daysAgo: daysAgo))-\(String(format: "%03d", sequence))"
+        }
 
         return [
             Invoice(
                 id: 1001,
                 clientKey: "demo-001",
-                number: "INV-2024-042",
+                number: number(42, daysAgo: 7),
                 purchaseOrder: nil,
                 amount: 4250.00,
                 dueAmount: 4250.00,
@@ -49,7 +59,7 @@ enum DemoDataProvider {
             Invoice(
                 id: 1002,
                 clientKey: "demo-002",
-                number: "INV-2024-041",
+                number: number(41, daysAgo: 35),
                 purchaseOrder: nil,
                 amount: 1875.00,
                 dueAmount: 0,
@@ -82,8 +92,8 @@ enum DemoDataProvider {
             Invoice(
                 id: 1003,
                 clientKey: "demo-003",
-                number: "INV-2024-040",
-                purchaseOrder: "PO-2024-789",
+                number: number(40, daysAgo: 14),
+                purchaseOrder: "PO-\(year(daysAgo: 14))-789",
                 amount: 8500.00,
                 dueAmount: 8500.00,
                 tax: 8.1,
@@ -116,7 +126,7 @@ enum DemoDataProvider {
             Invoice(
                 id: 1004,
                 clientKey: "demo-004",
-                number: "INV-2024-039",
+                number: number(39, daysAgo: 45),
                 purchaseOrder: nil,
                 amount: 2340.00,
                 dueAmount: 0,
@@ -149,7 +159,7 @@ enum DemoDataProvider {
             Invoice(
                 id: 1005,
                 clientKey: "demo-005",
-                number: "INV-2024-043",
+                number: number(43, daysAgo: 0),
                 purchaseOrder: nil,
                 amount: 3600.00,
                 dueAmount: 3600.00,
@@ -183,7 +193,7 @@ enum DemoDataProvider {
             Invoice(
                 id: 1006,
                 clientKey: "demo-006",
-                number: "INV-2024-038",
+                number: number(38, daysAgo: 90),
                 purchaseOrder: nil,
                 amount: 1200.00,
                 dueAmount: 0,
@@ -215,7 +225,7 @@ enum DemoDataProvider {
             Invoice(
                 id: 1007,
                 clientKey: "demo-007",
-                number: "INV-2024-044",
+                number: number(44, daysAgo: 3),
                 purchaseOrder: nil,
                 amount: 5750.00,
                 dueAmount: 5750.00,
@@ -250,7 +260,7 @@ enum DemoDataProvider {
             Invoice(
                 id: 1008,
                 clientKey: "demo-008",
-                number: "INV-2024-045",
+                number: number(45, daysAgo: 0),
                 purchaseOrder: nil,
                 amount: 2400.00,
                 dueAmount: 2400.00,
@@ -283,7 +293,7 @@ enum DemoDataProvider {
             Invoice(
                 id: 1009,
                 clientKey: "demo-009",
-                number: "INV-2024-046",
+                number: number(46, daysAgo: 0),
                 purchaseOrder: nil,
                 amount: 950.00,
                 dueAmount: 950.00,
@@ -316,8 +326,8 @@ enum DemoDataProvider {
             Invoice(
                 id: 1010,
                 clientKey: "demo-010",
-                number: "INV-2024-047",
-                purchaseOrder: "PO-2024-901",
+                number: number(47, daysAgo: 0),
+                purchaseOrder: "PO-\(year(daysAgo: 0))-901",
                 amount: 12500.00,
                 dueAmount: 12500.00,
                 tax: 8.1,
@@ -351,7 +361,7 @@ enum DemoDataProvider {
             Invoice(
                 id: 1011,
                 clientKey: "demo-011",
-                number: "INV-2024-037",
+                number: number(37, daysAgo: 120),
                 purchaseOrder: nil,
                 amount: 3200.00,
                 dueAmount: 0,
@@ -385,7 +395,7 @@ enum DemoDataProvider {
             Invoice(
                 id: 1012,
                 clientKey: "demo-012",
-                number: "INV-2024-036",
+                number: number(36, daysAgo: 150),
                 purchaseOrder: nil,
                 amount: 4800.00,
                 dueAmount: 0,
@@ -395,8 +405,8 @@ enum DemoDataProvider {
                 tax2Amount: nil,
                 discount: nil,
                 discountAmount: nil,
-                subject: "Website Maintenance Q1",
-                notes: "Wartungsvertrag Januar - März 2024",
+                subject: "Website Maintenance",
+                notes: "Wartungsvertrag über drei Monate.",
                 currency: "CHF",
                 state: .closed,
                 periodStart: now.addingTimeInterval(-180 * day),
@@ -419,12 +429,12 @@ enum DemoDataProvider {
             Invoice(
                 id: 1013,
                 clientKey: "demo-013",
-                number: "INV-2023-089",
+                number: number(89, daysAgo: 300),
                 purchaseOrder: nil,
                 amount: 6750.00,
                 dueAmount: 0,
-                tax: 7.7,
-                taxAmount: 519.75,
+                tax: 8.1,
+                taxAmount: 546.75,
                 tax2: nil,
                 tax2Amount: nil,
                 discount: nil,
@@ -453,12 +463,12 @@ enum DemoDataProvider {
             Invoice(
                 id: 1014,
                 clientKey: "demo-014",
-                number: "INV-2023-088",
+                number: number(88, daysAgo: 320),
                 purchaseOrder: nil,
                 amount: 1500.00,
                 dueAmount: 0,
-                tax: 7.7,
-                taxAmount: 115.50,
+                tax: 8.1,
+                taxAmount: 121.50,
                 tax2: nil,
                 tax2Amount: nil,
                 discount: nil,
@@ -486,12 +496,12 @@ enum DemoDataProvider {
             Invoice(
                 id: 1015,
                 clientKey: "demo-015",
-                number: "INV-2023-087",
-                purchaseOrder: "PO-2023-456",
+                number: number(87, daysAgo: 350),
+                purchaseOrder: "PO-\(year(daysAgo: 350))-456",
                 amount: 15000.00,
                 dueAmount: 0,
-                tax: 7.7,
-                taxAmount: 1155.00,
+                tax: 8.1,
+                taxAmount: 1215.00,
                 tax2: nil,
                 tax2Amount: nil,
                 discount: 5,
@@ -522,7 +532,7 @@ enum DemoDataProvider {
             Invoice(
                 id: 1016,
                 clientKey: "demo-016",
-                number: "INV-2024-035",
+                number: number(35, daysAgo: 60),
                 purchaseOrder: nil,
                 amount: 2100.00,
                 dueAmount: 2100.00,
@@ -556,12 +566,12 @@ enum DemoDataProvider {
             Invoice(
                 id: 1017,
                 clientKey: "demo-017",
-                number: "INV-2023-086",
+                number: number(86, daysAgo: 380),
                 purchaseOrder: nil,
                 amount: 880.00,
                 dueAmount: 0,
-                tax: 7.7,
-                taxAmount: 67.76,
+                tax: 8.1,
+                taxAmount: 71.28,
                 tax2: nil,
                 tax2Amount: nil,
                 discount: nil,
@@ -589,12 +599,12 @@ enum DemoDataProvider {
             Invoice(
                 id: 1018,
                 clientKey: "demo-018",
-                number: "INV-2023-085",
+                number: number(85, daysAgo: 420),
                 purchaseOrder: nil,
                 amount: 5400.00,
                 dueAmount: 0,
-                tax: 7.7,
-                taxAmount: 415.80,
+                tax: 8.1,
+                taxAmount: 437.40,
                 tax2: nil,
                 tax2Amount: nil,
                 discount: nil,
@@ -624,7 +634,7 @@ enum DemoDataProvider {
             Invoice(
                 id: 1019,
                 clientKey: "demo-019",
-                number: "INV-2024-048",
+                number: number(48, daysAgo: 0),
                 purchaseOrder: nil,
                 amount: 1800.00,
                 dueAmount: 1800.00,
@@ -657,12 +667,12 @@ enum DemoDataProvider {
             Invoice(
                 id: 1020,
                 clientKey: "demo-020",
-                number: "INV-2023-084",
+                number: number(84, daysAgo: 450),
                 purchaseOrder: nil,
                 amount: 3150.00,
                 dueAmount: 0,
-                tax: 7.7,
-                taxAmount: 242.55,
+                tax: 8.1,
+                taxAmount: 255.15,
                 tax2: nil,
                 tax2Amount: nil,
                 discount: nil,
