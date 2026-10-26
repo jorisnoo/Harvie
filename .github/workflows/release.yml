@@ -2,26 +2,54 @@ name: Build, Sign, Notarise and Release
 
 on:
   push:
+    branches: [main]
     tags:
       - '[0-9]+.[0-9]+.[0-9]+'
-
-concurrency:
-  group: release-${{ github.ref }}
-  cancel-in-progress: false
 
 permissions:
   contents: read
 
 jobs:
+  version:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+
+    steps:
+      - name: Determine release version
+        id: version
+        env:
+          GH_TOKEN: ${{ github.token }}
+          COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
+        run: |
+          if [[ "$GITHUB_REF_TYPE" == tag ]]; then
+            echo "version=$GITHUB_REF_NAME" >> "$GITHUB_OUTPUT"
+          elif [[ "$(head -1 <<< "$COMMIT_MESSAGE")" =~ ^release:\ ([0-9]+\.[0-9]+\.[0-9]+)$ ]]; then
+            VERSION="${BASH_REMATCH[1]}"
+            # The helper pushes the branch and tag together; the tag push runs that release.
+            if gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/$VERSION" > /dev/null 2>&1; then
+              echo "Tag $VERSION already exists; skipping."
+            else
+              echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+            fi
+          fi
+
   test:
+    needs: version
+    if: needs.version.outputs.version != ''
     uses: ./.github/workflows/test.yml
 
   build:
-    needs: test
+    needs: [version, test]
     runs-on: macos-26
     timeout-minutes: 90
+    concurrency:
+      group: release-${{ needs.version.outputs.version }}
+      cancel-in-progress: false
     permissions:
       contents: write
+    env:
+      VERSION: ${{ needs.version.outputs.version }}
 
     steps:
       - name: Checkout code
@@ -33,13 +61,7 @@ jobs:
         run: sudo xcode-select -s /Applications/Xcode_26.2.app/Contents/Developer
 
       - name: Validate release notes
-        env:
-          RELEASE_VERSION: ${{ github.ref_name }}
-        run: python3 scripts/release.py "$RELEASE_VERSION" --notes > "$RUNNER_TEMP/changelog-notes.md"
-
-      - name: Extract version from tag
-        id: version
-        run: echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+        run: python3 scripts/release.py "$VERSION" --notes > "$RUNNER_TEMP/changelog-notes.md"
 
       - name: Extract app name from Xcode project
         run: |
@@ -87,13 +109,12 @@ jobs:
           MACOS_CERTIFICATE_NAME: ${{ secrets.MACOS_CERTIFICATE_NAME }}
         run: |
           ./scripts/build-release.sh --clean --notarise \
-            --version "${{ steps.version.outputs.VERSION }}" \
+            --version "$VERSION" \
             --build-number "${{ github.run_number }}"
 
       - name: Extract release notes
         id: changelog
         run: |
-          VERSION="${{ github.ref_name }}"
           REPO="${{ github.repository }}"
           APP_NAME="${{ env.APP_NAME }}"
 
@@ -114,20 +135,32 @@ jobs:
           echo "" >> release_notes.md
           echo "**Full Changelog:** https://github.com/${REPO}/blob/${GITHUB_SHA}/CHANGELOG.md" >> release_notes.md
 
+      - name: Create release tag
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if ! gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/$VERSION" > /dev/null 2>&1; then
+            TAG_SHA=$(gh api "repos/$GITHUB_REPOSITORY/git/tags" \
+              -f tag="$VERSION" -f message="Release $VERSION" \
+              -f object="$GITHUB_SHA" -f type=commit --jq .sha)
+            gh api "repos/$GITHUB_REPOSITORY/git/refs" \
+              -f ref="refs/tags/$VERSION" -f sha="$TAG_SHA" > /dev/null
+          fi
+
       - name: Create GitHub Release
         run: |
-          if gh release view "${{ github.ref_name }}" > /dev/null 2>&1; then
+          if gh release view "$VERSION" > /dev/null 2>&1; then
             echo "GitHub release already exists; using its published assets."
-            gh release download "${{ github.ref_name }}" \
-              --pattern "${{ env.APP_NAME }}-${{ github.ref_name }}.dmg" \
-              --pattern "${{ env.APP_NAME }}-${{ github.ref_name }}.zip" \
+            gh release download "$VERSION" \
+              --pattern "${{ env.APP_NAME }}-$VERSION.dmg" \
+              --pattern "${{ env.APP_NAME }}-$VERSION.zip" \
               --dir build --clobber
           else
-            gh release create "${{ github.ref_name }}" \
-              "build/${{ env.APP_NAME }}-${{ github.ref_name }}.dmg" \
-              "build/${{ env.APP_NAME }}-${{ github.ref_name }}.zip" \
+            gh release create "$VERSION" \
+              "build/${{ env.APP_NAME }}-$VERSION.dmg" \
+              "build/${{ env.APP_NAME }}-$VERSION.zip" \
               --verify-tag \
-              --title "${{ github.ref_name }}" \
+              --title "$VERSION" \
               --notes-file release_notes.md
           fi
         env:
@@ -137,7 +170,6 @@ jobs:
         env:
           HOMEBREW_TAP_TOKEN: ${{ secrets.HOMEBREW_TAP_PAT }}
         run: |
-          VERSION="${{ steps.version.outputs.VERSION }}"
           DMG_PATH="build/${{ env.APP_NAME }}-${VERSION}.dmg"
           SHA256=$(shasum -a 256 "$DMG_PATH" | awk '{print $1}')
 
@@ -162,7 +194,6 @@ jobs:
         env:
           WEBSITE_REPO_TOKEN: ${{ secrets.WEBSITE_REPO_PAT }}
         run: |
-          VERSION="${{ steps.version.outputs.VERSION }}"
           APP_NAME="${{ env.APP_NAME }}"
 
           git clone "https://x-access-token:${WEBSITE_REPO_TOKEN}@github.com/jorisnoo/harvie-app.git" website-repo
