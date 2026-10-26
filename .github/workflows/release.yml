@@ -50,6 +50,10 @@ jobs:
       contents: write
     env:
       VERSION: ${{ needs.version.outputs.version }}
+      # Tokens are in the clone URLs; storing them fails once the signing keychain replaces the default one.
+      GIT_CONFIG_COUNT: 1
+      GIT_CONFIG_KEY_0: credential.helper
+      GIT_CONFIG_VALUE_0: ''
 
     steps:
       - name: Checkout code
