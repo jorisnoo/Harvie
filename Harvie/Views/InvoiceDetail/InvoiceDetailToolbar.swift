@@ -56,7 +56,6 @@ struct InvoiceDetailToolbar: ToolbarContent {
                     Label(Strings.InvoiceDetail.exportQRBill, systemImage: "square.and.arrow.down")
                 }
             }
-            .buttonStyle(.borderedProminent)
             .disabled(isProcessing || isPreviewing || !canExport)
             .help(canExport ? Strings.InvoiceDetail.exportTooltip : Strings.InvoiceDetail.creditorRequiredTooltip)
             .accessibilityLabel(Strings.InvoiceDetail.exportQRBill)

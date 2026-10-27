@@ -64,7 +64,6 @@ struct EstimateDetailView: View {
                         Label(Strings.EstimateDetail.export, systemImage: "square.and.arrow.down")
                     }
                 }
-                .buttonStyle(.borderedProminent)
                 .disabled(isProcessing)
                 .help(Strings.EstimateDetail.exportTooltip)
                 .accessibilityLabel(Strings.EstimateDetail.export)
