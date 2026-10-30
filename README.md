@@ -35,6 +35,12 @@
 
 ## Installation
 
+### Homebrew
+
+```bash
+brew install jorisnoo/tap/harvie
+```
+
 ### Download
 
 Download the latest release from the [Releases](https://github.com/jorisnoo/Harvie/releases/latest) page.
