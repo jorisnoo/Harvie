@@ -2,26 +2,40 @@ name: Test
 
 on:
   push:
-    branches: ['**']
+    branches: [main]
+    paths-ignore: &docs
+      - '**.md'
+      - 'assets/**'
+      - 'LICENSE'
   pull_request:
     branches: [main]
+    paths-ignore: *docs
   workflow_call:
+    inputs:
+      release:
+        type: boolean
+        default: false
 
 permissions:
   contents: read
 
+concurrency:
+  # When called from release.yml, github.workflow is the caller's name, so a
+  # release's test run never cancels (or is cancelled by) a direct Test run.
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   test:
+    # release.yml tests release commits itself, so skip the direct push run.
+    if: "inputs.release || !startsWith(github.event.head_commit.message, 'release: ')"
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - os: macos-15
-            xcode: '16.2'
-          - os: macos-26
-            xcode: '26.2'
-          - os: xcode-27
-            xcode: '27.1'
+        # PRs run only the oldest toolchain, which is where most failures show up.
+        include: ${{ fromJSON(github.event_name == 'pull_request'
+          && '[{"os":"macos-15","xcode":"16.2"}]'
+          || '[{"os":"macos-15","xcode":"16.2"},{"os":"macos-26","xcode":"26.2"},{"os":"xcode-27","xcode":"27.1"}]') }}
     runs-on: ${{ matrix.os }}
     timeout-minutes: 45
 
