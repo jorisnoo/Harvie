@@ -153,6 +153,7 @@ struct NewInvoiceSheet: View {
             draft = InvoiceDraft(kind: kinds.first { $0 == "Service" } ?? kinds[0])
             loadState = .loaded
         } catch {
+            Analytics.trackError(error)
             loadState = .failed(error.localizedDescription)
         }
     }
@@ -164,6 +165,7 @@ struct NewInvoiceSheet: View {
             try await viewModel.createInvoice(newInvoice)
             dismiss()
         } catch {
+            Analytics.trackError(error)
             self.error = error.localizedDescription
         }
         isCreating = false

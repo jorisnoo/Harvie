@@ -35,6 +35,7 @@ struct DocumentCache<Cached: CachedDocument> {
             let rows = try context.fetch(FetchDescriptor<Cached>()).filter { $0.accountId == accountId }
             return (documents: rows.map { $0.toDocument() }, lastFetched: rows.map(\.lastFetched).min())
         } catch {
+            Analytics.trackError(error)
             logger.warning("Failed to load \(String(describing: Cached.self)): \(error.localizedDescription)")
             return nil
         }
@@ -78,6 +79,7 @@ struct DocumentCache<Cached: CachedDocument> {
         do {
             try context.save()
         } catch {
+            Analytics.trackError(error)
             logger.warning("Failed to save \(String(describing: Cached.self)): \(error.localizedDescription)")
         }
     }

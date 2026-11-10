@@ -36,6 +36,17 @@ enum Analytics {
         Aptabase.shared.trackEvent(event, with: allProps)
     }
 
+    /// Reports a handled error. Only the error's domain and code are sent, never its
+    /// message, which can contain file names or other user content. Cancellations
+    /// are skipped.
+    static func trackError(_ error: Error) {
+        guard isInitialized, !(error is CancellationError) else { return }
+        let nsError = error as NSError
+        if nsError.domain == NSCocoaErrorDomain && nsError.code == NSUserCancelledError { return }
+        if nsError.domain == NSURLErrorDomain && nsError.code == NSURLErrorCancelled { return }
+        Aptabase.shared.trackError(NSError(domain: nsError.domain, code: nsError.code))
+    }
+
     static func appLaunched() {
         track("app_launched")
     }

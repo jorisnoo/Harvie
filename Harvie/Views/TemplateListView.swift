@@ -279,6 +279,7 @@ struct TemplateListView: View {
                 to: url
             )
         } catch {
+            Analytics.trackError(error)
             importError = error.localizedDescription
         }
     }
@@ -322,6 +323,7 @@ struct TemplateListView: View {
 
                 selectedTemplate = template
             } catch {
+                Analytics.trackError(error)
                 importError = error.localizedDescription
             }
         }

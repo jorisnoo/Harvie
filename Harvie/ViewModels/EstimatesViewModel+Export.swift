@@ -92,6 +92,7 @@ extension EstimatesViewModel {
             showExportSuccess = true
             Analytics.estimatesExported(count: exportedCount)
         } catch {
+            Analytics.trackError(error)
             exportError = error.localizedDescription
         }
 

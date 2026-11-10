@@ -184,6 +184,7 @@ actor HarvestExporter {
                     throw error
                 }
                 logger.error("Resource \(resource.rawValue) failed: \(error.localizedDescription)")
+                await Analytics.trackError(error)
                 results.append(ResourceResult(
                     resource: resource,
                     recordCount: 0,

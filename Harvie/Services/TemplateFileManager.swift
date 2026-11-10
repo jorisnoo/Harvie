@@ -77,6 +77,7 @@ enum TemplateFileManager {
             try css.write(to: target.appendingPathComponent("styles.css"), atomically: true, encoding: .utf8)
         } catch {
             logger.error("Failed to save template files for \(id): \(error.localizedDescription)")
+            Analytics.trackError(error)
             throw error
         }
     }

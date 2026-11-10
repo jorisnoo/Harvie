@@ -302,11 +302,13 @@ struct InvoiceDetailView: View {
             try await action(credentials)
             return true
         } catch let apiError as HarvestAPIService.APIError {
+            Analytics.trackError(apiError)
             model.error = Strings.InvoiceDetail.failedAction(label, apiError.localizedDescription)
         } catch {
             #if DEBUG
             logger.error("Failed to \(label): \(error.localizedDescription)")
             #endif
+            Analytics.trackError(error)
             model.error = Strings.InvoiceDetail.failedActionGeneric(label)
         }
         return false
@@ -535,6 +537,7 @@ private extension InvoiceDetailView {
     }
 
     func handlePDFError(_ error: Error, context: String) {
+        if !(error is GenerationError) { Analytics.trackError(error) }
         if let apiError = error as? HarvestAPIService.APIError {
             model.error = apiError.localizedDescription
         } else if let pdfError = error as? PDFService.PDFError {

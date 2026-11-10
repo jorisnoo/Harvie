@@ -121,6 +121,7 @@ final class ExportViewModel {
                 )
                 result = .success(summary)
             } catch {
+                Analytics.trackError(error)
                 result = .failure(error)
             }
             self?.finishExport(with: result, generation: generation)

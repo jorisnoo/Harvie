@@ -43,6 +43,7 @@ struct TemplateResolver {
             return try context.fetch(descriptor).first
         } catch {
             logger.error("Failed to fetch \(String(describing: T.self)): \(error.localizedDescription)")
+            Analytics.trackError(error)
             return nil
         }
     }

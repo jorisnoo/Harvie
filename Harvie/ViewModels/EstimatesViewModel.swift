@@ -249,6 +249,7 @@ final class EstimatesViewModel: BatchUpdating {
             // CancellationError — a superseded load must not clobber its replacement's state.
             guard !Task.isCancelled else { return }
 
+            Analytics.trackError(error)
             if error is KeychainService.KeychainError { clearAccountData() }
             self.error = error.localizedDescription
         }

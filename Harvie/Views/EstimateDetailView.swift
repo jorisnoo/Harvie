@@ -298,11 +298,13 @@ struct EstimateDetailView: View {
             completedAction = transition.completed
             onStateChanged?(estimate.id, transition.newState)
         } catch let apiError as HarvestAPIService.APIError {
+            Analytics.trackError(apiError)
             self.error = apiError.localizedDescription
         } catch {
             #if DEBUG
             logger.error("State transition failed: \(error.localizedDescription)")
             #endif
+            Analytics.trackError(error)
             self.error = error.localizedDescription
         }
     }
@@ -358,13 +360,16 @@ struct EstimateDetailView: View {
                 break
             }
         } catch let apiError as HarvestAPIService.APIError {
+            Analytics.trackError(apiError)
             self.error = apiError.localizedDescription
         } catch let pdfError as PDFService.PDFError {
+            Analytics.trackError(pdfError)
             self.error = pdfError.localizedDescription
         } catch {
             #if DEBUG
             logger.error("Export failed: \(error.localizedDescription)")
             #endif
+            Analytics.trackError(error)
             self.error = error.localizedDescription
         }
     }

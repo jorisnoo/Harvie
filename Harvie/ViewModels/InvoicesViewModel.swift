@@ -376,6 +376,7 @@ final class InvoicesViewModel: BatchUpdating {
             // CancellationError — a superseded load must not clobber its replacement's state.
             guard !Task.isCancelled else { return }
 
+            Analytics.trackError(error)
             if error is KeychainService.KeychainError { clearAccountData() }
             self.error = error.localizedDescription
         }
@@ -701,6 +702,7 @@ final class InvoicesViewModel: BatchUpdating {
                 updatedCount += 1
             }
         } catch {
+            Analytics.trackError(error)
             updateError = error.localizedDescription
         }
 
@@ -720,6 +722,7 @@ final class InvoicesViewModel: BatchUpdating {
             try context.delete(model: CachedInvoice.self, where: #Predicate { idList.contains($0.id) })
             try context.save()
         } catch {
+            Analytics.trackError(error)
             logger.warning("Failed to remove deleted invoices from cache: \(error.localizedDescription)")
         }
     }

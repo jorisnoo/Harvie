@@ -97,6 +97,7 @@ extension BatchUpdating {
             }
             showUpdateSuccess = true
         } catch {
+            Analytics.trackError(error)
             updateError = error.localizedDescription
         }
 

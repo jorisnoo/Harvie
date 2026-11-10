@@ -215,6 +215,7 @@ struct TemplateSeeder {
             try content.write(to: dest, atomically: true, encoding: .utf8)
         } catch {
             logger.error("Failed to seed variables reference: \(error.localizedDescription)")
+            Analytics.trackError(error)
         }
     }
 

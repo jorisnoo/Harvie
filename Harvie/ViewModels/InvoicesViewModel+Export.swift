@@ -104,6 +104,7 @@ extension InvoicesViewModel {
             showExportSuccess = true
             Analytics.batchExportCompleted(count: exportedCount, withQRBill: withQRBill)
         } catch {
+            Analytics.trackError(error)
             exportError = error.localizedDescription
         }
 

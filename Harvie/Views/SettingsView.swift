@@ -602,6 +602,7 @@ private struct TemplatesFolderSection: View {
         do {
             try TemplateFileManager.changeTemplatesRoot(to: change.destination, moveTemplates: moveTemplates)
         } catch {
+            Analytics.trackError(error)
             errorMessage = error.localizedDescription
         }
 

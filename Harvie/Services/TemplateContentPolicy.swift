@@ -49,6 +49,7 @@ enum TemplateContentPolicy {
             return ruleList
         } catch {
             logger.error("Failed to compile template content rules: \(error.localizedDescription)")
+            Analytics.trackError(error)
             return nil
         }
     }

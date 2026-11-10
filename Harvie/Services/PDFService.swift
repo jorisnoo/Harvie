@@ -398,6 +398,7 @@ actor PDFService {
             #if DEBUG
             logger.debug("Failed to fetch client details: \(error.localizedDescription)")
             #endif
+            await Analytics.trackError(error)
             return nil
         }
     }

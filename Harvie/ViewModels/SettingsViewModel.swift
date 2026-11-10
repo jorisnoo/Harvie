@@ -102,6 +102,7 @@ final class SettingsViewModel {
             )
         } catch {
             logger.error("Failed to save settings: \(error.localizedDescription)")
+            Analytics.trackError(error)
             saveError = error.localizedDescription
         }
     }
@@ -114,6 +115,7 @@ final class SettingsViewModel {
             return try await apiService.fetchCompany(credentials: credentials).subdomain
         } catch {
             logger.error("Failed to resolve Harvest subdomain: \(error.localizedDescription)")
+            Analytics.trackError(error)
             return ""
         }
     }
@@ -144,6 +146,7 @@ final class SettingsViewModel {
             #if DEBUG
             logger.error("Connection test failed: \(error.localizedDescription)")
             #endif
+            Analytics.trackError(error)
             connectionTestResult = .failure(Strings.Errors.connectionFailedNetwork)
         }
 
@@ -167,6 +170,7 @@ final class SettingsViewModel {
             logoImage = LogoStorage.loadImage()
         } catch {
             logger.error("Failed to save logo: \(error.localizedDescription)")
+            Analytics.trackError(error)
         }
     }
 

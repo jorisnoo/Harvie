@@ -355,11 +355,13 @@ final class InvoiceDetailModel {
             try await send(edit)
             return true
         } catch let apiError as HarvestAPIService.APIError {
+            Analytics.trackError(apiError)
             report(Strings.InvoiceDetail.failedAction(action, apiError.localizedDescription))
         } catch {
             #if DEBUG
             logger.error("Failed to \(action): \(error.localizedDescription)")
             #endif
+            Analytics.trackError(error)
             report(Strings.InvoiceDetail.failedActionGeneric(action))
         }
         return false
