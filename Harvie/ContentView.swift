@@ -19,11 +19,12 @@ struct ContentView: View {
     @State private var estimatesVM = EstimatesViewModel()
     @State private var columnVisibility: NavigationSplitViewVisibility = .all
     @State private var isSearching = false
-    @SceneStorage("documentSource") private var sourceRaw: String = DocumentSource.invoices.rawValue
+    /// App-wide rather than per scene, so the last chosen list survives quitting the app.
+    @AppStorage("documentSource") private var sourceRaw: String = DocumentSource.invoices.rawValue
 
     private var source: Binding<DocumentSource> {
         Binding(
-            get: { DocumentSource(rawValue: sourceRaw) ?? .invoices },
+            get: { estimatesEnabled ? DocumentSource(rawValue: sourceRaw) ?? .invoices : .invoices },
             set: { sourceRaw = $0.rawValue }
         )
     }
