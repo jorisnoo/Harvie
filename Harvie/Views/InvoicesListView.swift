@@ -167,7 +167,12 @@ struct InvoicesListView: View {
                 }
             }
 
-            SidebarStatusBar(invoices: viewModel.sortedInvoices)
+            DocumentStatusBar(
+                count: Strings.InvoicesList.invoiceCount(viewModel.sortedInvoices.count),
+                totals: viewModel.sortedInvoices.map {
+                    DocumentTotal(currency: $0.currency, gross: $0.displayAmount, net: $0.netDisplayAmount)
+                }
+            )
         }
     }
 
@@ -528,38 +533,6 @@ struct ExportProgressOverlay: View {
             .padding(24)
             .background(.regularMaterial)
             .clipShape(RoundedRectangle(cornerRadius: 12))
-        }
-    }
-}
-
-private struct SidebarStatusBar: View {
-    let invoices: [Invoice]
-
-    private var totalByCurrency: [(currency: String, total: Decimal)] {
-        Dictionary(grouping: invoices, by: \.currency)
-            .map { (currency: $0.key, total: $0.value.reduce(0) { $0 + $1.displayAmount }) }
-            .sorted { $0.currency < $1.currency }
-    }
-
-    private var formattedTotal: String {
-        totalByCurrency.map { CurrencyFormatter.format($0.total, currency: $0.currency) }.joined(separator: " · ")
-    }
-
-    var body: some View {
-        if !invoices.isEmpty {
-            HStack {
-                Text(Strings.InvoicesList.invoiceCount(invoices.count))
-                    .contentTransition(.numericText())
-                Spacer()
-                Text(formattedTotal)
-                    .contentTransition(.numericText())
-            }
-            .animation(.default, value: formattedTotal)
-            .font(.caption)
-            .foregroundStyle(.secondary)
-            .padding(.horizontal)
-            .padding(.vertical, 6)
-            .background(.bar)
         }
     }
 }

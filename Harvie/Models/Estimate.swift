@@ -70,6 +70,11 @@ struct Estimate: Codable, Identifiable, Hashable, Sendable {
     let client: ClientReference
     let lineItems: [LineItem]?
 
+    /// `amount` without taxes.
+    var netAmount: Decimal {
+        amount - (taxAmount ?? 0) - (tax2Amount ?? 0)
+    }
+
     init(
         id: Int, clientKey: String, number: String, purchaseOrder: String? = nil,
         amount: Decimal,

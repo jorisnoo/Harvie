@@ -279,6 +279,13 @@ enum Strings {
 
     // MARK: - Estimates List
 
+    enum StatusBar {
+        static let includingVAT = String(localized: "incl. VAT")
+        static let excludingVAT = String(localized: "excl. VAT")
+        static let showIncludingVAT = String(localized: "Show totals including VAT")
+        static let showExcludingVAT = String(localized: "Show totals excluding VAT")
+    }
+
     enum EstimatesList {
         static let title = String(localized: "Estimates")
         static let updating = String(localized: "Updating...")

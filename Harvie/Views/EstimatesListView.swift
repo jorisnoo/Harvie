@@ -91,7 +91,12 @@ struct EstimatesListView: View {
                 }
             }
 
-            EstimatesStatusBar(estimates: viewModel.sortedEstimates)
+            DocumentStatusBar(
+                count: Strings.EstimatesList.estimateCount(viewModel.sortedEstimates.count),
+                totals: viewModel.sortedEstimates.map {
+                    DocumentTotal(currency: $0.currency, gross: $0.amount, net: $0.netAmount)
+                }
+            )
         }
     }
 
@@ -184,40 +189,6 @@ private struct EstimatesOnChangeModifier: ViewModifier {
             .onReceive(NotificationCenter.default.publisher(for: .refreshEstimates)) { _ in
                 viewModel.refresh()
             }
-    }
-}
-
-// MARK: - Status Bar
-
-private struct EstimatesStatusBar: View {
-    let estimates: [Estimate]
-
-    private var totalByCurrency: [(currency: String, total: Decimal)] {
-        Dictionary(grouping: estimates, by: \.currency)
-            .map { (currency: $0.key, total: $0.value.reduce(0) { $0 + $1.amount }) }
-            .sorted { $0.currency < $1.currency }
-    }
-
-    private var formattedTotal: String {
-        totalByCurrency.map { CurrencyFormatter.format($0.total, currency: $0.currency) }.joined(separator: " \u{00B7} ")
-    }
-
-    var body: some View {
-        if !estimates.isEmpty {
-            HStack {
-                Text(Strings.EstimatesList.estimateCount(estimates.count))
-                    .contentTransition(.numericText())
-                Spacer()
-                Text(formattedTotal)
-                    .contentTransition(.numericText())
-            }
-            .animation(.default, value: formattedTotal)
-            .font(.caption)
-            .foregroundStyle(.secondary)
-            .padding(.horizontal)
-            .padding(.vertical, 6)
-            .background(.bar)
-        }
     }
 }
 

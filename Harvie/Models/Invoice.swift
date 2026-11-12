@@ -80,6 +80,13 @@ struct Invoice: Codable, Identifiable, Hashable, Sendable {
         dueAmount > 0 ? dueAmount : amount
     }
 
+    /// `displayAmount` without taxes, prorated when the invoice is partially paid.
+    var netDisplayAmount: Decimal {
+        guard amount != 0 else { return displayAmount }
+        let taxes = (taxAmount ?? 0) + (tax2Amount ?? 0)
+        return displayAmount * (amount - taxes) / amount
+    }
+
     nonisolated var effectivePaidDate: Date? {
         paidAt ?? paidDate
     }
