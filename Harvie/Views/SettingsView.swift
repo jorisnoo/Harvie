@@ -402,40 +402,11 @@ struct TemplatesSettings: View {
     @Environment(\.modelContext) private var modelContext
     @State private var showLabelEditor = false
 
+    private var usesTemplate: Bool { viewModel.appSettings.pdfSource == .template }
+
     var body: some View {
         ScrollView {
             Form {
-                Section(Strings.Settings.companyLogo) {
-                    HStack {
-                        if let logo = viewModel.logoImage {
-                            Image(nsImage: logo)
-                                .resizable()
-                                .scaledToFit()
-                                .frame(maxHeight: 48)
-                        } else {
-                            Text(Strings.Settings.noLogoSet)
-                                .foregroundStyle(.secondary)
-                        }
-
-                        Spacer()
-
-                        HStack(spacing: 6) {
-                            Button(Strings.Settings.chooseImage) {
-                                viewModel.selectLogo()
-                            }
-
-                            if viewModel.logoImage != nil {
-                                Button(Strings.Settings.remove, role: .destructive) {
-                                    viewModel.removeLogo()
-                                }
-                            }
-                        }
-                    }
-                    Text(Strings.Settings.logoHint)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-
                 Section(Strings.Settings.invoicePDFSource) {
                     Picker(Strings.Settings.pdfSource, selection: $viewModel.appSettings.pdfSource) {
                         ForEach(InvoicePDFSource.allCases, id: \.self) { source in
@@ -460,7 +431,7 @@ struct TemplatesSettings: View {
                         .accessibilityLabel(Strings.Settings.customizeLabels)
                     }
 
-                    if viewModel.appSettings.pdfSource == .template {
+                    if usesTemplate {
                         Toggle(Strings.Settings.showQuantityColumn, isOn: $viewModel.appSettings.columnVisibility.showQuantity)
                         Toggle(Strings.Settings.showUnitPriceColumn, isOn: $viewModel.appSettings.columnVisibility.showUnitPrice)
                         Toggle(Strings.Settings.showTotalHours, isOn: $viewModel.appSettings.columnVisibility.showTotalHours)
@@ -472,7 +443,40 @@ struct TemplatesSettings: View {
 
                 }
 
-                TemplatesFolderSection()
+                if usesTemplate {
+                    Section(Strings.Settings.companyLogo) {
+                        HStack {
+                            if let logo = viewModel.logoImage {
+                                Image(nsImage: logo)
+                                    .resizable()
+                                    .scaledToFit()
+                                    .frame(maxHeight: 48)
+                            } else {
+                                Text(Strings.Settings.noLogoSet)
+                                    .foregroundStyle(.secondary)
+                            }
+
+                            Spacer()
+
+                            HStack(spacing: 6) {
+                                Button(Strings.Settings.chooseImage) {
+                                    viewModel.selectLogo()
+                                }
+
+                                if viewModel.logoImage != nil {
+                                    Button(Strings.Settings.remove, role: .destructive) {
+                                        viewModel.removeLogo()
+                                    }
+                                }
+                            }
+                        }
+                        Text(Strings.Settings.logoHint)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+
+                    TemplatesFolderSection()
+                }
             }
             .sheet(isPresented: $showLabelEditor) {
                 LabelEditorSheet(
@@ -484,19 +488,20 @@ struct TemplatesSettings: View {
             .frame(maxHeight: .infinity, alignment: .top)
             .fixedSize(horizontal: false, vertical: true)
 
-            TemplateListView(
-                activeTemplateId: viewModel.appSettings.pdfSource == .template
-                    ? $viewModel.appSettings.selectedTemplateId : nil,
-                language: viewModel.appSettings.templateLanguage,
-                labelOverrides: viewModel.appSettings.labelOverrides,
-                columnVisibility: viewModel.appSettings.columnVisibility
-            )
-            .padding(.horizontal)
-            .padding(.bottom, 12)
+            if usesTemplate {
+                TemplateListView(
+                    activeTemplateId: $viewModel.appSettings.selectedTemplateId,
+                    language: viewModel.appSettings.templateLanguage,
+                    labelOverrides: viewModel.appSettings.labelOverrides,
+                    columnVisibility: viewModel.appSettings.columnVisibility
+                )
+                .padding(.horizontal)
+                .padding(.bottom, 12)
+            }
         }
         .scrollBounceBehavior(.basedOnSize)
         .onChange(of: viewModel.appSettings.pdfSource) {
-            guard viewModel.appSettings.pdfSource == .template,
+            guard usesTemplate,
                   viewModel.appSettings.selectedTemplateId == nil else { return }
 
             let descriptor = FetchDescriptor<InvoiceTemplate>(

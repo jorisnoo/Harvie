@@ -9,8 +9,8 @@ import SwiftUI
 import UniformTypeIdentifiers
 
 struct TemplateListView: View {
-    /// When non-nil, double-clicking a template selects it as the active template.
-    var activeTemplateId: Binding<UUID?>?
+    /// Double-clicking a template selects it as the active template.
+    @Binding var activeTemplateId: UUID?
     var language: TemplateLanguage = .en
     var labelOverrides: [String: [String: String]]?
     var columnVisibility: ColumnVisibility = .default
@@ -30,15 +30,11 @@ struct TemplateListView: View {
                 ForEach(templates) { template in
                     TemplateRow(
                         template: template,
-                        isActive: activeTemplateId?.wrappedValue == template.id
+                        isActive: activeTemplateId == template.id
                     )
                     .tag(template)
                     .onDoubleClick {
-                        if activeTemplateId != nil {
-                            activeTemplateId?.wrappedValue = template.id
-                        } else {
-                            openEditor(for: template)
-                        }
+                        activeTemplateId = template.id
                     }
                     .contextMenu {
                         templateContextMenu(for: template)
