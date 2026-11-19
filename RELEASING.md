@@ -39,7 +39,9 @@ Verify the workflow and published release/assets before reporting success. If a 
 
 The tag workflow builds, signs and notarises the app, then publishes the DMG and ZIP with these notes. Keep the existing signing secrets and asset naming: the ZIP must contain one top-level `.app`, its bundle version must match the tag, and AppUpdater must be able to find the versioned ZIP. The build script receives the tag as `--version`; do not edit generated archives or introduce a second GitHub release command.
 
-The existing workflow also updates the Homebrew tap and website download URL.
+After publishing the DMG, the workflow opens an update PR against [the Homebrew tap](https://github.com/jorisnoo/homebrew-tap) and requests automatic merging. `Cask audit` must pass before the update reaches users. The separate website download update is unchanged.
+
+The `HOMEBREW_TAP_PAT` secret needs Contents and Pull requests write access to the tap. The app's `GITHUB_TOKEN` cannot update the tap. If a cask PR fails its audit, inspect the failing check; do not push directly to `main`.
 
 For a local signed build, use `./scripts/build-release.sh --clean --notarise --version X.Y.Z`. GitHub Actions remains responsible for publishing release assets.
 
